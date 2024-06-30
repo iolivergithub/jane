@@ -1,0 +1,29 @@
+{{define "content"}}
+<h3>Element</h3>
+
+<form action="/new/element" method="post">
+<div class="container-md">
+   <div class="row">
+      <div class="col-md-12">
+         <textarea class="form-control" rows=17 id="elementdata" name="elementdata"></textarea>
+      </div>
+   </div>
+
+<br/>
+<button type="submit" class="btn btn-primary">Submit</button>
+<hr/>
+   <div class="row">
+      <div class="col-md-12">
+         <h3>Instructions</h3>
+         <p>The above must be valid JSON</p>
+         <p>The protocol must be of a valid type</p>
+         <p>The UEFI, TPM2, IMA and TXT sections can be removed if these do not apply</p>
+         <p>If a new element is being created, then the <em>itemid</em> field will be overwritten and an identifier automatically generated</p>
+      </div>
+   </div>
+
+</form>
+
+
+
+{{end}}

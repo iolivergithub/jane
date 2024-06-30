@@ -1,0 +1,39 @@
+#Some general naming
+system:
+  name: JANE_DOCKER
+
+#MongoDB Configuration
+database:
+  connection: mongodb://mongo:27017
+  name: jane_docker
+
+#MQTT Configuration
+messaging:
+  broker: messagebus
+  port: 1883
+  clientid: janemessagebus
+
+#REST Interface Configuration
+rest:
+  port: 8520
+  crt: /temporary.crt
+  key: /temporary.key
+  usehttp: true
+
+#Web Interface Configuration
+web:
+  port: 8540
+  crt: /temporary.crt
+  key: /temporary.key
+  usehttp: true  
+
+
+#X3270
+x3270:
+  port: 3270
+
+
+#Log file
+logging:
+  logfilelocation: /tmp/jane_docker.log
+  sessionupdatelogging: false

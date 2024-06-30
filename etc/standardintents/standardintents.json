@@ -1,0 +1,79 @@
+[
+    {
+        "itemid": "std::intent::sha256::crtm::pcr0",
+        "name": "x86 UEFI CRTM only",
+        "description": "The initial CRTM PCR0 measurement for x86 UEFI machines as stored in SHA256 PCR 0",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::crtm::firmware",
+        "name": "x86 UEFI CRTM Firmware",
+        "description": "The initial CRTM firmware measurement for x86 UEFI machines as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,1,2,3",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::crtm::bootloaderonly",
+        "name": "x86 UEFI Bootloader Only",
+        "description": "The initial CRTM bootloader only measurement for x86 UEFI machines as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "4,5",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::srtm",
+        "name": "x86 UEFI SRTM",
+        "description": "The initial SRTM measurement for x86 UEFI machines as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,1,2,3,4,5,6,7",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::txt",
+        "name": "x86 Intel TXT",
+        "description": "The Intel TXT measurements as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,17,18",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::grubfull",
+        "name": "x86 Grub Full",
+        "description": "The Grub measurements as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,1,2,3,4,5,6,7,8,9,10",
+            "bank": "sha256"
+        }
+    },
+    {
+        "itemid": "std::intent::sha256::linuxIMA",
+        "name": "Linux IMA with PCR 0",
+        "description": "The Linux IMA measurements as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,10",
+            "bank": "sha256"
+        }
+    }
+]

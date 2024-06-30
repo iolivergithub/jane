@@ -1,0 +1,25 @@
+{{define "content"}}
+<h3>Intent</h3>
+<form action="/new/intent" method="post">
+<div class="container-md">
+   <div class="row">
+      <div class="col-md-12">
+         <textarea class="form-control" rows=8 id="intentdata" name="intentdata"></textarea>
+      </div>
+   </div>
+
+<br/>
+<button type="submit" class="btn btn-primary">Submit</button>
+<hr/>
+   <div class="row">
+      <div class="col-md-12">
+         <h3>Instructions</h3>
+         <p>The above must be valid JSON</p>
+         <p>If a new intent is being created, then the itemid field will be overwritten and an identifier automatically generated</p>
+      </div>
+   </div>
+</form>
+
+
+
+{{end}}

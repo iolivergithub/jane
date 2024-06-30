@@ -1,0 +1,104 @@
+
+#version: "3"
+
+#
+# docker-compoes file to bring up the whole attestation engine
+##
+# Defacto ports for A10
+#  8540 - Web UI
+#  8520 - REST API
+#  8560 - MQTT Channels
+#  8561 - MQTT Channels (SSH)
+#  8530 - trust agents (on elements to be attested)     # Does not run here - not part of the server
+#  8555 - mongo-express - for convenience
+#
+
+
+
+#
+# The services needed to run the system
+#
+
+services:
+
+#
+# The core database
+#  
+   database:
+     image: "mongo"
+     container_name: mongo
+     volumes:
+      - attestationdata:/data/db
+     networks:
+      - attestationnetwork
+
+#
+# Useful tool for examining the database instead of using the mongo shell
+#
+# Mongoexpress listens normally on port 8081, we expose this on 8555
+#
+   databaseui:
+     image: "mongo-express"
+     ports: 
+       - 8555:8081                          
+     networks:
+      - attestationnetwork
+     environment:
+      - ME_CONFIG_MONGODB_SERVER=database
+      - ME_CONFIG_MONGODB_URL="mongodb://database:27017"
+     restart: always
+     depends_on: 
+      - database
+#
+# Mosquitto for the MQTT channels
+#
+   messagebus:
+     image: "eclipse-mosquitto"
+     container_name: messagebus
+     ports:
+       - 8560:1883                          
+       - 8561:9000                          
+     networks:
+      - attestationnetwork
+     volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - /mosquitto/data
+      - /mosquitto/log
+
+#
+# JANESERVER - the core attestation server
+#    
+   janeserver:
+     image: "janeserver"
+     command: --config=config.yaml
+     container_name: janeserver     
+     ports:
+       - 8540:8540                           
+       - 8520:8520                           
+       - 3270:3270                                 
+     depends_on:
+       - messagebus
+     restart: always
+     networks:
+      - attestationnetwork
+     volumes:
+      - ./config.yaml:/config.yaml               
+      - ./temporary.key:/temporary.key           
+      - ./temporary.crt:/temporary.crt           
+
+#
+# This defines the permanent volume for storing the database
+# so that it is permanent between starting and stopping the whole system
+#
+
+volumes:
+  attestationdata: 
+    external: true
+
+#
+# Internal network
+#
+
+networks:
+   attestationnetwork:
+     driver: bridge
