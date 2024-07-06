@@ -52,7 +52,7 @@ This is how to start tarzan. It works on BSDs, Linux, Windows and quite a few ot
 
 Place the following systemd configuration in `/etc/systemd/system`  as `tarzan.service`
 
-Note tarzan may require root to run. Take note of any security aspects.
+Note tarzan may require root to run. Take note of any security aspects. Ensure that tarzan starts the correct services - these are all made on the command line, see [here](running.md)!!
 
 ```
 [Unit]
@@ -65,7 +65,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-ExecStart=/opt/jane/tarzan
+ExecStart=/opt/jane/tarzan --tpm2 --sys
 
 [Install]
 WantedBy=multi-user.target

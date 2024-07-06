@@ -75,7 +75,7 @@ func initialise() {
 // These configure the rest API
 
 
-func startRESTInterface(sys,tpm,uefi,ima,txt bool, p *string ) {
+func startRESTInterface(sys,tpm2,uefi,ima,txt bool, p *string ) {
     router := echo.New()
     router.HideBanner = true
    
@@ -88,22 +88,25 @@ func startRESTInterface(sys,tpm,uefi,ima,txt bool, p *string ) {
     router.Use(middleware.GzipWithConfig(middleware.GzipConfig{ Level: 5,}))
 
     if sys == true {
+    	fmt.Println("   +-- Sys attestation API enabled")
     	setupSYSendpoints(router)    
     }
     if uefi == true {
+    	fmt.Println("   +-- UEFI attestation API enabled")    	
     	setupUEFIendpoints(router)    
     } 
  	 if ima == true {
+    	fmt.Println("   +-- IMA attestation API enabled") 	 	
     	setupIMAendpoints(router)    
     } 
 
-    if tpm == true {
+    if tpm2 == true {
+    	fmt.Println("   +-- TPM2 attestation API enabled")    	
     	setupTPM2endpoints(router)    
     }    
-    if ima == true {
-    	setupIMAendpoints(router)    
-    } 
+     
 /*    if txt == true {
+    	fmt.println("   +-- TXT attestation API enabled")	
     	setupTXTendpoints(router)    
     }	    
 */
@@ -116,9 +119,11 @@ func startRESTInterface(sys,tpm,uefi,ima,txt bool, p *string ) {
 
 	//start the server
 	if usehttp == true{ 
+    	fmt.Printf("   +-- HTTP interface on port %v enabled\n",port)		
 		router.Logger.Fatal(router.Start(string(port))) 
 
 	} else {
+    	fmt.Printf("   +-- HTTPS interface on port %v enabled\n",port)				
 		//router.Logger.Fatal(router.StartTLS(port,crt,key))	
 	}
 }
@@ -147,11 +152,11 @@ func setupTPM2endpoints(router *echo.Echo) {
 
 // This starts everything...here we "go" :-)
 func main() {
-	flagSYS := flag.Bool("sys", true, "Expose the sys attestation API")
- 	flagTPM := flag.Bool("tpm", true, "Expose the tpm attesation API")
- 	flagUEFI := flag.Bool("uefi", true, "Expose the uefi attestation API")
- 	flagIMA := flag.Bool("ima", true, "Expose the ima attestation API")
- 	flagTXT := flag.Bool("txt", true, "Expose the txt attestation API")
+	flagSYS := flag.Bool("sys", false, "Expose the sys attestation API")
+ 	flagTPM2 := flag.Bool("tpm2", false, "Expose the tpm2 attesation API")
+ 	flagUEFI := flag.Bool("uefi", false, "Expose the uefi attestation API")
+ 	flagIMA := flag.Bool("ima", false, "Expose the ima attestation API")
+ 	flagTXT := flag.Bool("txt", false, "Expose the txt attestation API")
 
  	flagUNSAFEFILEACCESS := flag.Bool("unsafe", false, "Allow caller to request ANY file instead of the default UEFI and IMA locations. THIS IS UNSAFE!")
 
@@ -159,11 +164,9 @@ func main() {
 
  	flag.Parse()
 
- 	fmt.Printf("\nsys %v, port %v , unsafe %v\n", flagSYS, flagPort, flagUNSAFEFILEACCESS)
-
 	welcomeMessage(*flagUNSAFEFILEACCESS)
 	checkUnsafeMode(*flagUNSAFEFILEACCESS)
 
-	startRESTInterface(*flagSYS, *flagTPM, *flagUEFI, *flagIMA, *flagTXT, flagPort  )
+	startRESTInterface(*flagSYS, *flagTPM2, *flagUEFI, *flagIMA, *flagTXT, flagPort  )
 	exitMessage()
 }

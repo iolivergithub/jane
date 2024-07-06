@@ -60,6 +60,7 @@ If you wish to set a build flag, then specify  as part of the `ldflags -X` optio
 
 <!-- TOC --><a name="compiling-tarzan"></a>
 ## Compiling tarzan
+Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Tarzan is only required if you want to use this protocol - it is useful for debugging and building interesting tests.
 
 *MAKE SURE* you are in the `tarzan` directory.  tarzan is much simpler than janeserver and requires just compilation. For your local operating system and architecture you can remove the `GOOS` and `GOARCH` variables, for example as shown below. The `strip` command is optional but it does reduce the binary size a little.
 
