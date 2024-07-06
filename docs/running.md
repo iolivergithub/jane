@@ -51,17 +51,17 @@ X3270 service listening on port 3270
 If that works, point your browser at the machine where this is running and port 8540.
 
 
-# Running TA10
+# Running tarzan
 
-Running TA10 is simple, just use
+Running tarzan is simple, just use
 
 ```bash
-./ta10
+./tarzan
 ```
 
 ```bash
 +========================================================================================
-|  TA10 version - Starting
+|  tarzan version - Starting
 |   + linux O/S on amd64
 |   + version v0.1, build not set
 |   + session identifier is 19a14951-76c3-4641-b9ac-fa65683e5c36
@@ -71,15 +71,15 @@ Running TA10 is simple, just use
 ⇨ http server started on [::]:8530
 ```
 
-If you are running on Linux and need access to files such as the UEFI log file then you will need to run ta10 as sudo.
+If you are running on Linux and need access to files such as the UEFI log file then you will need to run tarzan as sudo.
 
-TA10 requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handles this internally), and so whichever user ta10 is running as needs access to that device.
+tarzan requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handles this internally), and so whichever user tarzan is running as needs access to that device.
 
 ```bash
-sudo ./ta10
+sudo ./tarzan
 ```
 
-Read the section on advanced TA10 usage.
+Read the section on advanced tarzan usage.
 
 # JANESERVER Configuration File
 
@@ -162,22 +162,22 @@ keylime:
   apiurl: https://127.0.0.1:30000/keylime                   #CHANGE ME
 ```
 
-# Advanced TA10 - Here be a good way to open your system to every hacker ever
+# Advanced tarzan - Here be a good way to open your system to every hacker ever
 
-TA10 CURRENTLY starts all the services, ie: it will happily offer TPM, IMA, UEFI services etc, even if these are not available. In a later version these will have be switched on specifically, but don't worry about this.
+tarzan CURRENTLY starts all the services, ie: it will happily offer TPM, IMA, UEFI services etc, even if these are not available. In a later version these will have be switched on specifically, but don't worry about this.
 
-TA10 can read UEFI and IMA logs in non-standard places, but in order to do this, the element description in the Jane's database would have to refer to those specifically. TA10 by default operates in a *safe* mode where it will only use the standard locations in Linux's securityfs. You can turn off this mode:
+tarzan can read UEFI and IMA logs in non-standard places, but in order to do this, the element description in the Jane's database would have to refer to those specifically. tarzan by default operates in a *safe* mode where it will only use the standard locations in Linux's securityfs. You can turn off this mode:
 
 ```bash
-sudo ./ta10 -unsafe=true
+sudo ./tarzan -unsafe=true
 ```
 
 which responds with
 
 ```bash
-$ sudo ./ta10 -unsafe=true
+$ sudo ./tarzan -unsafe=true
 +========================================================================================
-|  TA10 version - Starting
+|  tarzan version - Starting
 |   + linux O/S on amd64
 |   + version v0.1, build not set
 |   + session identifier is 4e85a08d-7d1c-450d-9a7a-659f29ab8380
@@ -186,7 +186,7 @@ $ sudo ./ta10 -unsafe=true
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-TA10 is running in UNSAFE file access mode.  Unsafe is set to true
+tarzan is running in UNSAFE file access mode.  Unsafe is set to true
 Requests for log files, eg: UEFI, IMA, that supply a non default location will happily read that file
 This is a HUGE security issue. YOU HAVE BEEN WARNED
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
