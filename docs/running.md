@@ -1,3 +1,12 @@
+# Table of contents
+
+- [Running JANESERVER](#running-janeserver)
+  - [JANESERVER Configuration File](#janeserver-configuration-file)
+  - [Using Keylime for Measured Boot evaluation](#using-keylime-for-measured-boot-evaluation)
+- [Running TARZAN](#running-tarzan)
+  - [Command line options](#command-line-options)
+  - [Unsafe operation - Here be a good way to open your system to every hacker ever](#unsafe-operation---here-be-a-good-way-to-open-your-system-to-every-hacker-ever)
+
 # Running JANESERVER
 
 Janeserver requires a configuration file and optionally keys for the https certs. We've supplied a temporary key in the dist folder...don't use these unless you're crazy. We also like triggering github to give us private key warnings because we've stored them there. Browsers will complain unless your certs a signed by a suitable authority, eg: LetsTrust.
@@ -50,38 +59,7 @@ X3270 service listening on port 3270
 
 If that works, point your browser at the machine where this is running and port 8540.
 
-
-# Running tarzan
-
-Running tarzan is simple, just use
-
-```bash
-./tarzan
-```
-
-```bash
-+========================================================================================
-|  tarzan version - Starting
-|   + linux O/S on amd64
-|   + version v0.1, build not set
-|   + session identifier is 19a14951-76c3-4641-b9ac-fa65683e5c36
-|   + unsafe mode? false
-+========================================================================================
-
-⇨ http server started on [::]:8530
-```
-
-If you are running on Linux and need access to files such as the UEFI log file then you will need to run tarzan as sudo.
-
-tarzan requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handles this internally), and so whichever user tarzan is running as needs access to that device.
-
-```bash
-sudo ./tarzan
-```
-
-Read the section on advanced tarzan usage.
-
-# JANESERVER Configuration File
+## JANESERVER Configuration File
 
 Note the lines with "CHANGE ME" - review these for your system.
 
@@ -162,9 +140,61 @@ keylime:
   apiurl: https://127.0.0.1:30000/keylime                   #CHANGE ME
 ```
 
-# Advanced tarzan - Here be a good way to open your system to every hacker ever
 
-tarzan CURRENTLY starts all the services, ie: it will happily offer TPM, IMA, UEFI services etc, even if these are not available. In a later version these will have be switched on specifically, but don't worry about this.
+
+
+
+# Running TARZAN
+
+Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Running tarzan is simple, just speicfy which services you want started, eg: sys and tpm2...
+
+```bash
+./tarzan --tpm2 --sys
+```
+
+```bash
++========================================================================================
+|  tarzan version - Starting
+|   + linux O/S on amd64
+|   + version v0.1, build not set
+|   + session identifier is 19a14951-76c3-4641-b9ac-fa65683e5c36
+|   + unsafe mode? false
++========================================================================================
+
+⇨ http server started on [::]:8530
+```
+
+If you are running on Linux and need access to files such as the UEFI log file then you will need to run tarzan as sudo.
+
+tarzan requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handles this internally), and so whichever user tarzan is running as needs access to that device.
+
+```bash
+sudo ./tarzan --tpm2 --sys
+```
+
+
+## Command line options
+
+Tarzan's services and configuration is all done by command line flags. At least one of these must be specified for tarzan to respond to anything at all. At minimum the sys service just to report what system you are running on should be enabled.
+
+| Flag |  Description |
+| --- | --- | --- |
+| --tpm2 | Start the services to respond to TPM2 attestation requests |
+| --uefi | Start the services to respond to UEFI attestation requests |
+| --ima | Start the services to respond to Linux IMA attestation requests |
+| --txt | Start the services to respond to Intel TXT attestation requests |
+| --sys | Start the services to respond to TPM2 attestation requests |
+
+
+tarzan by default listens on port 8530, this can be changed using the --port option
+
+For example, to start tarzan on port 4789 and reporting on uefi, ima and sys you would use (possibly with sudo):
+
+```bash
+tarzan --sysy --uefi --ima --port=4789
+```
+
+## Unsafe operation - Here be a good way to open your system to every hacker ever
 
 tarzan can read UEFI and IMA logs in non-standard places, but in order to do this, the element description in the Jane's database would have to refer to those specifically. tarzan by default operates in a *safe* mode where it will only use the standard locations in Linux's securityfs. You can turn off this mode:
 
