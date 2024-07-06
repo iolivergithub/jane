@@ -119,6 +119,6 @@ The following services are running and available externally by default
 
 
 
-## TA10
+## TARZAN
 
-Refer back to [compiling](compiling.md) to understand how to build TA10. This normally doesn't need to be run in a container (and we don't really recommend it anyway)
+Refer back to [compiling](compiling.md) to understand how to build tarzan. This normally doesn't need to be run in a container (and we don't really recommend it anyway)
