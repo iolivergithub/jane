@@ -32,9 +32,9 @@ var RUNSESSION string = utilities.MakeID()
 // Command line flags
 var flagREST = flag.Bool("startREST", true, "Start the REST API, defaults to true")
 var flagWEB = flag.Bool("startWebUI", true, "Start the HTML Web UI, defaults to true")
-var flagX3270 = flag.Bool("startx3270", true, "Start the X3270 UI, defaults to true")
+var flagX3270 = flag.Bool("startx3270", false, "Start the X3270 UI, defaults to false")
 
-var configFile = flag.String("config", "./config.yaml", "Location and name of the configuration file")
+var configFile = flag.String("config", "./config.yaml", "Location and name of the configuration file, default to a config.yaml in the current directory")
 
 // Provides the standard welcome message to stdout.
 func welcomeMessage() {
@@ -81,7 +81,7 @@ func main() {
 	// As these run as threads, we put them in a wait group
 	// Need to implement a proper graceful shutdown mechanism
 	//
-	// If any of these internal services fail to start, then the system will panic
+	// If any of these internal services fail to start, then the system may panic
 
 	var wg sync.WaitGroup
 

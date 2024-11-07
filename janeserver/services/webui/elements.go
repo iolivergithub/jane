@@ -40,11 +40,15 @@ func showElement(c echo.Context) error {
 }
 
 func newElement(c echo.Context) error {
-	return c.Render(http.StatusOK, "editelement.html", nil)
+	fmt.Println("ELEMTEMPLATE is ",elementtemplate())
+
+	return c.Render(http.StatusOK, "editelement.html", elementtemplate())
 }
 
 func processNewElement(c echo.Context) error {
+	fmt.Println("\nProcessing New Element")
 	elemdata := c.FormValue("elementdata")
+	fmt.Println("ELEMDATA is ",elemdata)
 
 	var newelem structures.Element
 
@@ -60,4 +64,46 @@ func processNewElement(c echo.Context) error {
 	fmt.Printf("  eid=%v,err=%v\n", eid, err)
 
 	return c.Redirect(http.StatusSeeOther, "/elements")
+}
+
+// This is the template for an element
+func elementtemplate() string {
+	raw := `{
+    "name": "****",
+    "description": "****",
+    "endpoint": "****",
+    "protocol": "****",
+    "tag": [
+        "****1",
+        "****2"
+    ],
+    "host": {
+        "os": "****",
+        "arch": "****",
+        "hostname": "****"
+    },
+    "tpm2": {
+        "device": "/dev/tpmrm0",
+        "ekcerthandle": "0x01c00002",
+        "ek": {
+            "handle": "0x810000EE",
+            "public": "****"
+        },
+        "ak": {
+            "handle": "0x810000AA",
+            "public": "****"
+        }
+    },
+    "uefi": {
+        "eventlog": "/sys/kernel/security/tpm0/binary_bios_measurements"
+    },
+    "ima": {
+        "asciilog": "/sys/kernel/security/ima/ascii_runtime_measurements"
+    },
+    "txt": {
+        "log": ""
+    }
+}
+	`
+	return raw
 }

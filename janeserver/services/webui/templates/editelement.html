@@ -1,150 +1,38 @@
 {{define "content"}}
 <h3>Element</h3>
 
-<form action="/new/element" method="post">
-   <div class="mb-3 row">
-      <label for="itemID" class="col-sm-2 col-form-label">ItemID</label>
-      <div class="col-sm-10">      
-         <input readonly type="text" class="form-control" name="itemID">
+ <button class="btn btn-primary" onclick="PrettyPrintJSON()">Pretty Print Element Description</button>
+
+<form action="/new/intent" method="post">
+<div class="container-md">
+   <div class="row">
+      <div class="col-md-12">
+         <textarea class="form-control" rows=16 id="elementdata"  name="elementdata">{{ . }}</textarea>
       </div>
    </div>
 
-   <div class="mb-3 row">
-      <label for="name" class="col-sm-2 col-form-label">Name</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="name">
+<br/>
+<button type="submit" class="btn btn-primary">Submit</button>
+<hr/>
+   <div class="row">
+      <div class="col-md-12">
+         <h3>Instructions</h3>
+         <p>The above must be valid JSON</p>
+         <p>If a new element is being created, then the itemid field will be overwritten and an identifier automatically generated</p>
       </div>
    </div>
-
-   <div class="mb-3 row">
-      <label for="description" class="col-sm-2 col-form-label">Description</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="description">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="tags" class="col-sm-2 col-form-label">Tags</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" placeholder="comma separated tags" name="tags">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="endpoint" class="col-sm-2 col-form-label">Endpoint</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="endpoint">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="protocol" class="col-sm-2 col-form-label">Protocol</label>
-      <div class="col-sm-10">      
-         <select class="form-select" name="protocol">
-           <option>1</option>
-           <option>2</option>             
-           <option>3</option>
-           <option>4</option>
-       </select> 
-      </div>
-   </div>
-    
-   <br>
-
-   <div class="mb-3 row">
-      <label for="uefieventlog" class="col-sm-2 col-form-label">UEFI Eventlog</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="uefieventlog"  value="/sys/kernel/security/tpm0/binary_bios_measurements">
-      </div> 
-   </div>
-
-   <div class="mb-3 row">
-      <label for="imalog" class="col-sm-2 col-form-label">IMA Log</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="imalog"  value="/sys/kernel/security/ima/ascii_runtime_measurements">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="txtlog" class="col-sm-2 col-form-label">TXT Log</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="txtlog" value="/var/log/txt.log">
-      </div>
-   </div>
-
-   <br>
-
-   <div class="mb-3 row">
-      <label for="os" class="col-sm-2 col-form-label">O/S</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="os" >
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="arch" class="col-sm-2 col-form-label">Arch</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="arch" >
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="hostname" class="col-sm-2 col-form-label">Hostname</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="hostname" >
-      </div>
-   </div>
-
-   <br>
-
-   <div class="mb-3 row">
-      <label for="tpmdevice" class="col-sm-2 col-form-label">TPM Device</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="tpmdevice" value="/dev/tpmrm0">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="ekcerthandle" class="col-sm-2 col-form-label">EK Cert Handle</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="ekcerthandle" value="0x01C00002">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="ekhandle" class="col-sm-2 col-form-label">EK Handle</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="ekhandle" value="0x810000EE">
-      </div>
-   </div>
-   <div class="mb-3 row">
-      <label for="ekpub" class="col-sm-2 col-form-label">EK Public</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="ekpub">
-      </div>
-   </div>
-
-   <div class="mb-3 row">
-      <label for="akhandle" class="col-sm-2 col-form-label">AK Handle</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="akhandle" value="0x810000AA">
-      </div>
-   </div>
-   <div class="mb-3 row">
-      <label for="akpub" class="col-sm-2 col-form-label">AK Public</label>
-      <div class="col-sm-10">      
-         <input type="text" class="form-control" name="akpub">
-      </div>
-   </div>
-
-
-    <br>
-    <input type="submit" value="Submit">
-
 </form>
 
 
-
+<script>
+   function PrettyPrintJSON() {
+      console.log("pressed")
+      var badJSON = document.getElementById("elementdata").value;
+      var parseJSON = JSON.parse(badJSON);
+      var JSONinPrettyFormat = JSON.stringify(parseJSON, undefined, 4);
+      document.getElementById("elementdata").value = JSONinPrettyFormat;
+   }   
+</script>
 
 
 {{end}}

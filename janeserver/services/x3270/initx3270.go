@@ -29,9 +29,9 @@ func StartX3270() {
 	//start the server
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service failed to start.")
-		fmt.Printf("X3270 failed to start service")
-		panic(err)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service failed to start: "+err.Error())
+		fmt.Printf("X3270 failed to start service: "+err.Error())
+		//panic(err)
 	}
 
 	logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service started.")
@@ -39,9 +39,9 @@ func StartX3270() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			logging.MakeLogEntry("SYS", "x3270", configuration.ConfigData.System.Name, "JANE", "X3270 failed to accept connnection")
-			fmt.Printf("X3270 failed to accept connnection")
-			panic(err)
+			logging.MakeLogEntry("SYS", "x3270", configuration.ConfigData.System.Name, "JANE", "X3270 failed to accept connnection: "+err.Error())
+			fmt.Printf("X3270 failed to accept connnection: "+err.Error())
+			//panic(err)
 		}
 		go handle(conn)
 	}
