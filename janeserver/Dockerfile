@@ -1,11 +1,15 @@
-FROM amd64/ubuntu:23.04 AS build-stage
+FROM amd64/ubuntu:24.04 AS build-stage
 
 RUN apt-get update
 RUN apt-get install -y wget 
 
 #Install Go
-RUN ["wget","https://go.dev/dl/go1.22.4.linux-amd64.tar.gz"]
-RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.4.linux-amd64.tar.gz
+
+# v 1.23.2
+RUN ["wget","https://go.dev/dl/go1.23.2.linux-amd64.tar.gz"]
+RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.2.linux-amd64.tar.gz
+
+
 RUN export PATH=$PATH:/usr/local/go/bin
 
 
@@ -18,10 +22,11 @@ RUN ["wget",  "https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.k
 
 RUN echo "deb [signed-by=/etc/apt/keyrings/intel-sgx-keyring.asc arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main" > /etc/apt/sources.list.d/intel-sgx.list 
 RUN apt update 
-#RUN ERT_DEB=edgelessrt_0.4.1_amd64_ubuntu-22.04.deb 
-RUN ["wget","https://github.com/edgelesssys/edgelessrt/releases/download/v0.4.1/edgelessrt_0.4.1_amd64_ubuntu-22.04.deb"]
 
-RUN apt-get install -y ./edgelessrt_0.4.1_amd64_ubuntu-22.04.deb  build-essential cmake libssl-dev libsgx-dcap-default-qpl libsgx-dcap-ql libsgx-dcap-quote-verify
+RUN ["wget","https://github.com/edgelesssys/edgelessrt/releases/download/v0.4.7/edgelessrt_0.4.7_amd64_ubuntu-24.04.deb"]
+
+
+RUN apt-get install -y ./edgelessrt_0.4.7_amd64_ubuntu-24.04.deb  build-essential cmake libssl-dev libsgx-dcap-default-qpl libsgx-dcap-ql libsgx-dcap-quote-verify
 
 # Set destination for COPY
 WORKDIR /app
@@ -37,7 +42,7 @@ RUN . /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64
 RUN strip /janeserver
 
 
-FROM  amd64/ubuntu:23.04
+FROM  amd64/ubuntu:24.04
 
 RUN apt-get update
 RUN apt-get install -y libssl-dev
