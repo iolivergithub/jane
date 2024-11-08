@@ -23,14 +23,14 @@ This is a dictionary of values utilised by various rules - the specific names an
 
 | Field Name | Description |
 | --- | --- |
-| attestedValue | Value for the TPM 2.0 Quote attested value field |
-| firmwareVersion | TPM 2.0 firmware version number |
+| attestedValue | Value for the TPM 2.0 Quote attested value field, used with pcrQuotes |
+| firmwareVersion | TPM 2.0 firmware version number, used with pcrQuotes |
 
 Refer to the code linked in the next section and rule definitions for more field details
 
 ## Go Definition
 
-The definition of the element structure can be found at https://gitlab.jyu.fi/ijoliver/jane/-/blob/main/janeserver/structures/expectedValues.go
+The definition of the expected value structure can be found at https://github.com/iolivergithub/jane/blob/main/janeserver/structures/expectedValues.go
 
 ## Example
 

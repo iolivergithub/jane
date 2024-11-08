@@ -1,6 +1,6 @@
 # Standard Intents
 
-The standard intents are a set of intents which are common across all installations and express typical scenarios. The file https://gitlab.jyu.fi/ijoliver/jane/-/blob/main/etc/standardintents.json contains a standard list of common intents and instructions on loading these are on [intents](intents.md) page.
+The standard intents are a set of intents which are common across all installations and express typical scenarios. The file https://github.com/iolivergithub/jane/etc/standardintents/standardintents.json contains a standard list of common intents and instructions on loading these are on [intents](intents.md) page.
 
 ## List of Standard Intents
 

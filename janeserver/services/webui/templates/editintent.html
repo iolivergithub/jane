@@ -1,10 +1,13 @@
 {{define "content"}}
 <h3>Intent</h3>
+
+ <button class="btn btn-primary" onclick="PrettyPrintJSON()">Pretty Print Element Description</button>
+
 <form action="/new/intent" method="post">
 <div class="container-md">
    <div class="row">
       <div class="col-md-12">
-         <textarea class="form-control" rows=8 id="intentdata" name="intentdata"></textarea>
+         <textarea class="form-control" rows=8 id="intentdata" name="intentdata">{{ . }}</textarea>
       </div>
    </div>
 
@@ -20,6 +23,14 @@
    </div>
 </form>
 
-
+<script>
+   function PrettyPrintJSON() {
+      console.log("pressed")
+      var badJSON = document.getElementById("intentdata").value;
+      var parseJSON = JSON.parse(badJSON);
+      var JSONinPrettyFormat = JSON.stringify(parseJSON, undefined, 4);
+      document.getElementById("intentdata").value = JSONinPrettyFormat;
+   }   
+</script>
 
 {{end}}

@@ -103,7 +103,7 @@ In following fields are part of the *mrmarbleinstance* entry
 
 ## Go Definition
 
-The definition of the element structure can be found at https://gitlab.jyu.fi/ijoliver/jane/-/blob/main/janeserver/structures/elements.go?ref_type=heads
+The definition of the element structure can be found at https://github.com/iolivergithub/jane/blob/main/janeserver/structures/elements.go
 
 ## Example
 

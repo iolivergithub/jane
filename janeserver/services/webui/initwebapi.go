@@ -140,6 +140,8 @@ func setupEditEndpoints(router *echo.Echo) {
 
 	router.GET(PREFIX+"/new/expectedvalue", newExpectedValue)
 
+	router.GET(PREFIX+"/loadstandardintents", loadstandardintents)
+
 }
 
 func setupHomeEndpoints(router *echo.Echo) {
