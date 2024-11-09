@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-    "reflect"
 
 	"github.com/labstack/echo/v4"
 
@@ -79,23 +78,22 @@ func loadstandardintents(c echo.Context) error {
     	return err
     }
 
-    defer resp.Body.Close()
 
     fmt.Println("Response ",resp.Status)
 
     jsonParser := json.NewDecoder(resp.Body)
     if err = jsonParser.Decode(&intentfilestruct); err != nil {
     	fmt.Println("parsing failed ",err.Error())
+    	return c.Redirect(http.StatusSeeOther, "/intents")
     }
-    
-    fmt.Println("parsing succeeded ",intentfilestruct)
+    defer resp.Body.Close()
 
-    for i,e := range intentfilestruct {
-    	fmt.Println(i,reflect.TypeOf(e))
-        operations.AddIntent(e)
+    //fmt.Println("parsing succeeded ",intentfilestruct,"\n\n")
+
+    for _,e := range intentfilestruct {
+        operations.AddStandardIntent(e)
     }
 
-
-    return nil
+	return c.Redirect(http.StatusSeeOther, "/intents")
 
 }
