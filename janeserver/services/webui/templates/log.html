@@ -1,8 +1,11 @@
 {{define "content"}}
 <h3>Log</h3>
 <p>Showing {{ .Amount }} entries of {{ .Count }} for duration {{ .Duration }}</p>
+
+<input type="text" id="searchInput" onkeyup="searchLogTable()" placeholder="Search table..">
+
 <hr/>
-<table class="table table-striped table-sm">
+<table class="table table-striped table-sm" id="logtable">
    <thead>
       <tr>
          <th scope="col">Timestamp</th>    
@@ -48,6 +51,30 @@
       {{end}}
    </tbody>
 </table>
+
+<script>
+function searchLogTable() {
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("searchInput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("logtable");
+  tr = table.getElementsByTagName("tr");
+
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td");
+    for (var j = 0; j < td.length; j++) {
+      txtValue = td[j].textContent || td[j].innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+        break;
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
+
 {{end}}
 
 

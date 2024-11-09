@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"os"
 
 	"a10/configuration"
 	"a10/datalayer"
@@ -62,6 +63,8 @@ func main() {
 	// Ok, we're up...let's log this.
 	msg := fmt.Sprintf("Starting: %v, build %v, OS %v, ARCH %v", VERSION, BUILD, runtime.GOOS, runtime.GOARCH)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, configuration.ConfigData.System.Name, msg)
+	msg = fmt.Sprintf("Command line contained %v items: %v",len(os.Args),os.Args)
+	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, "command line", msg)
 
 	welcomeMessage()
 

@@ -24,6 +24,8 @@ type homepagestructure struct {
 	Nlog  int64
 	Szlog int64
 	Cfg   *configuration.ConfigurationStruct
+	CmdLineLength int
+	CmdLine []string
 }
 
 func homepage(c echo.Context) error {
@@ -59,6 +61,9 @@ func homepage(c echo.Context) error {
 	}
 
 	hps.Cfg = configuration.ConfigData
+
+	hps.CmdLineLength = len(os.Args)
+	hps.CmdLine = os.Args
 
 	fmt.Printf("hps is %v\n", hps)
 
