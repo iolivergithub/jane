@@ -7,21 +7,21 @@
    <div class="row">
       <div class="col-md-12">
          <label for="itemid" class="form-label"><b>ItemID</b></label>
-         <input class="form-control" id="itemid" name="itemid"></input>
+         <input class="form-control" id="itemid" name="itemid" readonly></input>
       </div>
    </div>
 
    <div class="row">
       <div class="col-md-12">
          <label for="name" class="form-label"><b>Name</b></label>
-         <input class="form-control" id="name" name="name"></input>
+         <input class="form-control" id="name" name="name" required></input>
       </div>
    </div>
 
     <div class="row">
       <div class="col-md-12">
          <label for="description" class="form-label"><b>Description</b></label>
-         <input class="form-control" id="description" name="description"></input>
+         <input class="form-control" id="description" name="description" required></input>
       </div>
    </div>
      
@@ -30,7 +30,7 @@
    <div class="row">
       <div class="col-md-6">
          <label for="elementselect" class="form-label"><b>Element</b> <i>select one</i></label>
-         <select class="form-select" size=10 name="elementselect" id="elementselect">
+         <select class="form-select" size=10 name="elementselect" id="elementselect" required>
             {{ range .Elements }}
                <option value={{ .ItemID }}>{{ .Name }}</option>       
             {{ end }}
@@ -38,7 +38,7 @@
       </div>
       <div class="col-md-6">
          <label for="intentselect" class="form-label"><b>Intent</b> <i>select one</i></label>
-         <select class="form-select" size=10 name="intentselect" id="intentselect">
+         <select class="form-select" size=10 name="intentselect" id="intentselect" required>
             {{ range .Intents }}
                <option value={{ .ItemID }}>{{ .Name }} ({{ .Function }})</option>       
             {{ end }}
@@ -51,10 +51,23 @@
    <div class="row">
       <div class="col-md-10">
          <label for="evsparameters" class="form-label"><b>Expected Value Parameters (evs field) in JSON</b></label>
-         <textarea class="form-control" rows=6 id="evsparameters" name="evdata"></textarea>
+         <textarea class="form-control" rows=6 id="evsparameters" name="evsparameters" required>{}</textarea>
       </div>
       <div class="col-md-2">
-         <button type="button" class="btn btn-primary">TPM/Quote</button>
+         <div>
+            <p><b>Templates:</b><br/></p>
+            <p>
+               <button type="button" class="btn btn-warning btn-sm" onClick="setEVBlank()">Clear EVS</button>&nbsp;
+                <button class="btn btn-info btn-sm" onclick="PrettyPrintJSON()">Pretty Print EVS</button>
+
+            </p>     
+            <p>
+               <button type="button" class="btn btn-primary btn-sm" onClick="setEVTPMQuote()">TPM/Quote</button>&nbsp;
+               <button type="button" class="btn btn-primary btn-sm" onClick="setEVPCRSelection()">PCRSelection</button><br/>
+            </p>
+
+
+         </div>
       </div>
    </div>
 
@@ -73,6 +86,33 @@
    </div>
 
 </form>
+
+
+<script type="text/javascript">
+    function setEVTPMQuote() {
+        document.getElementById('evsparameters').value = `{
+         "attestedValue":"****",
+         "firmwareVersion":"****"
+      }`;
+    }
+    function setEVPCRSelection() {
+        document.getElementById('evsparameters').value = `{ "pcrselection":"****" }`;
+    }
+    function setEVBlank() {
+        document.getElementById('evsparameters').value = "{}";
+    }
+
+
+
+   function PrettyPrintJSON() {
+      console.log("pressed")
+      var badJSON = document.getElementById("evsparameters").value;
+      var parseJSON = JSON.parse(badJSON);
+      var JSONinPrettyFormat = JSON.stringify(parseJSON, undefined, 4);
+      document.getElementById("evsparameters").value = JSONinPrettyFormat;
+   }   
+
+</script>
 
 
 {{end}}
