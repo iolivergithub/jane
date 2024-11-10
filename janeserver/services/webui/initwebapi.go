@@ -95,6 +95,7 @@ func StartWebUI() {
 	templates["editelement.html"] = template.Must(template.New("editelement.html").Funcs(functions).ParseFS(WPFS, T+"editelement.html", T+"base.html"))
 	templates["editintent.html"] = template.Must(template.New("editintent.html").Funcs(functions).ParseFS(WPFS, T+"editintent.html", T+"base.html"))
 	templates["editexpectedvalue.html"] = template.Must(template.ParseFS(WPFS, T+"editexpectedvalue.html", T+"base.html"))
+	templates["editopaqueobject.html"] = template.Must(template.ParseFS(WPFS, T+"editopaqueobject.html", T+"base.html"))
 
 	// Create the router
 	router := echo.New()
@@ -143,6 +144,8 @@ func setupEditEndpoints(router *echo.Echo) {
 
 	router.GET(PREFIX+"/loadstandardintents", loadstandardintents)
 
+	router.GET(PREFIX+"/new/opaqueobject", newOpaqueObject)
+    router.POST(PREFIX+"/new/opaqueobject", processOpaqueObject)
 }
 
 func setupHomeEndpoints(router *echo.Echo) {

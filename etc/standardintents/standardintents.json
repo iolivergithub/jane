@@ -55,6 +55,17 @@
         }
     },
     {
+        "itemid": "std::intent::sha256::crtm::crtmplusbootloader",
+        "name": "x86 UEFI Bootloader and CRTM",
+        "description": "The bootloader and CRTM measurement for x86 UEFI machines as stored in SHA256 PCRs",
+        "function": "tpm2/quote",
+        "parameters":
+        {
+            "pcrSelection": "0,4,5",
+            "bank": "sha256"
+        }
+    },
+    {
         "itemid": "std::intent::sha256::crtm::srtmbootloader",
         "name": "x86 UEFI SRTM and Bootloader",
         "description": "The SRTM and bootloader measurements for x86 UEFI machines as stored in SHA256 PCRs",

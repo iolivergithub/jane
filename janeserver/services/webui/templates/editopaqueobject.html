@@ -1,0 +1,51 @@
+{{define "content"}}
+<h3>Opaque Object</h3>
+
+<form action="/new/opaqueobject" method="post">
+
+<div class="container-md">
+   <div class="row">
+      <div class="col-md-12">
+         <label for="value" class="form-label"><b>Value</b></label>
+         <input class="form-control" id="value" name="value" required></input>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-md-12">
+         <label for="type" class="form-label"><b>Type</b></label>
+         <input class="form-control" id="type" name="type" required></input>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-md-12">
+         <label for="shortdescription" class="form-label"><b>Short Description</b></label>
+         <input class="form-control" id="shortdescription" name="shortdescription" required></input>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-md-12">
+         <label for="longdescription" class="form-label"><b>Long Description</b></label>
+         <textarea class="form-control" id="longdescription" name="longdescription"></textarea>
+      </div>
+   </div>
+
+   <br/>
+   <button type="submit" class="btn btn-primary">Submit</button>
+</div>
+
+<hr/>
+   <div class="row">
+      <div class="col-md-12">
+         <h3>Instructions</h3>
+         <p>The above object parameters are freeform. However the value is the key field and will be used for searches etc</p>
+      </div>
+   </div>
+
+</form>
+
+
+
+{{end}}
