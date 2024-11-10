@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"encoding/json"	
 	"fmt"
 	"net/http"
 
@@ -41,6 +42,47 @@ func showExpectedValue(c echo.Context) error {
 	return c.Render(http.StatusOK, "ev.html", evstr)
 }
 
+
+
+type editevestruct struct {
+	Elements  []structures.ElementSummary
+	Intents   []structures.Intent
+}
+
 func newExpectedValue(c echo.Context) error {
-	return c.Render(http.StatusOK, "editexpectedvalue.html", nil)
+
+	e,_ := operations.GetElementsSummary()
+	i,_ := operations.GetIntentsAll()
+
+	evstr := editevestruct{e,i}
+
+	return c.Render(http.StatusOK, "editexpectedvalue.html", evstr)
+}
+
+func processNewExpectedValue(c echo.Context) error {
+	fmt.Println("\nProcessing New Element")
+	itemid := c.FormValue("itemid")
+	name := c.FormValue("name")
+	description := c.FormValue("description")	
+	elementselect := c.FormValue("elementselect")
+	intentselect := c.FormValue("intentselect")
+	evsparameters := c.FormValue("evsparameters")
+
+	fmt.Println("ELEMDATA is ",itemid,"\n",elementselect,"\n",intentselect,"\n",evsparameters,"\n")
+
+	var evsparams  map[string]interface{}
+	err := json.Unmarshal([]byte(evsparameters), &evsparams)
+	if err != nil {
+		fmt.Printf("error is %v\n", err.Error())
+		return c.Redirect(http.StatusSeeOther, "/new/expectedvalue")
+	}
+
+	var newev = structures.ExpectedValue{itemid,name,description,elementselect,intentselect,evsparams}
+
+	fmt.Printf("  fv%v\n", newev)
+	eid, err := operations.AddExpectedValue(newev)
+	fmt.Printf("  eid=%v,err=%v\n", eid, err)
+
+
+	return c.Redirect(http.StatusSeeOther, "/expectedvalues")
 }

@@ -1,38 +1,67 @@
 {{define "content"}}
 <h3>Expected Value</h3>
+
+<form action="/new/expectedvalue" method="post">
+
 <div class="container-md">
+   <div class="row">
+      <div class="col-md-12">
+         <label for="itemid" class="form-label"><b>ItemID</b></label>
+         <input class="form-control" id="itemid" name="itemid"></input>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-md-12">
+         <label for="name" class="form-label"><b>Name</b></label>
+         <input class="form-control" id="name" name="name"></input>
+      </div>
+   </div>
+
+    <div class="row">
+      <div class="col-md-12">
+         <label for="description" class="form-label"><b>Description</b></label>
+         <input class="form-control" id="description" name="description"></input>
+      </div>
+   </div>
+     
+   <br />
+
    <div class="row">
       <div class="col-md-6">
          <label for="elementselect" class="form-label"><b>Element</b> <i>select one</i></label>
-         <select class="form-select" size=5 name="elementselect" id="elementselect">
-            <option>element 1</option>
-            <option>element 1</option>
-            <option>element 1</option>
-            <option>element 1</option>
+         <select class="form-select" size=10 name="elementselect" id="elementselect">
+            {{ range .Elements }}
+               <option value={{ .ItemID }}>{{ .Name }}</option>       
+            {{ end }}
          </select>
       </div>
       <div class="col-md-6">
          <label for="intentselect" class="form-label"><b>Intent</b> <i>select one</i></label>
-         <select class="form-select" size=5 name="elementselect" id="elementselect">
-            <option>intent 1</option>
-            <option>intent 1</option>
-            <option>intent 1</option>
-            <option>intent 1</option>
+         <select class="form-select" size=10 name="intentselect" id="intentselect">
+            {{ range .Intents }}
+               <option value={{ .ItemID }}>{{ .Name }} ({{ .Function }})</option>       
+            {{ end }}
          </select>
       </div>
-      </div>
-   </div>
-   <br/>
-   <div class="row">
-      <div class="col-md-12">
-         <label for="evsparameters" class="form-label"><b>Expected Value Parameters (evs field) in JSON</b></label>
-         <textarea class="form-control" rows=8 id="evsparameters" name="evdata"></textarea>
-      </div>
-   
    </div>
 
-<br/>
-<button type="submit" class="btn btn-primary">Submit</button>
+   <br/>
+   
+   <div class="row">
+      <div class="col-md-10">
+         <label for="evsparameters" class="form-label"><b>Expected Value Parameters (evs field) in JSON</b></label>
+         <textarea class="form-control" rows=6 id="evsparameters" name="evdata"></textarea>
+      </div>
+      <div class="col-md-2">
+         <button type="button" class="btn btn-primary">TPM/Quote</button>
+      </div>
+   </div>
+
+   <br/>
+   <button type="submit" class="btn btn-primary">Submit</button>
+</div>
+
 <hr/>
    <div class="row">
       <div class="col-md-12">
@@ -44,7 +73,6 @@
    </div>
 
 </form>
-
 
 
 {{end}}

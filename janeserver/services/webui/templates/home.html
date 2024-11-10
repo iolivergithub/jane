@@ -67,7 +67,6 @@
                   </div>
                </div>
                <br/>
-
                <div class="row">
                   <div class="col-md-6">
                      <div class="card">
@@ -120,39 +119,38 @@
          </div>
       </div>
    </div>
-      <br/>
-      <div class="row">
-         <div class="col-md-6">
-            <div class="card">
-               <div class="card-header">Database (Mongodb)</div>
-               <div class="card-body">
-                  <table class="table table-sm table-striped">
-                     <tbody>
-                        <tr><td scope="col">Name</td> <td scope="col"><b> {{ .Cfg.Database.Name }} </b></td> </tr>
-                        <tr><td scope="col">Connection</td> <td scope="col"><b> {{ .Cfg.Database.Connection }}</b></td> </tr>
-                     </tbody>
-                  </table>
-               </div>
+   <br/>
+   <div class="row">
+      <div class="col-md-6">
+         <div class="card">
+            <div class="card-header">Database (Mongodb)</div>
+            <div class="card-body">
+               <table class="table table-sm table-striped">
+                  <tbody>
+                     <tr><td scope="col">Name</td> <td scope="col"><b> {{ .Cfg.Database.Name }} </b></td> </tr>
+                     <tr><td scope="col">Connection</td> <td scope="col"><b> {{ .Cfg.Database.Connection }}</b></td> </tr>
+                  </tbody>
+               </table>
             </div>
          </div>
-         <div class="col-md-6">
-            <div class="card">
-               <div class="card-header">Message Bus (MQTT)</div>
-               <div class="card-body">
-                  <table class="table table-sm table-striped">
-                     <tbody>
-                        <tr><td scope="col">Broker</td> <td scope="col"><b> {{ .Cfg.Messaging.Broker }} </b></td> </tr>
-                        <tr><td scope="col">Port</td> <td scope="col"><b> {{ .Cfg.Messaging.Port }}</b></td> </tr>
-                        <tr><td scope="col">Client ID</td> <td scope="col"><b>{{ .Cfg.Messaging.ClientID }}</b></td> </tr>
-                     </tbody>
-                  </table>
-               </div>
+      </div>
+      <div class="col-md-6">
+         <div class="card">
+            <div class="card-header">Message Bus (MQTT)</div>
+            <div class="card-body">
+               <table class="table table-sm table-striped">
+                  <tbody>
+                     <tr><td scope="col">Broker</td> <td scope="col"><b> {{ .Cfg.Messaging.Broker }} </b></td> </tr>
+                     <tr><td scope="col">Port</td> <td scope="col"><b> {{ .Cfg.Messaging.Port }}</b></td> </tr>
+                     <tr><td scope="col">Client ID</td> <td scope="col"><b>{{ .Cfg.Messaging.ClientID }}</b></td> </tr>
+                  </tbody>
+               </table>
             </div>
          </div>
       </div>
    </div>
-   <hr/>
 </div>
-
+<hr/>
+</div>
 </div>
 {{end}}

@@ -18,6 +18,12 @@ type Element struct {
 	MRMarbleInstance MRMarbleInstance `json:"mrmarbleinstance,omitempty" bson:"mrmarbleinstance,omitempty"`
 }
 
+// ELEMENTSUMMARY MUST BE A SUBSET OF ELEMENT
+type ElementSummary struct {
+	ItemID      string   `json:"itemid,omitempty",bson:"itemid,omitempty"`
+	Name        string   `json:"name",bson:"name"`
+}
+
 type HostMachine struct {
 	OS       string `json:"os",bson:"os"`
 	Arch     string `json:"arch",bson:"arch"`
