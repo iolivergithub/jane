@@ -42,14 +42,20 @@ func postAttest(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
+	fmt.Printf("\n attstr is ###%v###",att)
+
+
 	eid := (*att).EID
 	pid := (*att).PID
 	sid := (*att).SID
 
+	fmt.Printf("\n element is ###%s###",eid)
 	element, err := operations.GetElementByItemID(eid)
 	if err != nil {
 		fmt.Errorf("Element not found: %v", err)
 	}
+
+	fmt.Printf("\n intent is ###%s###",pid)
 
 	intent, err := operations.GetIntentByItemID(pid)
 	if err != nil {

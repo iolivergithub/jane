@@ -18,7 +18,7 @@ rest:
   port: 8520
   crt: temporary.crt
   key: temporary.key
-  usehttp: false
+  usehttp: true
 
 #Web Interface Configuration
 web:

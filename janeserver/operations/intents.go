@@ -132,7 +132,7 @@ func GetIntentsAll() ([]structures.Intent, error) {
 // GetElementByItemID returns a single element or error
 func GetIntentByItemID(itemid string) (structures.Intent, error) {
 	var pol structures.Intent
-	fmt.Println("** GetIntentByItemID ",itemid)
+	fmt.Printf("** GetIntentByItemID ###%s###",itemid)
 
 	// discard the cursor, it will be an empty entry if nothing exists
 	filter := bson.D{{"itemid", itemid}}
