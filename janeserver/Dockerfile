@@ -9,12 +9,7 @@ RUN apt-get install -y wget
 RUN ["wget","https://go.dev/dl/go1.23.2.linux-amd64.tar.gz"]
 RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.2.linux-amd64.tar.gz
 
-
 RUN export PATH=$PATH:/usr/local/go/bin
-
-
-#
-
 
 RUN mkdir -p /etc/apt/keyrings
 
@@ -24,7 +19,6 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/intel-sgx-keyring.asc arch=amd64] htt
 RUN apt update 
 
 RUN ["wget","https://github.com/edgelesssys/edgelessrt/releases/download/v0.4.7/edgelessrt_0.4.7_amd64_ubuntu-24.04.deb"]
-
 
 RUN apt-get install -y ./edgelessrt_0.4.7_amd64_ubuntu-24.04.deb  build-essential cmake libssl-dev libsgx-dcap-default-qpl libsgx-dcap-ql libsgx-dcap-quote-verify
 
@@ -40,7 +34,6 @@ RUN /usr/local/go/bin/go mod download
 RUN /usr/local/go/bin/go mod tidy
 RUN . /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 /usr/local/go/bin/go build -ldflags="-X 'main.BUILD=docker'" -o /janeserver   janeserver.go
 RUN strip /janeserver
-
 
 FROM  amd64/ubuntu:24.04
 

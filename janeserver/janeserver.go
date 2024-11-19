@@ -1,4 +1,4 @@
-// Attestation Engine A10 JANE, Febrary 2024 onwards.
+// Attestation Engine A10 JANE, February 2024 onwards.
 // The main package starts the various interfaces: REST, MQTT and links to the database system
 package main
 
