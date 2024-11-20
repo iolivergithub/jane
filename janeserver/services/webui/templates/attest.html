@@ -18,7 +18,7 @@
    <div class="row">
       <div class="col-md-4">
          <label for="elementid"><b>Elements</b> <i>select one</i></label>
-         <select class="form-select" size="10"  id="elementid" name="eid">
+         <select class="form-select" size="15"  id="elementid" name="eid">
             {{ range .ES }}
                <option value="{{ .ItemID }}">{{ .Name }} @ {{ .Endpoint }}</option>
             {{ end }}
@@ -28,7 +28,7 @@
       <div class="col-md-4">
          <label for="intentid"><b>Intents</b> <i>select one</i></label>
 
-           <select class="form-select" size="10" id="intentid" name="pid">
+           <select class="form-select" size="15" id="intentid" name="pid">
             {{ range .IS }}
                <option value="{{ .ItemID }}">{{ .Name }} <span class="badge bg-secondary">{{ .Function }}</span></option>
             {{ end }}
@@ -38,7 +38,7 @@
       <div class="col-md-4">
          <label for="rulename"><b>Rules</b> <i>ignored if attest only, multiple selection allowed</i></label>
 
-         <select class="form-select" multiple size="10" id="rulename" name="rn">
+         <select class="form-select" multiple size="15" id="rulename" name="rn">
             {{ range .RS }}
                <option value="{{ .Name }}">{{ .Name }}</option>
             {{ end }}
@@ -70,12 +70,12 @@
 
       <div class="col-md-4">
          <label for="intentparameters"><b>Intent Parameters (JSON)</b></label>
-         <textarea class="form-control" rows="5" id="intentparameters" name="pps"></textarea>
+         <textarea class="form-control" rows="4" id="intentparameters" name="pps"></textarea>
       </div>
 
       <div class="col-md-4">
          <label for="ruleparameters"><b>Rule Parameters (JSON)</b></label>
-         <textarea class="form-control" rows="5" id="ruleparameters" name="rps"></textarea>      
+         <textarea class="form-control" rows="4" id="ruleparameters" name="rps"></textarea>      
       </div>
    </div>
 </div>
