@@ -14,7 +14,7 @@ In the following sections we explain how to get started with Jane and explore so
 
 Point your browser at the UI, eg: (http://127.0.0.1:8540) if you are running on a local machine on the default port. You should see something like this:
 
-![Jane WebUI Home Page](janewebuihomepage.png "Jane WebUI Home Page")
+![Jane WebUI Home Page](images/janewebuihomepage.png "Jane WebUI Home Page")
 
 This shows the overall status of the system. The upper part showing the contents of the database and the lower part the congfiguration of the system. In our example we can see that we have 1 element, 12 intents, 2 expected values etc. Clicking on the titles of these will take you to a page which shows these items in more detail.
 
