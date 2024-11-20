@@ -2,25 +2,21 @@
 
 ## Basics
 
-How do do things manually...
+How to do things manually...
 
    * [Compiling](compiling.md)
    * [Running](running.md)
    * [Automatic Startup](automaticStartup.md)
    * [Security and Running in a Production Environment](security.md)
 
-How do do things with Docker...
+How to do things with Docker...
 
    * [Building and Running with Docker](docker.md)
 
-## Getting Started
+How do I get started?
 
-   * Creating an element
-   * Loading the standard intents
-   * Your first attestation
-   * Creating and expected value
-   * Verification
-   * More attestation and verification
+   * [Getting Started](gettingstarted.md)
+   * [UI, if on the local machine and default port](http://127.0.0.1:8540)
 
 ## Structures
 
