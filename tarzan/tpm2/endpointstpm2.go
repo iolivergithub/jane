@@ -201,7 +201,7 @@ func Quote(c echo.Context) error {
 
 	attestationdata, err := tpm2.DecodeAttestationData(att)
 
-	fmt.Println("\n attestationdata %v \n,attestationdata)
+	fmt.Println("\n attestationdata %v \n,attestationdata")
 
 	if attestationdata == nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Error decoding attestation data %v", err.Error())}
