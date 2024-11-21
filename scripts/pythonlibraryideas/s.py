@@ -47,6 +47,8 @@ attestAndVerify(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::sys::info
 attest(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::linux::ima::asciilog")
 attest(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::tpm::pcrs")
 attestAndVerify(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::sha256::crtm::srtmbootloader",rulelist_TPMQuote)
+attestAndVerify(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::sha256::crtm::pcr0",rulelist_TPMQuote)
+
 a.printSessionURL()
 
 a.close()
