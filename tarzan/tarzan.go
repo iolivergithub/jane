@@ -20,10 +20,8 @@ import (
 )
 
 // Version number
-const VERSION string = "v0.1"
+const VERSION string = "v0.2"
 var BUILD string = "not set"
-var RUNSESSION string = utilities.MakeID()
-
 const PREFIX=""
 
 
@@ -38,7 +36,7 @@ func welcomeMessage(unsafe bool) {
 	fmt.Printf("|  TA10 version - Starting\n",)
 	fmt.Printf("|   + %v O/S on %v\n",runtime.GOOS,runtime.GOARCH)
 	fmt.Printf("|   + version %v, build %v\n",VERSION,BUILD)	
-	fmt.Printf("|   + session identifier is %v\n",RUNSESSION)
+	fmt.Printf("|   + session identifier is %v\n",utilities.RUNSESSION)
 	fmt.Printf("|   + unsafe mode? %v\n",unsafe)
 	fmt.Printf("+========================================================================================\n\n")
 }
@@ -47,7 +45,7 @@ func exitMessage() {
 	fmt.Printf("\n")
 	fmt.Printf("+========================================================================================\n")
 	fmt.Printf("|  TA10 version - Exiting\n",)
-	fmt.Printf("|   + session identifier was %v\n",RUNSESSION)
+	fmt.Printf("|   + session identifier was %v\n",utilities.RUNSESSION)
 	fmt.Printf("+========================================================================================\n\n")
 }
 
@@ -65,11 +63,6 @@ func checkUnsafeMode(unsafe bool) {
 	}
 }
 
-
-// This function initialises the system by calling the configuration system to read the configuration
-func initialise() {
-	flag.Parse()
-}
 
 
 // These configure the rest API
@@ -110,6 +103,10 @@ func startRESTInterface(sys,tpm2,uefi,ima,txt bool, p *string ) {
     	setupTXTendpoints(router)    
     }	    
 */
+
+	if (sys==false && uefi==false && ima==false && tpm2==false && txt==false) {
+    	fmt.Println("   +-- WARNING: tarzan isn't listening to anyone and won't respond")    	
+	}
 
 	//get configuration data
 	port := ":"+ *p
@@ -152,6 +149,8 @@ func setupTPM2endpoints(router *echo.Echo) {
 
 // This starts everything...here we "go" :-)
 func main() {
+	utilities.RUNSESSION = utilities.MakeID()
+
 	flagSYS := flag.Bool("sys", false, "Expose the sys attestation API")
  	flagTPM2 := flag.Bool("tpm2", false, "Expose the tpm2 attesation API")
  	flagUEFI := flag.Bool("uefi", false, "Expose the uefi attestation API")

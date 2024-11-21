@@ -19,6 +19,8 @@ type sysinfoReturn struct {
 	Unsafe bool        `json:"unsafe"`
 	Pid   int 		   `json:"pid"`
 	Ppid  int          `json:"ppid"`
+	Uid  int           `json:"uid"`	
+	SessionID string   `json:"sessionid"`
 
 
 }
@@ -40,8 +42,7 @@ func Sysinfo(c echo.Context) error {
 
 	ncpus := runtime.NumCPU()
 
-
-	s := sysinfoReturn{ runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid() }
+	s := sysinfoReturn{ runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid(), os.Getuid(), utilities.RUNSESSION }
 	
 	return c.JSON(http.StatusOK, s)
 }

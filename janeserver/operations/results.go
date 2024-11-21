@@ -50,7 +50,7 @@ func GetResultsAll() ([]structures.Result, error) {
 	var results []structures.Result
 
 	filter := bson.D{{}} // Get all
-	options := options.Find().SetSort(bson.D{{"verifiedat", -1}})
+	options := options.Find().SetSort(bson.D{{"verifiedat", -1}}).SetLimit(2000)
 	dbcursor, _ := datalayer.DB.Collection("results").Find(context.TODO(), filter, options)
 	dbcursorerror := dbcursor.All(context.TODO(), &results)
 

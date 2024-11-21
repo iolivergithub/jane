@@ -4,7 +4,6 @@ package operations
 
 import (
 	"context"
-	"fmt"
 
 	"a10/datalayer"
 	"a10/logging"
@@ -39,14 +38,10 @@ func AddIntent(p structures.Intent) (string, error) {
 // AddStandardIntent is a function that takes and element structure that has a FILLED IN Itemid field 
 // and then replaces any existing version of that intent
 func AddStandardIntent(stdintent structures.Intent)  {
-	fmt.Println("*  adding standard intent ",stdintent.ItemID)
-    p,err := GetIntentByItemID(stdintent.ItemID)
-	fmt.Println("*  error is ",err,p)
+    _,err := GetIntentByItemID(stdintent.ItemID)
     
     if err == nil {
-    	fmt.Println("*  UPDATING STD INTENT")
     	dberr := UpdateIntent(stdintent)
-    	fmt.Println("* dberr ",dberr)
     	if dberr == nil {
     		logging.MakeLogEntry("IM", "update", stdintent.ItemID, "stdintent", "update successful for "+stdintent.ItemID)
     	} else {
@@ -54,20 +49,15 @@ func AddStandardIntent(stdintent structures.Intent)  {
     	}
     	
     } else {
-    	fmt.Println("*  ADDING STD INTENT")
     	// we don't call AddIntent because it expects NO itemid and automatically generates one
     	// which is what we don't want here.
     	_, dberr := datalayer.DB.Collection("intents").InsertOne(context.TODO(), stdintent)
-    	fmt.Println("* dberr ",dberr)
     	if dberr == nil {
     		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add successful for "+stdintent.ItemID)
     	} else {
     		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add FAILED due to "+dberr.Error())
-    	}
-        
+    	}     
     }
-
-
 }
 
 
@@ -86,7 +76,6 @@ func UpdateIntent(replacement structures.Intent) error {
 
 		return nil
 	}
-
 }
 
 // DeleteElement takes an itemid as input
@@ -103,7 +92,6 @@ func DeleteIntent(itemid string) error {
 
 		return nil
 	}
-
 }
 
 // GetElements returns a map of itemids in the ID structure. If this structure is an empty map then no elements exist in the database.
@@ -132,23 +120,12 @@ func GetIntentsAll() ([]structures.Intent, error) {
 // GetElementByItemID returns a single element or error
 func GetIntentByItemID(itemid string) (structures.Intent, error) {
 	var pol structures.Intent
-	fmt.Printf("** GetIntentByItemID ###%s###",itemid)
 
 	// discard the cursor, it will be an empty entry if nothing exists
 	filter := bson.D{{"itemid", itemid}}
 	dbcursorerror := datalayer.DB.Collection("intents").FindOne(context.TODO(), filter).Decode(&pol)
 
-	fmt.Println("** GetIntentByItemID dbcursorerror",dbcursorerror)
-	fmt.Println("** GetIntentByItemID pol",pol)
-
 	return pol,dbcursorerror
-
-	/*if pol.ItemID == "" {
-		return structures.Intent{}, dbcursorerror
-	} else {
-		return pol, nil
-		//return pol, dbcursorerror		
-	}*/
 }
 
 // GetElementByName returns all elements with the given name or an empty list.

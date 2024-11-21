@@ -1,8 +1,6 @@
 module a10
 
-go 1.22.0
-
-toolchain go1.23.2
+go 1.23.2
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.0
