@@ -30,7 +30,7 @@
 
            <select class="form-select" size="15" id="intentid" name="pid">
             {{ range .IS }}
-               <option value="{{ .ItemID }}">{{ .Name }} <span class="badge bg-secondary">{{ .Function }}</span></option>
+               <option value="{{ .ItemID }}">{{ .Name }} &nbsp;:&nbsp; {{ .Function }}</option>
             {{ end }}
          </select>
       </div>
