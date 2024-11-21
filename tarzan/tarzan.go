@@ -32,13 +32,13 @@ const PREFIX=""
 // Provides the standard welcome message to stdout.
 func welcomeMessage(unsafe bool) {
 	fmt.Printf("\n")
-	fmt.Printf("+========================================================================================\n")
+	fmt.Printf("+========================================================\n")
 	fmt.Printf("|  TA10 version - Starting\n",)
 	fmt.Printf("|   + %v O/S on %v\n",runtime.GOOS,runtime.GOARCH)
 	fmt.Printf("|   + version %v, build %v\n",VERSION,BUILD)	
 	fmt.Printf("|   + session identifier is %v\n",utilities.RUNSESSION)
 	fmt.Printf("|   + unsafe mode? %v\n",unsafe)
-	fmt.Printf("+========================================================================================\n\n")
+	fmt.Printf("+========================================================\n")
 }
 
 func exitMessage() {

@@ -1,8 +1,7 @@
-import janepy
-import random
-from threading import Thread
+import pyjane
+from datetime import datetime,timezone
 
-rulelist=[
+rulelist_Tests=[
 "null_fail",
 "null_missingEV",
 "null_noresult",
@@ -14,43 +13,40 @@ rulelist=[
 "sys_taRunningSafely" 
 ]
 
-threads=[]
+rulelist_Safe=[
+"sys_taRunningSafely" 
+]
 
-def claimtask(a,s,e,i):
-	c = a.attest(s,e,i)
-	for x in range(0,5):
-		print("            ..Verifying ",x)
-		r = random.choice(rulelist)
-		v=a.verify(s,c,r)   # equivalent to (s,c,r,{}) when without parameters
-	
+rulelist_TPMQuote=[
+ "tpm2_validNonce", 
+ "tpm2_safe",
+ "tpm2_magicNumber", 
+ "tpm2_firmware", 
+ "tpm2_attestedValue"
+]
 
-print("connecting, getting sessions, element and intent")
-a = janepy.Attestor("http://127.0.0.1:8520")
+def applyrules(a,c,rs):
+	for r in rs:
+		q = a.verify(c,r)
 
-for x in range(0,20):
-	a.newSession()
+def attest(a,e,i):
+	return a.attest(a.element(e), a.intent(i))
 
-e=a.getElement("d1b09fae-c996-4b4c-9678-0724cf15fc8c")
-i=a.getIntent("std::intent::sys::info")
+def attestAndVerify(a,e,i,rs):
+	return applyrules(a,attest(a,e,i),rs)
 
-print("attesting and verifying")
-for x in range(0,20):
-	print(" ...claim thread ",x)
 
-	rs = random.choice( list(a.openSessions().keys()))
-	s=a.openSessions()[rs]
+b = pyjane.AttestationSession("http://127.0.0.1",8520,"test atteststion session at "+str(datetime.now(timezone.utc))+"Z")
+attestAndVerify(b,"d1b09fae-c996-4b4c-9678-0724cf15fc8c","std::intent::sys::info",rulelist_Safe)
+b.close()
+b.printSessionURL()
 
-	t = Thread(target=claimtask,args=(a,s,e,i,))
-	threads.append(t)
-	t.start()
+a = pyjane.AttestationSession("http://127.0.0.1",8520,"test atteststion session at "+str(datetime.now(timezone.utc))+"Z")
 
-	
-print("waiting for threads to close")
-for t in threads:
-	t.join()
+attestAndVerify(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::sys::info",rulelist_Safe)
+attest(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::linux::ima::asciilog")
+attest(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::tpm::pcrs")
+attestAndVerify(a,"4921af2b-e1af-456e-9e21-4b5df5d72e04","std::intent::sha256::crtm::srtmbootloader",rulelist_TPMQuote)
+a.printSessionURL()
 
-print("closing")
-opensessions = a.openSessions().copy()
-for s in opensessions.keys():
-	a.closeSession(opensessions[s])
-print("done")
+a.close()

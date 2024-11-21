@@ -26,18 +26,18 @@
         "name": "x86 UEFI CRTM only",
         "description": "The initial CRTM PCR0 measurement for x86 UEFI machines as stored in SHA256 PCR 0",
         "function": "tpm2/quote",
-        "parameters": {}
+        "parameters":
+        {
+            "pcrSelection": "0",
+            "bank": "sha256"
+        }
     },
     {
         "itemid": "std::intent::tpm::pcrs",
         "name": "TPM 2.0 PCRs",
         "description": "Returns the PCR values for all banks",
         "function": "tpm2/pcrs",
-        "parameters":
-        {
-            "pcrSelection": "0,1,2,3",
-            "bank": "sha256"
-        }
+        "parameters":{}
     },    
     {
         "itemid": "std::intent::sha256::crtm::firmware",

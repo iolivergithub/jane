@@ -40,14 +40,13 @@ var configFile = flag.String("config", "./config.yaml", "Location and name of th
 // Provides the standard welcome message to stdout.
 func welcomeMessage() {
 	fmt.Printf("\n")
-	fmt.Printf("+========================================================================================\n")
+	fmt.Printf("+========================================================\n")
 	fmt.Printf("|  JANESERVER version\n")
 	fmt.Printf("|   + %v O/S on %v\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Printf("|   + version %v, build %v\n", VERSION, BUILD)
 	fmt.Printf("|   + runing with name %v\n", configuration.ConfigData.System.Name)
 	fmt.Printf("|   + session identifier is %v\n", RUNSESSION)
-	fmt.Printf("+========================================================================================\n\n")
-}
+	fmt.Printf("+========================================================\n")}
 
 // This starts everything...here we "go" <- great pun! :-)
 func main() {
