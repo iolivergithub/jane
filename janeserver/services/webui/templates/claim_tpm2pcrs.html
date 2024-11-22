@@ -9,7 +9,7 @@
                            <tbody>
                               {{ range $pkey, $pvalue :=  $value  }}
                                     <tr><td scope="col"><b>{{ $pkey }}</b></td> 
-                                        <td scope="col">{{ $pvalue }}</td> 
+                                        <td scope="col">{{ opaqueObject $pvalue }}</td> 
                                     </tr>     
                               {{ end }}
                            </tbody>

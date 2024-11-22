@@ -8,7 +8,7 @@
            <span class="badge bg-secondary">{{ . }}</span>
         {{ end }}
      </td></tr>
-     <tr><td><b>Firmware</b></td><td>{{ .quote.FirmwareVersion }}</td></tr>
+     <tr><td><b>Firmware</b></td><td>{{ opaqueObjectInt64 .quote.FirmwareVersion }}</td></tr>
 
      <tr><td><b>Magic & Type</b></td><td>{{ .quote.Magic }}, {{ .quote.Type }}</td></tr>
      <tr><td><b>Extra Data</b></td><td>{{ .quote.ExtraData }}</td></tr>
