@@ -11,9 +11,6 @@ import (
 	"a10/structures"
 )
 
-const STDINTENTSURL="https://raw.githubusercontent.com/iolivergithub/jane/refs/heads/main/etc/standardintents/standardintents.json"
-const STDINTENTSSHA="https://github.com/iolivergithub/jane/blob/main/etc/standardintents/standardintents.sha256"
-
 
 
 func showIntents(c echo.Context) error {
@@ -66,34 +63,3 @@ func intenttemplate() string {
 // Standard Intents
 
 
-
-
-func loadstandardintents(c echo.Context) error {
-    var intentfilestruct []structures.Intent
-
-    resp,err := http.Get( STDINTENTSURL )
-
-    if err != nil {
-    	fmt.Println("getting std intents failed ", err.Error())
-    	return err
-    }
-
-
-    fmt.Println("Response ",resp.Status)
-
-    jsonParser := json.NewDecoder(resp.Body)
-    if err = jsonParser.Decode(&intentfilestruct); err != nil {
-    	fmt.Println("parsing failed ",err.Error())
-    	return c.Redirect(http.StatusSeeOther, "/intents")
-    }
-    defer resp.Body.Close()
-
-    //fmt.Println("parsing succeeded ",intentfilestruct,"\n\n")
-
-    for _,e := range intentfilestruct {
-        operations.AddStandardIntent(e)
-    }
-
-	return c.Redirect(http.StatusSeeOther, "/intents")
-
-}

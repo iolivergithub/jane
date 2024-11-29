@@ -35,30 +35,6 @@ func AddIntent(p structures.Intent) (string, error) {
 }
 
 
-// AddStandardIntent is a function that takes and element structure that has a FILLED IN Itemid field 
-// and then replaces any existing version of that intent
-func AddStandardIntent(stdintent structures.Intent)  {
-    _,err := GetIntentByItemID(stdintent.ItemID)
-    
-    if err == nil {
-    	dberr := UpdateIntent(stdintent)
-    	if dberr == nil {
-    		logging.MakeLogEntry("IM", "update", stdintent.ItemID, "stdintent", "update successful for "+stdintent.ItemID)
-    	} else {
-    		logging.MakeLogEntry("IM", "update", stdintent.ItemID, "stdintent", "update FAILED due to "+dberr.Error())
-    	}
-    	
-    } else {
-    	// we don't call AddIntent because it expects NO itemid and automatically generates one
-    	// which is what we don't want here.
-    	_, dberr := datalayer.DB.Collection("intents").InsertOne(context.TODO(), stdintent)
-    	if dberr == nil {
-    		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add successful for "+stdintent.ItemID)
-    	} else {
-    		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add FAILED due to "+dberr.Error())
-    	}     
-    }
-}
 
 
 
@@ -138,4 +114,32 @@ func GetIntentsByName(name string) ([]structures.Intent, error) {
 	dbcursorerror := dbcursor.All(context.TODO(), &pol)
 
 	return pol, dbcursorerror
+}
+
+
+
+
+// AddStandardIntent is a function that takes and element structure that has a FILLED IN Itemid field 
+// and then replaces any existing version of that intent
+func AddStandardIntent(stdintent structures.Intent)  {
+    _,err := GetIntentByItemID(stdintent.ItemID)
+    
+    if err == nil {
+    	dberr := UpdateIntent(stdintent)
+    	if dberr == nil {
+    		logging.MakeLogEntry("IM", "update", stdintent.ItemID, "stdintent", "update successful for "+stdintent.ItemID)
+    	} else {
+    		logging.MakeLogEntry("IM", "update", stdintent.ItemID, "stdintent", "update FAILED due to "+dberr.Error())
+    	}
+    	
+    } else {
+    	// we don't call AddIntent because it expects NO itemid and automatically generates one
+    	// which is what we don't want here.
+    	_, dberr := datalayer.DB.Collection("intents").InsertOne(context.TODO(), stdintent)
+    	if dberr == nil {
+    		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add successful for "+stdintent.ItemID)
+    	} else {
+    		logging.MakeLogEntry("IM", "add", stdintent.ItemID, "stdintent", "add FAILED due to "+dberr.Error())
+    	}     
+    }
 }
