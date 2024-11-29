@@ -133,7 +133,7 @@ func setupSYSendpoints(router *echo.Echo) {
 func setupUEFIendpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/uefi/eventlog", uefi.Eventlog)
 	router.POST(PREFIX+"/uefi/efivars", uefi.Efivars)
-	//router.POST(PREFIX+"/uefi/bootconfig", uefi.BootConfig)
+	router.POST(PREFIX+"/uefi/bootconfig", uefi.BootConfig)
 }
 
 func setupIMAendpoints(router *echo.Echo) {

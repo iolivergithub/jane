@@ -1,0 +1,21 @@
+{{define "claim_efivars.html"}}
+
+<h4>Count {{ .count }}</h4>
+
+ <table class="table table-sm table-striped">
+   <tbody>
+     {{ range .efivars  }}
+         <tr>
+            <td scope="col"><b>{{ .name }}</b></td> 
+            <td scope="col">{{ .value }}</td> 
+            <td scope="col">{{ .attributes }}</td>        
+            <td scope="col">{{ .somevalue }}</td>             
+            <td scope="col">{{ .errorvalue }}</td>             
+         </tr>     
+     {{ end }}
+   </tbody>
+</table> 
+
+{{end}}
+
+   

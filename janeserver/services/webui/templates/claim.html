@@ -32,6 +32,25 @@
       <div class="col-xxl-6">
 
 
+<h5>Footer</h5>
+<table class="table table-xxl table-striped">
+   <thead>
+      <tr>
+         <th scope="col">Field</th>    
+         <th scope="col">Value</th>                   
+      </tr>
+   </thead>
+   <tbody>
+      <tr><td scope="col">Hash</th> <td scope="col"  style="word-break: break-all;">{{ encodeAsHexString .Footer.Hash }}</td> </tr>     
+      <tr><td scope="col">Signature</th> <td scope="col" style="word-break: break-all;" >{{ encodeAsHexString .Footer.Signature }}</td> </tr>      
+   </tbody>
+</table>
+
+</div>
+
+
+ <div class="col-xxl-12">
+
 <h5>Body: </h5>
 
 {{ if eq .BodyType "*ERROR" }}
@@ -59,28 +78,13 @@
     {{ template "claim_quote.html" .Body.parsed }}
 {{ end }}
 
+{{ if eq .BodyType "uefi/efivars" }}
+    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+    {{ template "claim_efivars.html" .Body }}
+{{ end }}
 
       </div>
 
-
-
- <div class="col-xxl-6">
-
-<h5>Footer</h5>
-<table class="table table-xxl table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Hash</th> <td scope="col"  style="word-break: break-all;">{{ encodeAsHexString .Footer.Hash }}</td> </tr>     
-      <tr><td scope="col">Signature</th> <td scope="col" style="word-break: break-all;" >{{ encodeAsHexString .Footer.Signature }}</td> </tr>      
-   </tbody>
-</table>
-
-      </div>
    </div>
 </div>
 

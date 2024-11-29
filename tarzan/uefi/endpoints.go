@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	_ "reflect"
 
 	utilities "ta10/common"
 
@@ -13,9 +14,7 @@ import (
 
 	"github.com/0x5a17ed/uefi/efi/efivario"
 	"github.com/0x5a17ed/uefi/efi/efivars"	
-	"github.com/0x5a17ed/uefi/efi/efiguid"	
-
-	_ "github.com/0x5a17ed/itkit/iters/sliceit"
+	_ "github.com/0x5a17ed/uefi/efi/efiguid"	
 	"github.com/0x5a17ed/itkit/itlib"	
 )
 
@@ -43,7 +42,7 @@ func GetEventLogLocation(loc string) string {
 func Eventlog(c echo.Context) error {
 	fmt.Println("eventlog called")
 
-	var postbody map[string]interface{}
+	var postbody   map[string]interface{}
 	var rtnbody = make(map[string]interface{})
 
 	if err := c.Bind(&postbody); err != nil {
@@ -64,20 +63,24 @@ func Eventlog(c echo.Context) error {
 	return c.JSON(http.StatusOK, rtn)
 }
 
-type returnEfivars struct {
+type efivardata struct {
 	Name        string    `json:"name"`
-	Guid        efiguid.GUID    `json:"guid"`
-	Attributes  efivario.Attributes     `json:"attributes"`
-	SomeValue   int       `json:"somevalue"`
-	StringValue string    `json:"stringvalue"`
-	RawValue    []byte    `json:"rawvalue"`
-	ErrorValue   string    `json:"errorvalue"`
+	Guid        string    `json:"guid"`
+	Attributes  int32     `json:"attributes"`
+	SomeValue   int       `json:"somevalue"`    // no idea what this is supposed to represent
+	Value       string    `json:"value"`    
+	ErrorValue  string    `json:"errorvalue"`
+}
+
+type returnEfivars struct {
+	Efivars 	[]efivardata   `json:"efivars"`
+	Count		int            `json:"count"`
 }
 
 func Efivars(c echo.Context) error {
 	fmt.Println("efivars called")
 
-	var rtnvars = []returnEfivars{}
+	var efivars = []efivardata{}
 
 	co := efivario.NewDefaultContext()
 	vni,_ := co.VariableNames()
@@ -90,39 +93,49 @@ func Efivars(c echo.Context) error {
 
 			out := make([]byte,hint)
 			a,i,err := co.Get(v.Name,v.GUID,out)
-			fmt.Printf("N=%v, A=%v, I=%v, E=%v, S=%v, O=%v, X=%v\n\n",v.Name,a,i,err,string(out[:]),out,err)
-
+			//fmt.Printf("N=%v, A=%v, I=%v, E=%v, S=%v, O=%v, X=%v\n\n",v.Name,a,i,err,string(out[:]),out,err)
+			//fmt.Printf("Types %v, %v, %v, %v, %v\n",reflect.TypeOf(v.Name),reflect.TypeOf(v.GUID.String()), reflect.TypeOf(int32(a)), reflect.TypeOf(i), reflect.TypeOf(string(out[:])))
 			errval := ""
 			if err!=nil {
 				errval = err.Error()
 			}
 
-			rtnvarstr :=returnEfivars{v.Name,v.GUID,a,i,string(out[:]),out,errval}
+			efd := efivardata{v.Name,v.GUID.String(),int32(a),i,string(out[:]),errval}
 
-			rtnvars=append(rtnvars,rtnvarstr)
+			fmt.Printf("X=%v\n\n",efd)
+
+			efivars=append(efivars,efd)
 		})
 
-	return c.JSON(http.StatusOK, rtnvars)
+
+	rtn := returnEfivars{efivars, len(efivars)}
+
+	return c.JSON(http.StatusOK, rtn)
 }
 
-// type returnBootInformation struct {
-// 	//TBD
-// }
-
-// func BootConfig(c echo.Context) error {
-// 	fmt.Println("boot order called")
-
-// 	var rtnvars = []returnEfivars{}
-
-// 	v1,v2,v3 := efivars.BootCurrent.Get(co)
-// 	fmt.Printf("EFI %v\n%v\n%v\n",v1,v2,v3)
-
-// 	ov1,ov2,ov3 := efivars.BootOrder.Get(co)
-// 	fmt.Printf("EFI %v\n%v\n%v\n",ov1,ov2,ov3)
-
-// 	bv1,bv2,bv3 := efivars.BootNext.Get(co)
-// 	fmt.Printf("EFI %v\n%v\n%v\n",bv1,bv2,bv3)
 
 
-// 	return c.JSON(http.StatusOK, rtnvars)
-// }
+type returnBootInformation struct {
+	msg  string `json:"msg"`
+}
+
+func BootConfig(c echo.Context) error {
+	fmt.Println("boot order called")
+
+	co := efivario.NewDefaultContext()
+
+	v1,v2,v3 := efivars.BootCurrent.Get(co)
+	fmt.Printf("EFIbootcurrent %v\n%v\n%v\n",v1,v2,v3)
+
+	ov1,ov2,ov3 := efivars.BootOrder.Get(co)
+	fmt.Printf("EFIbootorder %v\n%v\n%v\n",ov1,ov2,ov3)
+
+	bv1,bv2,bv3 := efivars.BootNext.Get(co)
+	fmt.Printf("EFIbootnext %v\n%v\n%v\n",bv1,bv2,bv3)
+
+	rtn :=returnBootInformation{"boot order not implemented yet"}
+
+	fmt.Printf("rtn=%v\n",rtn)
+
+	return c.JSON(http.StatusOK, rtn)
+}
