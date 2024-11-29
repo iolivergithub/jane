@@ -14,6 +14,20 @@
         "function": "uefi/eventlog",
         "parameters": {}
     },
+    {
+        "itemid": "std::intent::uefi::efivars",
+        "name": "UEFI EFI Variables",
+        "description": "Retreives the UEFI EFI Variables on Linux (and maybe Windows) systems",
+        "function": "uefi/efivars",
+        "parameters": {}
+    },    
+    {
+        "itemid": "std::intent::uefi::bootconfig",
+        "name": "UEFI Boot Configuration",
+        "description": "Retreives the UEFI Boot Configuration",
+        "function": "uefi/bootconfig",
+        "parameters": {}
+    },     
         {
         "itemid": "std::intent::linux::ima::asciilog",
         "name": "Linux IMA ASCII Log",
