@@ -1,0 +1,14 @@
+#!/bin/sh
+
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+echo "${PURPLE}Running post installation scripts${NC}"
+
+echo "${PURPLE}Enabling Tarzan with systemd${NC}"
+systemctl enable tarzan.service
+
+echo "${PURPLE}Starting Jane with systemd${NC}"
+systemctl start tarzan.service
+
+echo "${PURPLE}Post installation scripts complete${NC}"

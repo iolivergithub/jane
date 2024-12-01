@@ -1,6 +1,6 @@
 Package: tarzantrustagent
 Version: 1.0
-Maintainer: Ian Oliver ian.oliver@oulu.fi
+Maintainer: Ian Oliver <ian.oliver@oulu.fi>
 Architecture: amd64
 Priority: optional
 Section: admin

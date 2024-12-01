@@ -1,0 +1,4 @@
+/etc/opt/jane/config.yaml
+/opt/jane/REPLACE_ME.key
+/opt/jane/REPLACE_ME.crt
+/etc/systemd/system/jane.service
