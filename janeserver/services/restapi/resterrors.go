@@ -5,7 +5,7 @@ import (
 )
 
 type restErrorMessage struct {
-	ErrorMessage string `json:"error",bson:"error"`
+	ErrorMessage string `json:"error" bson:"error"`
 }
 
 func MakeRESTErrorMessage(e error) restErrorMessage {

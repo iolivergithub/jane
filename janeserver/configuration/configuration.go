@@ -80,11 +80,11 @@ func SetupConfiguration(f string) {
 
 	configFile, err := ioutil.ReadFile(f)
 	if err != nil {
-		panic(fmt.Sprintf("Configuration file missing. Exiting with error ", err))
+		panic(fmt.Sprintf("Configuration file missing. Exiting with error %w", err))
 	}
 
 	err = yaml.Unmarshal(configFile, &ConfigData)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to parse configuration file. Exiting with error ", err))
+		panic(fmt.Sprintf("Unable to parse configuration file. Exiting with error %w", err))
 	}
 }

@@ -25,14 +25,14 @@ type attestStr struct {
 	EID        string                 `json:"eid"`
 	PID        string                 `json:"pid"`
 	SID        string                 `json:"sid"`
-	Parameters map[string]interface{} `json:"parameters",bson:"parameters"`
+	Parameters map[string]interface{} `json:"parameters", bson:"parameters"`
 }
 
 type verifyStr struct {
 	CID        string                 `json:"cid"`
 	Rule       string                 `json:"rule"`
 	SID        string                 `json:"sid"`
-	Parameters map[string]interface{} `json:"parameters",bson:"parameters"`
+	Parameters map[string]interface{} `json:"parameters", bson:"parameters"`
 }
 
 func postAttest(c echo.Context) error {
@@ -48,22 +48,24 @@ func postAttest(c echo.Context) error {
 	pid := (*att).PID
 	sid := (*att).SID
 
-	fmt.Printf("\n element is ###%s###", eid)
 	element, err := operations.GetElementByItemID(eid)
 	if err != nil {
-		fmt.Errorf("Element not found: %v", err)
+		clienterr := postAttestReturn{"", "Element " + eid + " not found"}
+		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
 	fmt.Printf("\n intent is ###%s###", pid)
 
 	intent, err := operations.GetIntentByItemID(pid)
 	if err != nil {
-		fmt.Errorf("Intent not found: %v", err)
+		clienterr := postAttestReturn{"", "Intent " + pid + " not found"}
+		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
 	session, err := operations.GetSessionByItemID(sid)
 	if err != nil {
-		fmt.Errorf("Session not found: %v", err)
+		clienterr := postAttestReturn{"", "Session " + sid + " not found"}
+		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
 	res, err := operations.Attest(element, intent, session, (*att).Parameters)

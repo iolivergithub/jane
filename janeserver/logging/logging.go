@@ -18,7 +18,7 @@ func MakeLogEntry(ch string, op string, itemid string, itemtype string, message 
 	logentry := structures.LogEntry{utilities.MakeID(), utilities.MakeTimestamp(), ch, op, itemid, itemtype, message, []byte{}}
 
 	if digest, err := utilities.MakeSHA256(logentry); err != nil {
-		log.Printf("WARNING: Encoding log entry failed with %w. Entry not made.", err)
+		log.Printf("WARNING: Encoding log entry failed with %v. Entry not made.", err.Error())
 	} else {
 		logentry.Hash = digest
 

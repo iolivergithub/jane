@@ -10,9 +10,9 @@ import (
 )
 
 type ruleExternal struct {
-	Name        string `json:"name",bson:"name"`
-	Description string `json:"description",bson:"description"`
-	NeedsEV     bool   `json:"needsev",bson:"needsev"`
+	Name        string `json:"name" bson:"name"`
+	Description string `json:"description" bson:"description"`
+	NeedsEV     bool   `json:"needsev" bson:"needsev"`
 }
 
 type returnRules struct {

@@ -11,6 +11,9 @@ build: libs fmt
 fmt:
 	go fmt ./...
 
+vet:
+	. /opt/edgelessrt/share/openenclave/openenclaverc && go vet ./...
+
 libs:
 	go get -u
 	go mod tidy -v

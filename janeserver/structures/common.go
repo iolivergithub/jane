@@ -1,5 +1,5 @@
 package structures
 
 type ID struct {
-	ItemID string `json:"itemid",bson:"itemid"`
+	ItemID string `json:"itemid" bson:"itemid"`
 }

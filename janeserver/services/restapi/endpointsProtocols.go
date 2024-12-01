@@ -9,9 +9,9 @@ import (
 )
 
 type protocolExternal struct {
-	Name        string   `json:"name",bson:"name"`
-	Description string   `json:"description",bson:"description"`
-	Intents     []string `json:"intents",bson:"intents"`
+	Name        string   `json:"name" bson:"name"`
+	Description string   `json:"description" bson:"description"`
+	Intents     []string `json:"intents" bson:"intents"`
 }
 
 type returnProtocols struct {

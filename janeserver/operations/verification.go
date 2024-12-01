@@ -44,7 +44,7 @@ func getEV(claim structures.Claim, rule structures.Rule) (structures.ExpectedVal
 	// if err is not nil then there was some error, usualy no EV for that E,P pair
 	// but it could be something worse, eg: datalayer failure, but this is unlikely
 
-	fmt.Println("  Rule needs EV is %v", rule.NeedsEV)
+	fmt.Printf("  Rule needs EV is %v\n", rule.NeedsEV)
 
 	if rule.NeedsEV == true {
 		e := claim.Header.Element.ItemID
@@ -55,7 +55,7 @@ func getEV(claim structures.Claim, rule structures.Rule) (structures.ExpectedVal
 
 		ev, err := GetExpectedValueByElementAndPolicy(e, p)
 
-		fmt.Println("  GET EV error=%v,  ev=%v", err, ev)
+		fmt.Printf("  GET EV error=%w,  ev=%v\n", err, ev)
 
 		return ev, err
 	}
@@ -89,7 +89,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 			fmt.Println("dealing with the ev")
 
 			returnedRV = structures.MissingExpectedValue
-			returnedMSG = fmt.Sprintf("Rule %v requries an expected value for e,p pair %v and %v and one was not found: %w", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err.Error())
+			returnedMSG = fmt.Sprintf("Rule %v requries an expected value for e,p pair %v and %v and one was not found: %w", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err)
 		} else {
 
 			// Now
@@ -103,7 +103,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 				fmt.Println("Step 3 -err")
 
 				returnedRV = structures.VerifyCallFailure
-				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %w", rule.Name, returnedMSG, err.Error()) // this should be the returnedMSG form the line above
+				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %w", rule.Name, returnedMSG, err) // this should be the returnedMSG form the line above
 			}
 		}
 

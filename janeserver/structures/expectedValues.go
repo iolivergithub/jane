@@ -8,14 +8,14 @@ import (
 )
 
 type ExpectedValue struct {
-	ItemID      string `json:"itemid",bson:"itemid"`
-	Name        string `json:"name",bson:"name"`
-	Description string `json:"description",bson:"description"`
+	ItemID      string `json:"itemid" bson:"itemid"`
+	Name        string `json:"name" bson:"name"`
+	Description string `json:"description" bson:"description"`
 
-	ElementID string `json:"elementid",bson:"elementid"`
-	IntentID  string `json:"intentid",bson:"intentid"`
+	ElementID string `json:"elementid" bson:"elementid"`
+	IntentID  string `json:"intentid" bson:"intentid"`
 
-	EVS map[string]interface{} `json:"evs",bson:"evs"`
+	EVS map[string]interface{} `json:"evs" bson:"evs"`
 }
 
 type KeylimeMBEV struct {

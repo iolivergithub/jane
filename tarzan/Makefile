@@ -11,6 +11,9 @@ libs:
 	go get -u
 	go mod tidy -v
 
+vet:
+	go vet ./...
+
 run: build
 	./${BINARY_NAME}
 
