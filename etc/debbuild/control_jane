@@ -1,0 +1,8 @@
+Package: janeattestationengine
+Version: 1.0
+Maintainer: Ian Oliver ian.oliver@oulu.fi
+Architecture: amd64
+Priority: optional
+Section: admin
+Description: Jane Attestation Engine: 
+ Test DEB packaging
