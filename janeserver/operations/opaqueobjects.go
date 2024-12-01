@@ -21,10 +21,10 @@ func CountOpaqueOjects() int64 {
 func AddOpaqueObject(h structures.OpaqueObject) (string, error) {
 	options := options.Update().SetUpsert(true)
 	filter := bson.D{{"value", h.Value}}
-	update := bson.D{{ "$set", h }}
+	update := bson.D{{"$set", h}}
 
 	_, dberr := datalayer.DB.Collection("opaqueobjects").UpdateOne(context.TODO(), filter, update, options)
-	
+
 	msg := fmt.Sprintf("%s,%s", h.Type, h.ShortDescription)
 	logging.MakeLogEntry("IM", "add", h.Value, "object", msg)
 	return h.Value, dberr

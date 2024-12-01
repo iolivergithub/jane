@@ -12,20 +12,20 @@ import (
 )
 
 type homepagestructure struct {
-	Nes   int
-	Nps   int
-	Nevs  int
-	Ncs   int
-	Nrs   int
-	Nprs  int
-	Nhs   int
-	Nses  int64
-	Nrus  int
-	Nlog  int64
-	Szlog int64
-	Cfg   *configuration.ConfigurationStruct
+	Nes           int
+	Nps           int
+	Nevs          int
+	Ncs           int
+	Nrs           int
+	Nprs          int
+	Nhs           int
+	Nses          int64
+	Nrus          int
+	Nlog          int64
+	Szlog         int64
+	Cfg           *configuration.ConfigurationStruct
 	CmdLineLength int
-	CmdLine []string
+	CmdLine       []string
 }
 
 func homepage(c echo.Context) error {

@@ -10,8 +10,8 @@ import (
 
 	"html/template"
 
-	"a10/structures"
 	"a10/operations"
+	"a10/structures"
 	"a10/utilities"
 
 	"github.com/google/go-tpm/legacy/tpm2"
@@ -46,17 +46,17 @@ func TCGAlg(h int32) string {
 }
 
 func GetOpaqueObjectByValue(v string) template.HTML {
-	o,err  := operations.GetOpaqueObjectByValue(v)
+	o, err := operations.GetOpaqueObjectByValue(v)
 	if err != nil {
 		return template.HTML(v)
 	} else {
-		sd := o.Type+" : "+o.ShortDescription
-		s := `<span data-bs-toggle="tooltip" title="`+sd+`"><a href="/opaqueobject/`+v+`">`+v+`</a></span>`
+		sd := o.Type + " : " + o.ShortDescription
+		s := `<span data-bs-toggle="tooltip" title="` + sd + `"><a href="/opaqueobject/` + v + `">` + v + `</a></span>`
 		return template.HTML(s)
 	}
 }
 
 func GetOpaqueObjectByValueInt64(v int64) template.HTML {
-	s := strconv.FormatInt(v,10)
+	s := strconv.FormatInt(v, 10)
 	return GetOpaqueObjectByValue(s)
 }

@@ -1,8 +1,8 @@
 package webui
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 
@@ -31,10 +31,10 @@ func processOpaqueObject(c echo.Context) error {
 	fmt.Println("\nProcessing New Opaque Object")
 	value := c.FormValue("value")
 	otype := c.FormValue("type")
-	shortdescription := c.FormValue("shortdescription")		
-	longdescription := c.FormValue("longdescription")		
+	shortdescription := c.FormValue("shortdescription")
+	longdescription := c.FormValue("longdescription")
 
-	var newoo = structures.OpaqueObject{value,otype,shortdescription,longdescription}
+	var newoo = structures.OpaqueObject{value, otype, shortdescription, longdescription}
 
 	eid, err := operations.AddOpaqueObject(newoo)
 	fmt.Printf("  eid=%v,err=%v\n", eid, err)

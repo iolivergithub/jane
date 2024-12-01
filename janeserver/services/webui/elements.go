@@ -40,7 +40,7 @@ func showElement(c echo.Context) error {
 }
 
 func newElement(c echo.Context) error {
-	fmt.Println("ELEMTEMPLATE is ",elementtemplate())
+	fmt.Println("ELEMTEMPLATE is ", elementtemplate())
 
 	return c.Render(http.StatusOK, "editelement.html", elementtemplate())
 }
@@ -48,7 +48,7 @@ func newElement(c echo.Context) error {
 func processNewElement(c echo.Context) error {
 	fmt.Println("\nProcessing New Element")
 	elemdata := c.FormValue("elementdata")
-	fmt.Println("ELEMDATA is ",elemdata)
+	fmt.Println("ELEMDATA is ", elemdata)
 
 	var newelem structures.Element
 

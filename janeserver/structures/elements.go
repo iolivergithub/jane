@@ -20,8 +20,8 @@ type Element struct {
 
 // ELEMENTSUMMARY MUST BE A SUBSET OF ELEMENT
 type ElementSummary struct {
-	ItemID      string   `json:"itemid,omitempty",bson:"itemid,omitempty"`
-	Name        string   `json:"name",bson:"name"`
+	ItemID string `json:"itemid,omitempty",bson:"itemid,omitempty"`
+	Name   string `json:"name",bson:"name"`
 }
 
 type HostMachine struct {

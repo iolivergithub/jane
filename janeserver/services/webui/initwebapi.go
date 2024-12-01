@@ -141,12 +141,12 @@ func setupEditEndpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/new/intent", processNewIntent)
 
 	router.GET(PREFIX+"/new/expectedvalue", newExpectedValue)
-    router.POST(PREFIX+"/new/expectedvalue", processNewExpectedValue)
+	router.POST(PREFIX+"/new/expectedvalue", processNewExpectedValue)
 
 	router.GET(PREFIX+"/loadstandardintents", loadstandardintents)
 
 	router.GET(PREFIX+"/new/opaqueobject", newOpaqueObject)
-    router.POST(PREFIX+"/new/opaqueobject", processOpaqueObject)
+	router.POST(PREFIX+"/new/opaqueobject", processOpaqueObject)
 }
 
 func setupHomeEndpoints(router *echo.Echo) {

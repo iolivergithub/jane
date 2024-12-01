@@ -5,9 +5,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"runtime"
 	"sync"
-	"os"
 
 	"a10/configuration"
 	"a10/datalayer"
@@ -46,7 +46,8 @@ func welcomeMessage() {
 	fmt.Printf("|   + version %v, build %v\n", VERSION, BUILD)
 	fmt.Printf("|   + runing with name %v\n", configuration.ConfigData.System.Name)
 	fmt.Printf("|   + session identifier is %v\n", RUNSESSION)
-	fmt.Printf("+========================================================\n")}
+	fmt.Printf("+========================================================\n")
+}
 
 // This starts everything...here we "go" <- great pun! :-)
 func main() {
@@ -62,7 +63,7 @@ func main() {
 	// Ok, we're up...let's log this.
 	msg := fmt.Sprintf("Starting: %v, build %v, OS %v, ARCH %v", VERSION, BUILD, runtime.GOOS, runtime.GOARCH)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, configuration.ConfigData.System.Name, msg)
-	msg = fmt.Sprintf("Command line contained %v items: %v",len(os.Args),os.Args)
+	msg = fmt.Sprintf("Command line contained %v items: %v", len(os.Args), os.Args)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, "command line", msg)
 
 	welcomeMessage()

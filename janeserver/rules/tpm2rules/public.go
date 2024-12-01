@@ -59,16 +59,16 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 	//claimedAV := hex.EncodeToString(quoteData.PCRDigest.Buffer)
 
 	//looks like Thore in his utilities/tpm2.go encoded the PCRDigest as Base64...so further doing this with
-        // hex to string of that base64 is overkill and complicates the expected values
-        // which if the above claimedAV line is written means that we have to write the expectedvalue for a PCRDigest
-        // in hex, but we see only base64 in the claim
-			
+	// hex to string of that base64 is overkill and complicates the expected values
+	// which if the above claimedAV line is written means that we have to write the expectedvalue for a PCRDigest
+	// in hex, but we see only base64 in the claim
+
 	//claimedAV := fmt.Sprintf("%v",quoteData.PCRDigest.Buffer)
-        //claimedAV := string(quoteData.PCRDigest.Buffer[:])
-        claimedAV := base64.StdEncoding.EncodeToString(quoteData.PCRDigest.Buffer)
+	//claimedAV := string(quoteData.PCRDigest.Buffer[:])
+	claimedAV := base64.StdEncoding.EncodeToString(quoteData.PCRDigest.Buffer)
 	expectedAV := (ev.EVS)["attestedValue"]
 
-	fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n",quoteData.PCRDigest.Buffer,claimedAV,expectedAV)
+	fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", quoteData.PCRDigest.Buffer, claimedAV, expectedAV)
 
 	if expectedAV == claimedAV {
 		return structures.Success, "", nil

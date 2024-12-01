@@ -52,7 +52,6 @@ func GetClaims() ([]structures.ID, error) {
 
 func GetClaimsAll() ([]structures.Claim, error) {
 	var claims []structures.Claim
-	
 
 	filter := bson.D{{}} // Get all
 	options := options.Find().SetSort(bson.D{{"header.timing.requested", -1}}).SetLimit(2000)

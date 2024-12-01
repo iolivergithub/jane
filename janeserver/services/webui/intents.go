@@ -11,8 +11,6 @@ import (
 	"a10/structures"
 )
 
-
-
 func showIntents(c echo.Context) error {
 	es, _ := operations.GetIntentsAll()
 	return c.Render(http.StatusOK, "intents.html", es)
@@ -46,7 +44,6 @@ func processNewIntent(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/intents")
 }
 
-
 // This is the template for an element
 func intenttemplate() string {
 	raw := `{ 
@@ -61,5 +58,3 @@ func intenttemplate() string {
 }
 
 // Standard Intents
-
-

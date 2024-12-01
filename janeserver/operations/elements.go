@@ -77,20 +77,17 @@ func GetElements() ([]structures.ID, error) {
 	return elems, dbcursorerror
 }
 
-
-
 // GetElements returns a map of itemids in the ID structure. If this structure is an empty map then no elements exist in the database.
 func GetElementsSummary() ([]structures.ElementSummary, error) {
 	var elems []structures.ElementSummary
 
 	filter := bson.D{{}} // Get all
-	options := options.Find().SetProjection(bson.D{{"itemid", 1},{"name",1}}).SetSort(bson.D{{"name", 1}})
+	options := options.Find().SetProjection(bson.D{{"itemid", 1}, {"name", 1}}).SetSort(bson.D{{"name", 1}})
 	dbcursor, _ := datalayer.DB.Collection("elements").Find(context.TODO(), filter, options)
 	dbcursorerror := dbcursor.All(context.TODO(), &elems)
 
 	return elems, dbcursorerror
 }
-
 
 // GetElementsAll returns a map of every element. If this structure is an empty map then no elements exist in the database.
 // This is only meant to be used sparingly, eg: when quering the UI to reduce load on the database

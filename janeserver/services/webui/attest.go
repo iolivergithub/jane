@@ -49,7 +49,6 @@ func processAttest(c echo.Context) error {
 
 	fmt.Printf("\n processAttest\n")
 
-
 	err := c.Bind(&attreq)
 	if err != nil {
 		fmt.Printf("Error in binding %v", err.Error())
@@ -58,7 +57,7 @@ func processAttest(c echo.Context) error {
 	fmt.Printf("ATTREQ %v\n", attreq)
 	// Get the objects
 	e, _ := operations.GetElementByItemID(attreq.Eid)
-	fmt.Printf("ATTREQ %v\n", attreq)	
+	fmt.Printf("ATTREQ %v\n", attreq)
 	p, _ := operations.GetIntentByItemID(attreq.Pid)
 
 	// Open a session
