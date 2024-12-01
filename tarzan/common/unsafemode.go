@@ -1,6 +1,5 @@
 package utilities
 
-
 var unsafemode bool = false
 
 func SetUnsafeMode() {

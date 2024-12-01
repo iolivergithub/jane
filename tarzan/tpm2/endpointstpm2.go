@@ -63,18 +63,18 @@ func PCRs(c echo.Context) error {
 	// Here we parse the tpm2 device
 	// We have a default of /dev/tpm0
 	tpm2device := params["tpm2/device"].(string)
-	fmt.Printf("TPM2Device is %v \n",tpm2device)
+	fmt.Printf("TPM2Device is %v \n", tpm2device)
 
 	rwc, err := OpenTPM(tpm2device)
 	if err != nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("no TPM %w", err.Error())}
-		fmt.Printf("no TPM ERROR is %v \n",err.Error() )
+		fmt.Printf("no TPM ERROR is %v \n", err.Error())
 
 		return c.JSON(http.StatusInternalServerError, rtn)
 	}
 	defer rwc.Close()
 
-	fmt.Printf("TPM readwriteio object is %v\n",rwc)
+	fmt.Printf("TPM readwriteio object is %v\n", rwc)
 
 	banks := make(map[string]pcrValue)
 
@@ -82,9 +82,9 @@ func PCRs(c echo.Context) error {
 		pcrvs := make(map[int]string)
 
 		for i := 0; i <= 23; i++ {
-			fmt.Printf("Reading back %v, pcr %v --> ",b,i)
+			fmt.Printf("Reading back %v, pcr %v --> ", b, i)
 			pcrv, pcre := tpm2.ReadPCR(rwc, i, b)
-			fmt.Printf(" hex %v err %w\n",pcrv,pcre)
+			fmt.Printf(" hex %v err %w\n", pcrv, pcre)
 			if pcre == nil {
 				pcrvs[i] = hex.EncodeToString(pcrv)
 			}
