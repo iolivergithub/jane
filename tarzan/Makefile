@@ -1,8 +1,15 @@
 BINARY_NAME=tarzan
 PIE_ON=-buildmode=pie
 
-build:
+build: libs fmt
 	go build ${PIE_ON} -o ${BINARY_NAME} tarzan.go
+
+fmt:
+	go fmt ./...
+
+libs:
+	go get -u
+	go mod tidy -v
 
 run: build
 	./${BINARY_NAME}

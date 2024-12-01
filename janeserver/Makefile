@@ -13,7 +13,7 @@ fmt:
 
 libs:
 	go get -u
-	go mod tidy
+	go mod tidy -v
 
 run: 
 	./${BINARY_NAME}

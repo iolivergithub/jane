@@ -2,6 +2,14 @@
 
 ############################################################# GO
 
+# For jane and tarzan
+/janeserver/janeserver
+/janeserver/ga10
+
+/tarzan/tarzan
+/tarzan/ta10
+
+
 
 # Binaries for programs and plugins
 *.exe
