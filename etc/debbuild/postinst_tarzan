@@ -8,7 +8,14 @@ echo "${PURPLE}Running post installation scripts${NC}"
 echo "${PURPLE}Enabling Tarzan with systemd${NC}"
 systemctl enable tarzan.service
 
-echo "${PURPLE}Starting Jane with systemd${NC}"
+echo "${PURPLE}Starting Tarzan with systemd${NC}"
 systemctl start tarzan.service
+
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+echo "${RED}   *** CHECK!!!!! **** ${NC}"
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+echo "${RED} Edit the /etc/systemd/system/tarzan.service ${NC}"
+echo "${RED} Ensure Tarzan is runnign the correct services${NC}"
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 
 echo "${PURPLE}Post installation scripts complete${NC}"

@@ -36,20 +36,14 @@ mkdir -p $TARZANBASE/etc/systemd/system
 #compile Jane
 echo "${BLUE}Compiling Janeserver${NC}"
 cd ../../janeserver
-go get -u
-go mod tidy
-#. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 /usr/local/go/bin/go build -o janeserver
-strip janeserver
+make build
 ls -l janeserver
 
 
 #compile Tarzan
 echo "${BLUE}Compling Tarzan${NC}"
 cd ../tarzan
-go get -u
-go mod tidy
-#go build -o tarzan
-strip tarzan
+make build
 ls -l tarzan
 
 
