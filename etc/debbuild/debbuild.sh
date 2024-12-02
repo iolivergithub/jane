@@ -95,6 +95,13 @@ dpkg-deb --root-owner-group --build tarzan
 ls -l jane.deb
 ls -l tarzan.deb
 
+echo "${BLUE}Attempting to build rpms${NC}"
+cd $TMPBASE
+
+alien -r -c -v jane.deb
+alien -r -c -v tarzan.deb
+
+ls -l *.rpm
 
 #Linting deb packages
 echo "${BLUE}Linting jane.deb${NC}"
@@ -105,6 +112,13 @@ echo "${BLUE}Linting tarzan.deb${NC}"
 cd $TMPBASE
 lintian tarzan.deb
 
+echo "${BLUE}Compressing${NC}"
+cd $TMPBASE
+
+gzip *.deb 
+gzip *.rpm 
+
+ls -l *.gz
 
 #Completion
 echo "${BLUE}Complete${NC}"

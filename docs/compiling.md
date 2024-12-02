@@ -40,38 +40,35 @@ apt-get install -y ./$ERT_DEB build-essential cmake libssl-dev libsgx-dcap-defau
 Once SGX and Edgeless have been installed then you can just run this part every time you need to recompile. *MAKE SURE* you are in the `janeserver` directory when you run these commands:
 
 ```bash
-go get -u
-go mod tidy
-. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -o janeserver
+make build
 ```
 
-You will now get a file called `janeserver` which is your executable.
-
-If you wish to reduce the size of the binary, run `strip janeserver`
+You will now get a file called `janeserver` which is your executable. The Makefile also sets BUILD and VERSION flags. Further the Makefile also genates a PIE binary for security reasons.
 
 <!-- TOC --><a name="optional-build-flag"></a>
-### Optional BUILD flag
+### Optional BUILD and VERSION flags
 
-If you wish to set a build flag, then specify  as part of the `ldflags -X` option as in the example command to compile below. Set the value `123` to whatever you want (within reason - a short string is fine). If you don't do this, and it is completely optional, then default value for the build flag will be `not set`.
+If you wish to set build and version flag, then specify  as part of the `ldflags -X` option as in the example command to compile below. Set the value `123` to whatever you want (within reason - a short string is fine). If you don't do this, and it is completely optional, then default value for the build flag will be `not set`.
 
 ```bash
-. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123'" -o janeserver
+. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
 ```
 
 <!-- TOC --><a name="compiling-tarzan"></a>
 ## Compiling tarzan
 Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Tarzan is only required if you want to use this protocol - it is useful for debugging and building interesting tests.
 
-*MAKE SURE* you are in the `tarzan` directory.  tarzan is much simpler than janeserver and requires just compilation. For your local operating system and architecture you can remove the `GOOS` and `GOARCH` variables, for example as shown below. The `strip` command is optional but it does reduce the binary size a little.
+*MAKE SURE* you are in the `tarzan` directory.  tarzan is much simpler than janeserver and requires just compilation. 
 
 ```bash
-go get -u
-go mod tidy
-go build -o tarzan
-strip tarzan
+Make build
 ```
 
-For other architectures, use `go tool dist list` for a list of operating system and architecture options. Listed below are a few common options - and we like to append this to the binary name when we're generating a few of these for the devices we have (remeber amd64 is 64-bit Intel/AMD x86 based chips, eg: Xeons, i9's, i7's, Threaripper etc etc)
+This generates a PIE binary with BUILD and VERSION tags set for amd64 linux. 
+
+BUILD and VERSION flags are similar to janeserver.
+
+For other architectures you can build tarzan manually: use `go tool dist list` for a list of operating system and architecture options. Listed below are a few common options - and we like to append this to the binary name when we're generating a few of these for the devices we have (remeber amd64 is 64-bit Intel/AMD x86 based chips, eg: Xeons, i9's, i7's, Threaripper etc etc)
 
 ```bash
 GOOS=linux GOARCH=arm go build -o tarzan_arm                 # eg: Pi 3s

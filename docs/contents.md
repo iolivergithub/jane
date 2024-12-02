@@ -9,9 +9,10 @@ How to do things manually...
    * [Automatic Startup](automaticStartup.md)
    * [Security and Running in a Production Environment](security.md)
 
-How to do things with Docker...
+How to do things with Docker and other things...
 
    * [Building and Running with Docker](docker.md)
+   * [Building and Instasllating with DEB and RPM](deb.md)
 
 How do I get started?
 
