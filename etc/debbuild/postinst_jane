@@ -1,6 +1,7 @@
 #!/bin/sh
 
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
@@ -9,16 +10,17 @@ echo "${PURPLE}Running post installation scripts${NC}"
 echo "${PURPLE}Enabling Jane with systemd${NC}"
 systemctl enable jane.service
 
-#echo "${PURPLE}Starting Jane with systemd${NC}"
-#systemctl start jane.service
-
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED}   *** CHECK!!!!! **** ${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} Edit the /opt/etc/jane/config.yaml ${NC}"
-echo "${RED} Regenerate keys in /opt/etc/jane${NC}"
+echo "${RED} Replace keys in /opt/etc/jane${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-
+echo "${RED} NOTE: janeserver HAS NOT been started${NC}"
+echo "${RED} use: ${YELLOW}systemctl start jane.service${RED} once the${NC}"
+echo "${RED} above configiguration files hecked and ${NC}"
+echo "${RED} keys been replaced${NC}"
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 
 echo "${PURPLE}Post installation scripts complete${NC}"
 

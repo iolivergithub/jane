@@ -6,7 +6,7 @@ system:
 #MongoDB Configuration
 database:
   connection: mongodb://127.0.0.1:27017
-  name: testasvrlocal
+  name: asvr
 
 
 #MQTT Configuration
@@ -39,5 +39,5 @@ x3270:
 
 #Log file
 logging:
-  logfilelocation: /var/log/jane/ASVR_GO_1_DEBBUILD.log
+  logfilelocation: /var/log/jane/jane.log
   sessionupdatelogging: false

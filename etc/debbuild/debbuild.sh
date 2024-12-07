@@ -24,6 +24,7 @@ echo "${BLUE}Creating temporary build directories${NC}"
 mkdir -p $JANEBASE
 mkdir -p $JANEBASE/DEBIAN
 mkdir -p $JANEBASE/opt/jane
+mkdir -p $JANEBASE/var/log/jane
 mkdir -p $JANEBASE/etc/opt/jane
 mkdir -p $JANEBASE/etc/systemd/system
 

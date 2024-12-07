@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=ian
-ExecStart=/opt/jane/janeserver -config=/etc/opt/jane/config.yaml
+ExecStart=/opt/jane/janeserver --config=/etc/opt/jane/config.yaml
 
 [Install]
 WantedBy=multi-user.target
