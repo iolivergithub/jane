@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -66,7 +67,9 @@ func processNewExpectedValue(c echo.Context) error {
 	intentselect := c.FormValue("intentselect")
 	evsparameters := c.FormValue("evsparameters")
 
-	fmt.Println("ELEMDATA is ", itemid, "\n", elementselect, "\n", intentselect, "\n", evsparameters, "\n")
+	// elementSelect is a CSV of itemid COMMA name of endpoint
+	theelement := strings.Split(elementselect, ",")[0]
+	endpointname := strings.Split(elementselect, ",")[1]
 
 	var evsparams map[string]interface{}
 	err := json.Unmarshal([]byte(evsparameters), &evsparams)
@@ -75,7 +78,7 @@ func processNewExpectedValue(c echo.Context) error {
 		return c.Redirect(http.StatusSeeOther, "/new/expectedvalue")
 	}
 
-	var newev = structures.ExpectedValue{itemid, name, description, elementselect, intentselect, evsparams}
+	var newev = structures.ExpectedValue{itemid, name, description, theelement, endpointname, intentselect, evsparams}
 
 	fmt.Printf("  fv%v\n", newev)
 	eid, err := operations.AddExpectedValue(newev)

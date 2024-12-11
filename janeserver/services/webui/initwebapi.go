@@ -42,15 +42,20 @@ func StartWebUI() {
 	// It is done this way so we can have different templates for each operation...a bit ugly, but html/template is not jinja
 	//dev.to/ykyuen/setup-nested-html-template-in-go-echo-web-framework-d9b
 
-	functions := template.FuncMap{"defaultMessage": DefaultMessage, "epochToUTC": EpochToUTC, "base64decode": Base64decode, "encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64, "opaqueObject": GetOpaqueObjectByValue}
+	functions := template.FuncMap{
+		"defaultMessage": DefaultMessage, "epochToUTC": EpochToUTC, "base64decode": Base64decode,
+		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
+		"opaqueObject": GetOpaqueObjectByValue,
+	}
 
-	templates["home.html"] = template.Must(template.ParseFS(WPFS, T+"home.html", T+"base.html"))
-	templates["help.html"] = template.Must(template.ParseFS(WPFS, T+"help.html", T+"base.html"))
-	templates["about.html"] = template.Must(template.ParseFS(WPFS, T+"about.html", T+"base.html"))
+	//templates["home.html"] = template.Must(template.ParseFS(WPFS, T+"home.html", T+"base.html"))
+	templates["home.html"] = template.Must(template.New("home.html").Funcs(functions).ParseFS(WPFS, T+"home.html", T+"base.html"))
+	templates["help.html"] = template.Must(template.New("help.html").Funcs(functions).ParseFS(WPFS, T+"help.html", T+"base.html"))
+	templates["about.html"] = template.Must(template.New("about.html").Funcs(functions).ParseFS(WPFS, T+"about.html", T+"base.html"))
 
-	templates["elements.html"] = template.Must(template.ParseFS(WPFS, T+"elements.html", T+"elementsummarylist.html", T+"base.html"))
-	templates["intents.html"] = template.Must(template.ParseFS(WPFS, T+"intents.html", T+"intentsummarylist.html", T+"base.html"))
-	templates["evs.html"] = template.Must(template.ParseFS(WPFS, T+"evs.html", T+"evsummarylist.html", T+"base.html"))
+	templates["elements.html"] = template.Must(template.New("elements.html").Funcs(functions).ParseFS(WPFS, T+"elements.html", T+"elementsummarylist.html", T+"base.html"))
+	templates["intents.html"] = template.Must(template.New("intents.html").Funcs(functions).ParseFS(WPFS, T+"intents.html", T+"intentsummarylist.html", T+"base.html"))
+	templates["evs.html"] = template.Must(template.New("evs.html").Funcs(functions).ParseFS(WPFS, T+"evs.html", T+"evsummarylist.html", T+"base.html"))
 
 	templates["element.html"] = template.Must(template.New("element.html").Funcs(functions).ParseFS(WPFS, T+"element.html", T+"base.html",
 		T+"uefi.html",
@@ -61,9 +66,9 @@ func StartWebUI() {
 		T+"hostinformation.html",
 		T+"resultvalue.html"))
 
-	templates["intent.html"] = template.Must(template.ParseFS(WPFS, T+"intent.html", T+"base.html",
+	templates["intent.html"] = template.Must(template.New("intent.html").Funcs(functions).ParseFS(WPFS, T+"intent.html", T+"base.html",
 		T+"genericList.html"))
-	templates["ev.html"] = template.Must(template.ParseFS(WPFS, T+"ev.html", T+"base.html",
+	templates["ev.html"] = template.Must(template.New("ev.html").Funcs(functions).ParseFS(WPFS, T+"ev.html", T+"base.html",
 		T+"genericList.html"))
 
 	templates["claims.html"] = template.Must(template.New("claims.html").Funcs(functions).ParseFS(WPFS, T+"claims.html", T+"base.html"))
@@ -84,19 +89,18 @@ func StartWebUI() {
 
 	templates["attest.html"] = template.Must(template.New("attest.html").Funcs(functions).ParseFS(WPFS, T+"attest.html", T+"base.html"))
 
-	templates["protocols.html"] = template.Must(template.ParseFS(WPFS, T+"protocols.html", T+"base.html"))
-	templates["rules.html"] = template.Must(template.ParseFS(WPFS, T+"rules.html", T+"base.html"))
+	templates["protocols.html"] = template.Must(template.New("protocols.html").Funcs(functions).ParseFS(WPFS, T+"protocols.html", T+"base.html"))
+	templates["rules.html"] = template.Must(template.New("rules.html").Funcs(functions).ParseFS(WPFS, T+"rules.html", T+"base.html"))
 
-	templates["log.html"] = template.Must(template.New("log.html").Funcs(functions).ParseFS(WPFS, T+"log.html",
-		T+"base.html"))
+	templates["log.html"] = template.Must(template.New("log.html").Funcs(functions).ParseFS(WPFS, T+"log.html", T+"base.html"))
 
-	templates["opaqueobjects.html"] = template.Must(template.ParseFS(WPFS, T+"opaqueobjects.html", T+"base.html"))
-	templates["opaqueobject.html"] = template.Must(template.ParseFS(WPFS, T+"opaqueobject.html", T+"base.html"))
+	templates["opaqueobjects.html"] = template.Must(template.New("opaqueobjects.html").Funcs(functions).ParseFS(WPFS, T+"opaqueobjects.html", T+"base.html"))
+	templates["opaqueobject.html"] = template.Must(template.New("opaqueobject.html").Funcs(functions).ParseFS(WPFS, T+"opaqueobject.html", T+"base.html"))
 
 	templates["editelement.html"] = template.Must(template.New("editelement.html").Funcs(functions).ParseFS(WPFS, T+"editelement.html", T+"base.html"))
 	templates["editintent.html"] = template.Must(template.New("editintent.html").Funcs(functions).ParseFS(WPFS, T+"editintent.html", T+"base.html"))
-	templates["editexpectedvalue.html"] = template.Must(template.ParseFS(WPFS, T+"editexpectedvalue.html", T+"base.html"))
-	templates["editopaqueobject.html"] = template.Must(template.ParseFS(WPFS, T+"editopaqueobject.html", T+"base.html"))
+	templates["editexpectedvalue.html"] = template.Must(template.New("editexpectedvalue.html").Funcs(functions).ParseFS(WPFS, T+"editexpectedvalue.html", T+"base.html"))
+	templates["editopaqueobject.html"] = template.Must(template.New("editopaqueobject.html").Funcs(functions).ParseFS(WPFS, T+"editopaqueobject.html", T+"base.html"))
 
 	// Create the router
 	router := echo.New()
@@ -106,9 +110,9 @@ func StartWebUI() {
 		templates: templates,
 	}
 
-	//not necessary, but I will keep this here because this is now my example of how to use middlewares
-	//in echo, plus the import declaration above
+	// Middlewares
 	router.Use(middleware.Logger())
+	router.Use(middleware.Secure())
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
 
 	//setup endpoints

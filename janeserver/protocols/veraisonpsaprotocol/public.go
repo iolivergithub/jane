@@ -16,7 +16,7 @@ func Registration() structures.Protocol {
 	return structures.Protocol{"EVCLI_PSA", "EVCLI Protocol - TEST VERSION, always returns a PSA test claim", Call, intents}
 }
 
-func Call(e structures.Element, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
+func Call(e structures.Element, ep structures.Endpoint, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
 
 	// Create a test body
 

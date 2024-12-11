@@ -146,7 +146,7 @@ func GetExpectedValuesByElement(name string) ([]structures.ExpectedValue, error)
 // mongo returns to you ... no checking, you are on your own but you were warned NOT to have more
 // than one eid,pid pair for an EV, so it is your fault.
 // I *may* put in checking for this one day....but I have other things to do :-)
-func GetExpectedValueByElementAndPolicy(eid string, pid string) (structures.ExpectedValue, error) {
+func GetExpectedValueByElementAndPolicy(eid string, pid string, epn string) (structures.ExpectedValue, error) {
 	var elem structures.ExpectedValue
 
 	// discard the cursor, it will be an empty entry if nothing exists
@@ -155,6 +155,7 @@ func GetExpectedValueByElementAndPolicy(eid string, pid string) (structures.Expe
 			bson.A{
 				bson.D{{"elementid", eid}},
 				bson.D{{"intentid", pid}},
+				bson.D{{"endpointname", epn}},
 			},
 		},
 	}

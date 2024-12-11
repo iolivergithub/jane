@@ -2,14 +2,12 @@ package utilities
 
 import (
 	"time"
-	//"fmt"
 
 	"a10/structures"
 )
 
 // makeTimestamp generates the number of nanoseconds since Unix Epoch in UTC.
 func MakeTimestamp() structures.Timestamp {
-	//t := structures.Timestamp(fmt.Sprintf("%d",time.Now().UnixNano()))
 	t := structures.Timestamp(time.Now().UnixNano())
 
 	return t
@@ -23,7 +21,6 @@ func TimeStampHoursAgo(d string) structures.Timestamp {
 
 	if err != nil {
 		xdur, _ := time.ParseDuration("1h")
-		//return structures.Timestamp(fmt.Sprintf("%d",now-xdur.Nanoseconds()))
 		return structures.Timestamp(now - xdur.Nanoseconds())
 
 	} else {

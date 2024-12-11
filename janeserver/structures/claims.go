@@ -11,6 +11,8 @@ type Claim struct {
 type ClaimHeader struct {
 	Element              Element                `json:"element" bson:"element"`
 	Intent               Intent                 `json:"intent" bson:"intent"`
+	EndpointName         string                 `json:"endpointname" bson:"endpointname"`
+	Endpoint             Endpoint               `json:"endpoint" bson:"endpoint"`
 	Session              Session                `json:"session" bson:"session"`
 	Timing               Timing                 `json:"timing" bson:"timing"`
 	AdditionalParameters map[string]interface{} `json:"aps" bson:"aps"`

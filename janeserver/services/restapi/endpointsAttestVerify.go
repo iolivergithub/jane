@@ -23,6 +23,7 @@ type postVerifyReturn struct {
 
 type attestStr struct {
 	EID        string                 `json:"eid"`
+	EPN        string                 `json:"epn"`
 	PID        string                 `json:"pid"`
 	SID        string                 `json:"sid"`
 	Parameters map[string]interface{} `json:"parameters", bson:"parameters"`
@@ -45,6 +46,7 @@ func postAttest(c echo.Context) error {
 	fmt.Printf("\n attstr is ###%v###", att)
 
 	eid := (*att).EID
+	epn := (*att).EPN
 	pid := (*att).PID
 	sid := (*att).SID
 
@@ -68,7 +70,7 @@ func postAttest(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
-	res, err := operations.Attest(element, intent, session, (*att).Parameters)
+	res, err := operations.Attest(element, epn, intent, session, (*att).Parameters)
 
 	if err != nil {
 		response := postAttestReturn{res, err.Error()}

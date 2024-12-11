@@ -4,8 +4,13 @@
 <td>  {{ range .Tags }} 
         <span class="badge bg-secondary"> {{ . }} </span>
       {{end}}</td>
-<td><span class="badge bg-primary">{{ .Protocol }}</span></td>
-<td>{{ .Endpoint }}</td>
+
+
+<td>{{ range .Endpoints }}
+         <span class="badge bg-secondary"> {{ .Protocol }} </span> {{ .Endpoint }}<br>
+    {{end}}
+</td>      
+
 {{end}}
 
 

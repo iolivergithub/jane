@@ -3,6 +3,7 @@ package webui
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -27,13 +28,13 @@ func showAttest(c echo.Context) error {
 }
 
 type attestrequest struct {
-	Eid string   `form:"eid"`
-	Pid string   `form:"pid"`
-	Rn  []string `form:"rn"`
-	Av  string   `form:"av"`
-	Pps string   `form:"pps"`
-	Rps string   `form:"rps"`
-	Msg string   `form:"msg"`
+	EidEpn string   `form:"eid"` // NOTE this actually contains the eid *AND* the name of the endpoint - comma delimited
+	Pid    string   `form:"pid"`
+	Rn     []string `form:"rn"`
+	Av     string   `form:"av"`
+	Pps    string   `form:"pps"`
+	Rps    string   `form:"rps"`
+	Msg    string   `form:"msg"`
 }
 
 type multipleresultsummary struct {
@@ -54,10 +55,15 @@ func processAttest(c echo.Context) error {
 		fmt.Printf("Error in binding %v", err.Error())
 	}
 
-	fmt.Printf("ATTREQ %v\n", attreq)
+	// split the EidEpn into its constituent parts
+
+	eid := strings.Split(attreq.EidEpn, ",")[0]
+	epn := strings.Split(attreq.EidEpn, ",")[1]
+
+	fmt.Printf(" eid, epn: %v %v \n ", eid, epn)
+
 	// Get the objects
-	e, _ := operations.GetElementByItemID(attreq.Eid)
-	fmt.Printf("ATTREQ %v\n", attreq)
+	e, _ := operations.GetElementByItemID(eid)
 	p, _ := operations.GetIntentByItemID(attreq.Pid)
 
 	// Open a session
@@ -70,7 +76,16 @@ func processAttest(c echo.Context) error {
 	empty := make(map[string]interface{})
 
 	// Call attest
-	cid, err := operations.Attest(e, p, s, empty)
+	cid, err := operations.Attest(e, epn, p, s, empty)
+
+	// need to handle errors here - there will be no claim ID so we can't redirect there
+	// for the moment, let's go back to the attest page
+
+	if err != nil {
+		return c.Redirect(http.StatusSeeOther, "/attest")
+	}
+
+	//
 
 	fmt.Printf("return after attests %v %v\n", err, cid)
 
@@ -89,7 +104,7 @@ func processAttest(c echo.Context) error {
 	cl, _ := operations.GetClaimByItemID(cid)
 
 	// And perform the verifications  <--- note the plural
-	// This bit needs to be parallelised
+	// This bit could be parallelised
 
 	for _, rn := range attreq.Rn {
 		r, _ := operations.GetRule(rn)
