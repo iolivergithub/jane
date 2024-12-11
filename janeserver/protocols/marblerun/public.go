@@ -25,8 +25,8 @@ func Registration() structures.Protocol {
 	return structures.Protocol{"A10MARBLERUNPROTOCOL", "Protocol to generate quote from MarbleRun", Call, intents}
 }
 
-func Call(e structures.Element, p structures.Intent, s structures.Session, aps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
-	rtn, cps, err := requestFromMarbleRun(e, p, s, aps)
+func Call(e structures.Element, ep structures.Endpoint, p structures.Intent, s structures.Session, aps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
+	rtn, cps, err := requestFromMarbleRun(e, ep, p, s, aps)
 
 	if err != nil {
 		rtn["error"] = err.Error()
@@ -74,7 +74,7 @@ func coordinatorTLSConfig(certs []string) (*tls.Config, error) {
 	return &conf, nil
 }
 
-func requestFromMarbleRun(e structures.Element, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, error) {
+func requestFromMarbleRun(e structures.Element, ep structures.Endpoint, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, error) {
 	var empty map[string]interface{} = make(map[string]interface{}) // this is an  *instantiated* empty map used for error situations
 	var bodymap map[string]interface{}                              // this is used to store the result of the final unmarshalling  of the body received from the TA
 
@@ -93,7 +93,7 @@ func requestFromMarbleRun(e structures.Element, p structures.Intent, s structure
 		return empty, nil, fmt.Errorf("intent not supported %s", p.Function)
 	}
 
-	url := e.Endpoint + "/" + suffix
+	url := ep.Endpoint + "/" + suffix
 	var tr http.Transport
 	// If we don't have setup any certs and are doing a quote ignore the TLS config for now
 	if p.Function == quoteIntent && len(e.MRCoordinator.Certs) == 0 {

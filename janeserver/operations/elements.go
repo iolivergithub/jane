@@ -82,7 +82,7 @@ func GetElementsSummary() ([]structures.ElementSummary, error) {
 	var elems []structures.ElementSummary
 
 	filter := bson.D{{}} // Get all
-	options := options.Find().SetProjection(bson.D{{"itemid", 1}, {"name", 1}}).SetSort(bson.D{{"name", 1}})
+	options := options.Find().SetProjection(bson.D{{"itemid", 1}, {"name", 1}, {"endpoints", 1}}).SetSort(bson.D{{"name", 1}})
 	dbcursor, _ := datalayer.DB.Collection("elements").Find(context.TODO(), filter, options)
 	dbcursorerror := dbcursor.All(context.TODO(), &elems)
 

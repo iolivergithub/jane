@@ -15,15 +15,15 @@
       </tr>
    </thead>
    <tbody>
-      <tr><td scope="col">ItemID, BodyType</th> <td scope="col">{{ .ItemID }}&nbsp;<span class="badge bg-primary">{{ .BodyType }}</span></th> </tr>      
-      <tr><td scope="col">Element</th> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }} </a><span class="badge bg-primary">{{ .Header.Element.Protocol }}</span>  {{ .Header.Element.Endpoint }}</th> </tr> 
+      <tr><td scope="col">ItemID, BodyType</th> <td scope="col">{{ .ItemID }}&nbsp;<span class="badge bg-primary">{{ .BodyType }}</span></td> </tr>      
+      <tr><td scope="col">Element</td> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a> &nbsp; <span class="badge bg-primary">{{ .Header.EndpointName }}</span> <span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td> </tr> 
                   
-      <tr><td scope="col">Intent</th> <td scope="col"><a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a> <span class="badge bg-primary">{{ .Header.Intent.Function }}</span> </th> </tr>     
+      <tr><td scope="col">Intent</td> <td scope="col"><a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a> <span class="badge bg-primary">{{ .Header.Intent.Function }}</span> </td> </tr>     
               
-      <tr><td scope="col">Session</th> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></th> </tr>     
-      <tr><td scope="col">Additional Parameters</th> <td scope="col">{{ .Header.AdditionalParameters }}</th> </tr>              
-      <tr><td scope="col">Call Parameters</th> <td scope="col">{{ .Header.CallParameters }}</th> </tr>                    
-      <tr><td scope="col">Requested, Received</th> <td scope="col">{{ epochToUTC .Header.Timing.Requested }} &nbsp; {{ epochToUTC .Header.Timing.Received }}</th> </tr>     
+      <tr><td scope="col">Session</td> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td> </tr>     
+      <tr><td scope="col">Additional Parameters</td> <td scope="col">{{ .Header.AdditionalParameters }}</td> </tr>              
+      <tr><td scope="col">Call Parameters</td> <td scope="col">{{ .Header.CallParameters }}</td> </tr>                    
+      <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTC .Header.Timing.Requested }} &nbsp; {{ epochToUTC .Header.Timing.Received }}</td> </tr>     
    </tbody>
 </table>
 

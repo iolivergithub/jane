@@ -13,7 +13,12 @@
    <tbody>
       <tr><td scope="col">Name, ItemID</td> <td scope="col"><b>{{ .E.Name }}</b> &nbsp; {{ .E.ItemID }}</td> </tr>     
       <tr><td scope="col">Description</td> <td scope="col">{{ .E.Description }}</td> </tr>     
-      <tr><td scope="col">Protocol, Endpoint</td> <td scope="col"><span class="badge bg-primary"> {{ .E.Protocol }} </span> &nbsp; {{ .E.Endpoint }}</td> </tr>     
+      <tr><td scope="col">Endpoints</td> 
+           <td>{{ range .E.Endpoints }}
+                 <span class="badge bg-secondary"> {{ .Protocol }} </span> {{ .Endpoint }}<br>
+              {{end}}
+          </td>   
+      </tr>     
       <tr><td scope="col">Tags</td> <td scope="col">{{ range .E.Tags }} 
                                                        <span class="badge bg-secondary"> {{ . }} </span>
                                                     {{end}}</td> </tr>     

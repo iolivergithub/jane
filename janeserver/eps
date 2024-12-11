@@ -1,0 +1,31 @@
+protocols/a10httprestv2/public.go:	url := e.Endpoint + "/" + p.Function
+protocols/marblerun/public.go:	url := e.Endpoint + "/" + suffix
+services/restapi/initrestapi.go:	setupStatusEndpoints(router)
+services/restapi/initrestapi.go:	setUpOperationEndpoints(router)
+services/restapi/initrestapi.go:	setupAuxillaryOperationEndpoints(router)
+services/restapi/initrestapi.go:	setupAttestationEndpoints(router)
+services/restapi/initrestapi.go:	setUpLoggingEndpoints(router)
+services/restapi/initrestapi.go:func setUpOperationEndpoints(router *echo.Echo) {
+services/restapi/initrestapi.go:func setupAuxillaryOperationEndpoints(router *echo.Echo) {
+services/restapi/initrestapi.go:func setupAttestationEndpoints(router *echo.Echo) {
+services/restapi/initrestapi.go:func setupStatusEndpoints(router *echo.Echo) {
+services/restapi/initrestapi.go:func setUpLoggingEndpoints(router *echo.Echo) {
+services/webui/initwebapi.go:	setupHomeEndpoints(router)
+services/webui/initwebapi.go:	setUpDisplayEndpoints(router)
+services/webui/initwebapi.go:	setUpAttestationEndpoints(router)
+services/webui/initwebapi.go:	setupEditEndpoints(router)
+services/webui/initwebapi.go:func setupEditEndpoints(router *echo.Echo) {
+services/webui/initwebapi.go:func setupHomeEndpoints(router *echo.Echo) {
+services/webui/initwebapi.go:func setUpDisplayEndpoints(router *echo.Echo) {
+services/webui/initwebapi.go:func setUpAttestationEndpoints(router *echo.Echo) {
+services/webui/templates/evs.html:         <th scope="col">Endpoint</th>
+services/webui/templates/attest.html:               <option value="{{ .ItemID }}">{{ .Name }} @ {{ .Endpoint }}</option>
+services/webui/templates/elementsummarylist.html:<td>{{ .Endpoint }}</td>
+services/webui/templates/element.html:      <tr><td scope="col">Protocol, Endpoint</td> <td scope="col"><span class="badge bg-primary"> {{ .E.Protocol }} </span> &nbsp; {{ .E.Endpoint }}</td> </tr>     
+services/webui/templates/claim.html:      <tr><td scope="col">Element</th> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }} </a><span class="badge bg-primary">{{ .Header.Element.Protocol }}</span>  {{ .Header.Element.Endpoint }}</th> </tr> 
+services/webui/templates/elements.html:         <th scope="col">Endpoint</th>             
+services/webui/templates/evsummarylist.html:<td>{{ .E.Endpoint }} </td>
+services/webui/templates/ev.html:      <tr><td scope="col">Element</th> <td scope="col"><a href="/element/{{ .E.ItemID }}">{{ .E.Name }} </a>@ {{ .E.Endpoint }} <span class="badge bg-secondary"> {{ .E.Protocol }}</span></th> </tr>     
+structures/elements.go:	Endpoints   []Endpoint   	`json:"endpoints" bson:"endpoints"`
+structures/elements.go:type Endpoint struct {
+structures/elements.go:	Endpoint    string   `json:"endpoint" bson:"endpoint"`

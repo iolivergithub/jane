@@ -15,7 +15,7 @@ func Registration() structures.Protocol {
 	return structures.Protocol{"TESTCONTAINERPROTOCOL", "Test protocol for containers", Call, intents}
 }
 
-func Call(e structures.Element, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
+func Call(e structures.Element, ep structures.Endpoint, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
 
 	// Create a test body
 
@@ -39,7 +39,7 @@ func Call(e structures.Element, p structures.Intent, s structures.Session, cps m
 
 	rtn := map[string]interface{}{
 		"foo":     "bar",
-		"calling": fmt.Sprintf("with protocol %v I would send an intent to %v", e.Protocol, p.Function),
+		"calling": fmt.Sprintf("with protocol %v I would send an intent to %v", ep.Protocol, p.Function),
 		"aNumber": 42,
 	}
 

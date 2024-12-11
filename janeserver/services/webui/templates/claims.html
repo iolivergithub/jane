@@ -7,6 +7,7 @@
          <th scope="col">Requested</th>             
          <th scope="col">Received</th>             
          <th scope="col">Element</th>   
+         <th scope="col">Endpoint</th>                      
          <th scope="col">Intent</th>             
          <th scope="col">Session</th>             
       </tr>
@@ -21,9 +22,10 @@
         <td><a href="/claim/{{ .ItemID }}">{{ .BodyType }}</a></td>
       <td>{{ epochToUTC .Header.Timing.Requested }}</td>
       <td>{{ epochToUTC .Header.Timing.Received }}</td>
-      <td>{{ .Header.Element.Name }}</td>
+      <td><a href="/element/{{.Header.Element.ItemID}}">{{ .Header.Element.Name }}</a></td>
+      <td><span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td>
       <td>{{ .Header.Intent.Name }}</td>
-      <td>{{ .Header.Session.ItemID }}</td> </tr>
+      <td><a href="/session/{{.Header.Session.ItemID}}">{{ .Header.Session.ItemID }}</a></td> </tr>
       {{end}}
    </tbody>
 </table>

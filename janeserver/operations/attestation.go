@@ -14,9 +14,9 @@ type hashablePartClaim struct {
 }
 
 // This function calls the attestation mechanism that eventually calls the TA on some client
-// ItemIDs for Element, Policy and String are provided in eid, pid and sid
+// ItemIDs for Element, intent and String are provided in eid, pid and sid
 // A map of additional parameters in aps
-func Attest(element structures.Element, policy structures.Intent, session structures.Session, aps map[string]interface{}) (string, error) {
+func Attest(element structures.Element, endpointname string, intent structures.Intent, session structures.Session, aps map[string]interface{}) (string, error) {
 
 	var body map[string]interface{} = make(map[string]interface{})
 
@@ -32,8 +32,19 @@ func Attest(element structures.Element, policy structures.Intent, session struct
 
 	// Step 1 ******************************************************
 
-	protocol := element.Protocol
-	protocolObject, _ := GetProtocol(protocol)
+	// Get the Protocol from the endpoint
+
+	endpoint, ok := utilities.SelectEndpoint(element, endpointname)
+	if ok == false {
+		return "", fmt.Errorf("No such endpoint %v", endpointname)
+	}
+
+	protocol := endpoint.Protocol
+	protocolObject, perr := GetProtocol(protocol)
+
+	if perr != nil {
+		return "", perr
+	}
 
 	// TODO: Need to check that the protocol exists here otherwise the acall below fails with a panic
 
@@ -44,7 +55,7 @@ func Attest(element structures.Element, policy structures.Intent, session struct
 	// Step 3 ******************************************************
 
 	aCALL := protocolObject.CallFunction
-	returnedBody, ips, bodytype := aCALL(element, policy, session, aps)
+	returnedBody, ips, bodytype := aCALL(element, endpoint, intent, session, aps)
 
 	if bodytype == "*ERROR" {
 		body["ERROR"] = returnedBody
@@ -60,7 +71,7 @@ func Attest(element structures.Element, policy structures.Intent, session struct
 	// NB: we have body and bodytype from above
 
 	timing := structures.Timing{claimTimerStart, claimTimerFinish}
-	header := structures.ClaimHeader{element, policy, session, timing, aps, ips}
+	header := structures.ClaimHeader{element, intent, endpointname, endpoint, session, timing, aps, ips}
 	footer, _ := hashAndSignClaim(hashablePartClaim{bodytype, header, body})
 
 	c := structures.Claim{"", bodytype, header, body, footer}

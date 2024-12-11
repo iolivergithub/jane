@@ -31,9 +31,18 @@
       <div class="col-md-6">
          <label for="elementselect" class="form-label"><b>Element</b> <i>select one</i></label>
          <select class="form-select" size=10 name="elementselect" id="elementselect" required>
-            {{ range .Elements }}
+            <!-- {{ range .Elements }}
                <option value={{ .ItemID }}>{{ .Name }}</option>       
             {{ end }}
+            -->
+
+            {{ range $i,$e := .Elements }}
+                {{ range $j,$ep := $e.Endpoints }}
+                     <option value="{{ $e.ItemID }},{{ $j }}">{{ $e.Name}} - {{ $j }} : {{ $ep.Endpoint }}</option>
+               {{ end }}  
+            {{ end }}
+
+
          </select>
       </div>
       <div class="col-md-6">

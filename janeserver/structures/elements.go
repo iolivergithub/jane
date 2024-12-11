@@ -1,12 +1,15 @@
 package structures
 
 type Element struct {
-	ItemID      string   `json:"itemid,omitempty" bson:"itemid,omitempty"`
-	Name        string   `json:"name" bson:"name"`
-	Description string   `json:"description" bson:"description"`
-	Endpoint    string   `json:"endpoint" bson:"endpoint"`
-	Protocol    string   `json:"protocol" bson:"protocol"`
-	Tags        []string `json:"tags" bson:"tags"`
+	ItemID      string `json:"itemid,omitempty" bson:"itemid,omitempty"`
+	Name        string `json:"name" bson:"name"`
+	Description string `json:"description" bson:"description"`
+
+	// endpoints, map a name to a string containing the URL - this allows multiple endpoints for a single
+	// element, supporting multiple protocols
+	Endpoints map[string]Endpoint `json:"endpoints" bson:"endpoints"`
+
+	Tags []string `json:"tags" bson:"tags"`
 
 	Sshkey           SSHKEY           `json:"sshkey,omitempty" bson:"sshkey,omitempty"`
 	TPM2             TPM2             `json:"tpm2,omitempty" bson:"tpm2,omitempty"`
@@ -18,10 +21,16 @@ type Element struct {
 	MRMarbleInstance MRMarbleInstance `json:"mrmarbleinstance,omitempty" bson:"mrmarbleinstance,omitempty"`
 }
 
-// ELEMENTSUMMARY MUST BE A SUBSET OF ELEMENT
+// ELEMENTSUMMARY MUST BE A SUBSET OF THE ELEMENT TYPE
 type ElementSummary struct {
-	ItemID string `json:"itemid,omitempty" bson:"itemid,omitempty"`
-	Name   string `json:"name" bson:"name"`
+	ItemID    string              `json:"itemid,omitempty" bson:"itemid,omitempty"`
+	Name      string              `json:"name" bson:"name"`
+	Endpoints map[string]Endpoint `json:"endpoints" bson:"endpoints"`
+}
+
+type Endpoint struct {
+	Endpoint string `json:"endpoint" bson:"endpoint"`
+	Protocol string `json:"protocol" bson:"protocol"`
 }
 
 type HostMachine struct {

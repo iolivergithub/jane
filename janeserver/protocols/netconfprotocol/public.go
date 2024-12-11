@@ -16,13 +16,13 @@ func Registration() structures.Protocol {
 	return structures.Protocol{"A10NETCONF", "POC protocol module for NetConf", Call, intents}
 }
 
-func Call(e structures.Element, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
+func Call(e structures.Element, ep structures.Endpoint, p structures.Intent, s structures.Session, cps map[string]interface{}) (map[string]interface{}, map[string]interface{}, string) {
 
 	// Create a test body
 
 	rtn := map[string]interface{}{
 		"foo":     "bar",
-		"calling": fmt.Sprintf("with protocol %v I would send an intent to %v", e.Protocol, p.Function),
+		"calling": fmt.Sprintf("with protocol %v I would send an intent to %v", ep.Protocol, p.Function),
 		"aNumber": 42,
 	}
 
