@@ -71,36 +71,55 @@ func elementtemplate() string {
 	raw := `{
     "name": "****",
     "description": "****",
-    "endpoint": "****",
-    "protocol": "****",
-    "tag": [
+    "endpoints":
+    {
+        "tarzan":
+        {
+            "endpoint": "http://127.0.0.1:8530",
+            "protocol": "A10HTTPRESTv2"
+        },
+        "ratsd":
+        {
+            "endpoint": "http://127.0.0.1:8531",
+            "protocol": "RATSD"
+        }
+    },
+    "tag":
+    [
         "****1",
         "****2"
     ],
-    "host": {
+    "host":
+    {
         "os": "****",
         "arch": "****",
         "hostname": "****"
     },
-    "tpm2": {
+    "tpm2":
+    {
         "device": "/dev/tpmrm0",
         "ekcerthandle": "0x01c00002",
-        "ek": {
-            "handle": "0x810000EE",
+        "ek":
+        {
+            "handle": "0x810100EE",
             "public": "****"
         },
-        "ak": {
-            "handle": "0x810000AA",
+        "ak":
+        {
+            "handle": "0x810100AA",
             "public": "****"
         }
     },
-    "uefi": {
+    "uefi":
+    {
         "eventlog": "/sys/kernel/security/tpm0/binary_bios_measurements"
     },
-    "ima": {
+    "ima":
+    {
         "asciilog": "/sys/kernel/security/ima/ascii_runtime_measurements"
     },
-    "txt": {
+    "txt":
+    {
         "log": ""
     }
 }
