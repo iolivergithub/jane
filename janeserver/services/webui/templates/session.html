@@ -72,7 +72,12 @@
          <table class="table table-sm table-striped">
             <tbody>
                {{ range .CS }}
-               <tr><td><a href="/claim/{{.ItemID}}">{{ .BodyType }}</a></td></tr>
+               <tr>
+                  <td><a href="/claim/{{.ItemID}}">{{ .BodyType }}</a></td>
+                       <td><span class="badge bg-dark">{{ .EndpointName }}</span> </td>
+                       <td>{{ epochToUTC .Timing.Requested }}</td>
+                       <td>{{ epochToUTC .Timing.Received }}</td>
+                </tr>
                {{ end }}
             </tbody>
          </table>

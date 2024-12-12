@@ -1,16 +1,16 @@
 {{define "elementsummarylist.html"}}
 <td><a href="/element/{{ .ItemID }}">{{ .Name }}</a></td>
 <td>{{ .Description }}</td>
-<td>  {{ range .Tags }} 
+<td>  {{ range .Tags }}
         <span class="badge bg-secondary"> {{ . }} </span>
-      {{end}}</td>
-
-
-<td>{{ range .Endpoints }}
-         <span class="badge bg-secondary"> {{ .Protocol }} </span> {{ .Endpoint }}<br>
-    {{end}}
-</td>      
-
+{{end}}</td>
+<td>
+        <table class="table table-md table-striped">
+                {{ range $i, $v := .Endpoints }}
+                <tr>
+                        <td>{{ $i }}</td><td> <span class="badge bg-secondary"> {{ $v.Protocol }} </span></td><td> {{ $v.Endpoint }}</td>
+                </tr>
+                {{end}}
+        </table>
+</td>
 {{end}}
-
-

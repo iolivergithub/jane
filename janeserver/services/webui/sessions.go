@@ -9,8 +9,10 @@ import (
 )
 
 type claimsummary struct {
-	ItemID   string
-	BodyType string
+	ItemID       string
+	BodyType     string
+	EndpointName string
+	Timing       structures.Timing
 }
 
 type resultsummary struct {
@@ -56,7 +58,7 @@ func showSession(c echo.Context) error {
 	cs := make([]claimsummary, 0)
 	for _, i := range s.ClaimList {
 		cl, _ := operations.GetClaimByItemID(i)
-		cs = append(cs, claimsummary{cl.ItemID, cl.BodyType})
+		cs = append(cs, claimsummary{cl.ItemID, cl.BodyType, cl.Header.EndpointName, cl.Header.Timing})
 	}
 
 	rs := make([]resultsummary, 0)
