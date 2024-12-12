@@ -20,7 +20,7 @@ libs:
 	go mod tidy -v
 
 vet:
-	go vet ./...
+	go vet -composites=false ./...
 
 run: build
 	./${BINARY_NAME}

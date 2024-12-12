@@ -112,7 +112,7 @@ func Efivars(c echo.Context) error {
 }
 
 type returnBootInformation struct {
-	msg string `json:"msg"`
+	Message string `json:"msg"`
 }
 
 func BootConfig(c echo.Context) error {
