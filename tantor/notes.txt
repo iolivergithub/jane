@@ -1,0 +1,6 @@
+Tantor --- provisioning system
+
+
+tantor provision.yaml
+
+1. read file
