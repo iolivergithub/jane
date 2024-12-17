@@ -10,6 +10,37 @@ import (
     "github.com/google/go-tpm/tpm2"
 )
 
+
+var RSAAKTemplate = tpm2.TPMTPublic{
+		Type:    tpm2.TPMAlgRSA,
+		NameAlg: tpm2.TPMAlgSHA256,
+		ObjectAttributes: tpm2.TPMAObject{
+			SignEncrypt:         true,
+			FixedTPM:            true,
+			FixedParent:         true,
+			SensitiveDataOrigin: true,
+			UserWithAuth:        true,
+		},
+		AuthPolicy: tpm2.TPM2BDigest{},
+		Parameters: tpm2.NewTPMUPublicParms(
+			tpm2.TPMAlgRSA,
+			&tpm2.TPMSRSAParms{
+				Scheme: tpm2.TPMTRSAScheme{
+					Scheme: tpm2.TPMAlgRSASSA,
+					Details: tpm2.NewTPMUAsymScheme(
+						tpm2.TPMAlgRSASSA,
+						&tpm2.TPMSSigSchemeRSASSA{
+							HashAlg: tpm2.TPMAlgSHA256,
+						},
+					),
+				},
+				KeyBits: 2048,
+			},
+		),
+	}
+	
+
+
 func main() {
 	tpm,err := linuxtpm.Open("/dev/tpmrm0")
 	fmt.Printf("TPM %v, Error %w \n",tpm,err)
@@ -72,6 +103,23 @@ func main() {
 
 
 
+	fmt.Println("\nAttempting to create the an attestation key, load and store it")
+
+	aktmpl := tpm2.CreateLoaded{
+		ParentHandle: tpm2.AuthHandle{
+			Handle: ektmpl.ObjectHandle,
+			Name:   ektmpl.Name,
+			Auth:   tpm2.PasswordAuth(nil),
+		},
+		InPublic: tpm2.New2BTemplate(&RSAAKTemplate),
+	}
+
+    arsp,err := aktmpl.Execute(tpm)
+
+    fmt.Printf("Create response %v, %w\n",arsp,err)
+
+
+
 	// load := tpm2.Load{
 	// 	ParentHandle:  tpm2.NamedHandle{
 	// 						Handle: ersp.ObjectHandle,
@@ -85,3 +133,4 @@ func main() {
 	// fmt.Printf("Load response %v, %w\n",lrsp,err)
 
 }
+
