@@ -5,40 +5,12 @@ import (
     "os"
 
     "encoding/hex"
+    "encoding/base64"
 
     "github.com/google/go-tpm/tpm2/transport/linuxtpm"
     "github.com/google/go-tpm/tpm2"
 )
 
-
-var RSAAKTemplate = tpm2.TPMTPublic{
-		Type:    tpm2.TPMAlgRSA,
-		NameAlg: tpm2.TPMAlgSHA256,
-		ObjectAttributes: tpm2.TPMAObject{
-			SignEncrypt:         true,
-			FixedTPM:            true,
-			FixedParent:         true,
-			SensitiveDataOrigin: true,
-			UserWithAuth:        true,
-		},
-		AuthPolicy: tpm2.TPM2BDigest{},
-		Parameters: tpm2.NewTPMUPublicParms(
-			tpm2.TPMAlgRSA,
-			&tpm2.TPMSRSAParms{
-				Scheme: tpm2.TPMTRSAScheme{
-					Scheme: tpm2.TPMAlgRSASSA,
-					Details: tpm2.NewTPMUAsymScheme(
-						tpm2.TPMAlgRSASSA,
-						&tpm2.TPMSSigSchemeRSASSA{
-							HashAlg: tpm2.TPMAlgSHA256,
-						},
-					),
-				},
-				KeyBits: 2048,
-			},
-		),
-	}
-	
 
 
 func main() {
@@ -80,57 +52,87 @@ func main() {
 
 	fmt.Println("\nAttempting to create the primary endorsement key, load and store it")
 
-    ektmpl := tpm2.CreatePrimary{ 
-    	PrimaryHandle: tpm2.TPMRHEndorsement,
-    	InPublic: tpm2.New2B(tpm2.RSAEKTemplate),
-    }
-    ersp,err := ektmpl.Execute(tpm)
-	fmt.Printf("Create Primary response %v, %w\n",ersp,err)
-	fmt.Printf("   Object handle is %x\n",ersp.ObjectHandle)
+    // https://github.com/TPM2Nexus/tpm2-samples/blob/master/quote_verify/main.go
 
-	fmt.Println("\nAttempting evict control")
+	primaryKey, err := tpm2.CreatePrimary{
+		PrimaryHandle: tpm2.TPMRHEndorsement,
+		InPublic:      tpm2.New2B(tpm2.RSASRKTemplate),
+	}.Execute(tpm)
+
+	fmt.Printf(" EK: %w, %v\n", err,primaryKey)
+	fmt.Printf("   Object handle is %x\n",primaryKey.ObjectHandle)
+	fmt.Printf("   Name %s\n", base64.StdEncoding.EncodeToString(primaryKey.Name.Buffer))
+
+
+
+	rsaTemplate := tpm2.TPMTPublic{
+		Type:    tpm2.TPMAlgRSA,
+		NameAlg: tpm2.TPMAlgSHA256,
+		ObjectAttributes: tpm2.TPMAObject{
+			SignEncrypt:         true,
+			FixedTPM:            true,
+			FixedParent:         true,
+			SensitiveDataOrigin: true,
+			UserWithAuth:        true,
+		},
+		AuthPolicy: tpm2.TPM2BDigest{},
+		Parameters: tpm2.NewTPMUPublicParms(
+			tpm2.TPMAlgRSA,
+			&tpm2.TPMSRSAParms{
+				Scheme: tpm2.TPMTRSAScheme{
+					Scheme: tpm2.TPMAlgRSASSA,
+					Details: tpm2.NewTPMUAsymScheme(
+						tpm2.TPMAlgRSASSA,
+						&tpm2.TPMSSigSchemeRSASSA{
+							HashAlg: tpm2.TPMAlgSHA256,
+						},
+					),
+				},
+				KeyBits: 2048,
+			},
+		),
+	}
+
+	rsaKeyResponse, err := tpm2.CreateLoaded{
+		ParentHandle: tpm2.AuthHandle{
+			Handle: primaryKey.ObjectHandle,
+			Name:   primaryKey.Name,
+			Auth:   tpm2.PasswordAuth(nil),
+		},
+		InPublic: tpm2.New2BTemplate(&rsaTemplate),
+	}.Execute(tpm)
+
+	fmt.Printf(" AK: %w, %v\n", err,rsaKeyResponse)
+	fmt.Printf("   Object handle is %x\n",rsaKeyResponse.ObjectHandle)
+	fmt.Printf("   Name %s\n", base64.StdEncoding.EncodeToString(rsaKeyResponse.Name.Buffer))
+
+
+
+	fmt.Println("\nAttempting evict control on EK")
 
 	vrsp, err := tpm2.EvictControl{
 		Auth: tpm2.TPMRHOwner,
 		ObjectHandle: &tpm2.NamedHandle{
-			Handle: ersp.ObjectHandle,
-			Name:   ersp.Name,
+			Handle: primaryKey.ObjectHandle,
+			Name:   primaryKey.Name,
 		},
-		PersistentHandle: 0x81000002,
+		PersistentHandle:  tpm2.TPMHandle(0x81000002),
 	}.Execute(tpm)
 
 	fmt.Printf("Evict control response %v, %w\n",vrsp,err)
 
+	fmt.Println("\nAttempting evict control on AK")
 
-
-	fmt.Println("\nAttempting to create the an attestation key, load and store it")
-
-	aktmpl := tpm2.CreateLoaded{
-		ParentHandle: tpm2.AuthHandle{
-			Handle: ektmpl.ObjectHandle,
-			Name:   ektmpl.Name,
-			Auth:   tpm2.PasswordAuth(nil),
+	vrsp, err = tpm2.EvictControl{
+		Auth: tpm2.TPMRHOwner,
+		ObjectHandle: &tpm2.NamedHandle{
+			Handle: rsaKeyResponse.ObjectHandle,
+			Name:   rsaKeyResponse.Name,
 		},
-		InPublic: tpm2.New2BTemplate(&RSAAKTemplate),
-	}
+		PersistentHandle:  tpm2.TPMHandle(0x81000003),
+	}.Execute(tpm)
 
-    arsp,err := aktmpl.Execute(tpm)
-
-    fmt.Printf("Create response %v, %w\n",arsp,err)
-
-
-
-	// load := tpm2.Load{
-	// 	ParentHandle:  tpm2.NamedHandle{
-	// 						Handle: ersp.ObjectHandle,
-	// 						Name:   ersp.Name,
-	// 					},
-	// 	InPublic: ersp.OutPublic,
-	// }
- 
-
-	// lrsp, err := load.Execute(tpm)
-	// fmt.Printf("Load response %v, %w\n",lrsp,err)
+	fmt.Printf("Evict control response %v, %w\n",vrsp,err)
 
 }
 
