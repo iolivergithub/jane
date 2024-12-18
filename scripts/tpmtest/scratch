@@ -1,0 +1,131 @@
+
+var RSAAKTemplate = tpm2.TPMTPublic{
+		Type:    tpm2.TPMAlgRSA,
+		NameAlg:  tpm2.TPMAlgRSASSA,
+		ObjectAttributes: tpm2.TPMAObject{
+			FixedTPM:             true,
+
+
+	RSASRKTemplate = TPMTPublic{
+		Type:    TPMAlgRSA,
+		NameAlg: TPMAlgSHA256,
+		ObjectAttributes: TPMAObject{
+			FixedTPM:             true,
+			STClear:              false,
+			FixedParent:          true,
+			SensitiveDataOrigin:  true,
+			UserWithAuth:         true,
+			AdminWithPolicy:      false,
+			NoDA:                 true,
+			EncryptedDuplication: false,
+			Restricted:           true,
+			Decrypt:              true,
+			SignEncrypt:          false,
+		},
+		Parameters: NewTPMUPublicParms(
+			TPMAlgRSA,
+			&TPMSRSAParms{
+				Symmetric: TPMTSymDefObject{
+					Algorithm: TPMAlgAES,
+					KeyBits: NewTPMUSymKeyBits(
+						TPMAlgAES,
+						TPMKeyBits(128),
+					),
+					Mode: NewTPMUSymMode(
+						TPMAlgAES,
+						TPMAlgCFB,
+					),
+				},
+				KeyBits: 2048,
+			},
+		),
+		Unique: NewTPMUPublicID(
+			TPMAlgRSA,
+			&TPM2BPublicKeyRSA{
+				Buffer: make([]byte, 256),
+			},
+		),
+	}
+
+
+
+
+
+
+	
+    ektmpl := tpm2.CreatePrimary{ 
+    	PrimaryHandle: tpm2.TPMRHEndorsement,
+    	InPublic: tpm2.New2B(tpm2.RSAEKTemplate),
+    }
+    ersp,err := ektmpl.Execute(tpm)
+	fmt.Printf("Create Primary response %v, %w\n",ersp,err)
+	fmt.Printf("   Object handle is %x\n",ersp.ObjectHandle)
+	fmt.Printf("   Name %s\n", base64.StdEncoding.EncodeToString(ersp.Name.Buffer))
+
+	fmt.Println("\nAttempting evict control")
+
+	vrsp, err := tpm2.EvictControl{
+		Auth: tpm2.TPMRHOwner,
+		ObjectHandle: &tpm2.NamedHandle{
+			Handle: ersp.ObjectHandle,
+			Name:   ersp.Name,
+		},
+		PersistentHandle:  tpm2.TPMHandle(0x81000002),
+	}.Execute(tpm)
+
+	fmt.Printf("Evict control response %v, %w\n",vrsp,err)
+
+
+
+	fmt.Println("\nAttempting to create the an attestation key, load and store it")
+
+	rsaTemplate := tpm2.TPMTPublic{
+		Type:    tpm2.TPMAlgRSA,
+		NameAlg: tpm2.TPMAlgSHA256,
+		ObjectAttributes: tpm2.TPMAObject{
+			SignEncrypt:         true,
+			FixedTPM:            true,
+			FixedParent:         true,
+			SensitiveDataOrigin: true,
+			UserWithAuth:        true,
+		},
+		AuthPolicy: tpm2.TPM2BDigest{},
+		Parameters: tpm2.NewTPMUPublicParms(
+			tpm2.TPMAlgRSA,
+			&tpm2.TPMSRSAParms{
+				Scheme: tpm2.TPMTRSAScheme{
+					Scheme: tpm2.TPMAlgRSASSA,
+					Details: tpm2.NewTPMUAsymScheme(
+						tpm2.TPMAlgRSASSA,
+						&tpm2.TPMSSigSchemeRSASSA{
+							HashAlg: tpm2.TPMAlgSHA256,
+						},
+					),
+				},
+				KeyBits: 2048,
+			},
+		),
+		Unique: tpm2.NewTPMUPublicID(
+			tpm2.TPMAlgRSA,
+			&tpm2.TPM2BPublicKeyRSA{
+				Buffer: make([]byte, 256),
+			},
+		),
+	}
+
+	rsaKeyResponse, err := tpm2.CreateLoaded{
+		ParentHandle:  tpm2.NamedHandle{
+			Handle: tpm2.TPMHandle(0x81000002),
+			Name:   ersp.Name,
+		},
+		// ParentHandle: tpm2.AuthHandle{
+		// 	Handle: ersp.ObjectHandle,
+		// 	Name:   ersp.Name,
+		// 	Auth:   tpm2.PasswordAuth([]byte("")),
+		// },
+		InPublic: tpm2.New2BTemplate(&rsaTemplate),
+	}.Execute(tpm)
+
+
+
+	fmt.Printf("Create control response %v, %w\n",rsaKeyResponse,err)
