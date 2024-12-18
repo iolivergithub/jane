@@ -7,8 +7,6 @@ VERSION=locally_compiled
 
 
 build: libs fmt
-	go build ${PIE_ON} -o ${BINARY_NAME} tarzan.go
-
 	GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build  -ldflags="-X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
 
 
@@ -20,7 +18,7 @@ libs:
 	go mod tidy -v
 
 vet:
-	go vet ./...
+	go vet -composites=false ./...
 
 run: build
 	./${BINARY_NAME}

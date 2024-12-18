@@ -1,5 +1,3 @@
-// Attestation Engine A10
-// Golang version v0.1
 // The main package starts the various interfaces: REST, MQTT and links to the database system
 package main
 
@@ -30,7 +28,7 @@ const PREFIX = ""
 func welcomeMessage(unsafe bool) {
 	fmt.Printf("\n")
 	fmt.Printf("+========================================================\n")
-	fmt.Printf("|  TA10 version - Starting\n")
+	fmt.Printf("|  Tarzan\n")
 	fmt.Printf("|   + %v O/S on %v\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Printf("|   + version %v, build %v\n", VERSION, BUILD)
 	fmt.Printf("|   + session identifier is %v\n", utilities.RUNSESSION)
@@ -41,8 +39,9 @@ func welcomeMessage(unsafe bool) {
 func exitMessage() {
 	fmt.Printf("\n")
 	fmt.Printf("+========================================================================================\n")
-	fmt.Printf("|  TA10 version - Exiting\n")
+	fmt.Printf("|  Tarzan\n")
 	fmt.Printf("|   + session identifier was %v\n", utilities.RUNSESSION)
+	fmt.Printf("|  Hwyl fawr!\n")
 	fmt.Printf("+========================================================================================\n\n")
 }
 

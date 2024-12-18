@@ -54,7 +54,7 @@ func PCRs(c echo.Context) error {
 	ps := new(map[string]interface{})
 
 	if err := c.Bind(&ps); err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not decode parameters %w", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not decode parameters %v", err.Error())}
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}
 
@@ -67,7 +67,7 @@ func PCRs(c echo.Context) error {
 
 	rwc, err := OpenTPM(tpm2device)
 	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("no TPM %w", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("no TPM %v", err.Error())}
 		fmt.Printf("no TPM ERROR is %v \n", err.Error())
 
 		return c.JSON(http.StatusInternalServerError, rtn)
@@ -84,7 +84,7 @@ func PCRs(c echo.Context) error {
 		for i := 0; i <= 23; i++ {
 			fmt.Printf("Reading back %v, pcr %v --> ", b, i)
 			pcrv, pcre := tpm2.ReadPCR(rwc, i, b)
-			fmt.Printf(" hex %v err %w\n", pcrv, pcre)
+			fmt.Printf(" hex %v err %v\n", pcrv, pcre.Error())
 			if pcre == nil {
 				pcrvs[i] = hex.EncodeToString(pcrv)
 			}
@@ -138,7 +138,7 @@ func Quote(c echo.Context) error {
 
 	nonceBytes, err := base64.StdEncoding.DecodeString(nonce)
 	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not base64 decode nonce", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not base64 decode nonce: %v", err.Error())}
 		return c.JSON(http.StatusInternalServerError, rtn)
 	}
 
@@ -148,7 +148,7 @@ func Quote(c echo.Context) error {
 	akh := strings.Replace(params["tpm2/akhandle"].(string), "0x", "", -1)
 	h, err := strconv.ParseUint(akh, 16, 32)
 	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable to parse AK handle %w", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable to parse AK handle %v", err.Error())}
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}
 	h32 := uint32(h) // this is safe because we only create a 32bit unsigned value above.
@@ -165,7 +165,7 @@ func Quote(c echo.Context) error {
 
 	rwc, err := OpenTPM(tpm2device)
 	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("no TPM %w", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("no TPM %v", err.Error())}
 		return c.JSON(http.StatusInternalServerError, rtn)
 	}
 	defer rwc.Close()
@@ -182,7 +182,7 @@ func Quote(c echo.Context) error {
 		tpm2.PCRSelection{pcrbank, pcrsel},
 		tpm2.AlgNull)
 
-	fmt.Println("Got the quote...processing errors %v", err)
+	fmt.Printf("Got the quote...processing errors %v\n", err.Error())
 
 	if err != nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Error obtaining quote %v", err.Error())}
@@ -197,18 +197,14 @@ func Quote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, rtn)
 	}
 
-	fmt.Sprintf("Decoding attestation data")
-
 	attestationdata, err := tpm2.DecodeAttestationData(att)
-
-	fmt.Println("\n attestationdata %v \n,attestationdata")
 
 	if attestationdata == nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Error decoding attestation data %v", err.Error())}
 		return c.JSON(http.StatusInternalServerError, rtn)
 	}
 
-	fmt.Println("Att and Sig are %v and %v", att, sig)
+	fmt.Printf("Att and Sig are %v and %v\n", att, sig)
 
 	sigBytes, _ := sig.Encode()
 	qr := quoteReturn{att, sigBytes}

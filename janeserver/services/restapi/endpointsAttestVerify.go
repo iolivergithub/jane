@@ -26,14 +26,14 @@ type attestStr struct {
 	EPN        string                 `json:"epn"`
 	PID        string                 `json:"pid"`
 	SID        string                 `json:"sid"`
-	Parameters map[string]interface{} `json:"parameters", bson:"parameters"`
+	Parameters map[string]interface{} `json:"parameters" bson:"parameters"`
 }
 
 type verifyStr struct {
 	CID        string                 `json:"cid"`
 	Rule       string                 `json:"rule"`
 	SID        string                 `json:"sid"`
-	Parameters map[string]interface{} `json:"parameters", bson:"parameters"`
+	Parameters map[string]interface{} `json:"parameters" bson:"parameters"`
 }
 
 func postAttest(c echo.Context) error {
