@@ -6,8 +6,8 @@ import (
 )
 
 func RunWorklist(ws []string) {
-	for _, v := range ws {
-		fmt.Printf("Running item %v\n", v)
+	for j, v := range ws {
+		fmt.Printf("Running item %v : %v\n", j, v)
 
 		switch {
 		case v == "collectsysinfo":

@@ -8,7 +8,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.2
 	github.com/racingmars/go3270 v0.0.0-20231111230320-21f273b327b8
 	go.mongodb.org/mongo-driver v1.17.1
-	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -19,7 +19,7 @@ require github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 require (
 	github.com/edgelesssys/ego v1.6.1
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-tpm v0.9.2
+	github.com/google/go-tpm v0.9.3
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

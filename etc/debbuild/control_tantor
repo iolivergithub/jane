@@ -1,0 +1,8 @@
+Package: tantorattestationprovisioner
+Version: 1.0
+Maintainer: Ian Oliver <ian.oliver@oulu.fi>
+Architecture: amd64
+Priority: optional
+Section: admin
+Description: Tantor Attestation Engine Device Provisioner: 
+ Test DEB packaging
