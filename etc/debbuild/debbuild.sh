@@ -9,6 +9,7 @@ DEBBUILDDIR=`pwd`
 TMPBASE=/tmp/janedebbuild
 JANEBASE=$TMPBASE/jane
 TARZANBASE=$TMPBASE/tarzan
+TANTORBASE=$TMPBASE/tantor
 
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
@@ -34,18 +35,28 @@ mkdir -p $TARZANBASE/opt/jane
 mkdir -p $TARZANBASE/etc/systemd/system
 
 
+mkdir -p $TANTORBASE
+mkdir -p $TANTORBASE/DEBIAN
+mkdir -p $TANTORBASE/opt/jane
+
+
 #compile Jane
 echo "${BLUE}Compiling Janeserver${NC}"
 cd ../../janeserver
 make build
 ls -l janeserver
 
-
 #compile Tarzan
 echo "${BLUE}Compling Tarzan${NC}"
 cd ../tarzan
 make build
 ls -l tarzan
+
+#compile Tantor
+echo "${BLUE}Compling Tantor${NC}"
+cd ../tantor
+make build
+ls -l tantor
 
 
 #return to this directory
@@ -57,6 +68,7 @@ cd $DEBBUILDDIR
 echo "${BLUE}Copying binaries"
 cp ../../janeserver/janeserver $JANEBASE/opt/jane
 cp ../../tarzan/tarzan $TARZANBASE/opt/jane
+cp ../../tantor/tantor $TANTORBASE/opt/jane
 
 
 #Copy configuration files
@@ -69,11 +81,13 @@ cp REPLACE_ME.crt $JANEBASE/opt/jane/REPLACE_ME.crt
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
 
+cp tantorprovisioningtemplate.yaml $TANTORBASE/opt/jane tantorprovisioningtemplate.yaml
 
 #Copy control files
 echo "${BLUE}Copying Debian control, conffile and postinst files${NC}"
 cp control_jane $JANEBASE/DEBIAN/control
 cp control_tarzan $TARZANBASE/DEBIAN/control
+cp control_tantor $TANTORBASE/DEBIAN/control
 
 cp postinst_jane $JANEBASE/DEBIAN/postinst
 cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
@@ -93,14 +107,21 @@ echo "${BLUE}Building Debian package for Tarzan${NC}"
 cd $TMPBASE
 dpkg-deb --root-owner-group --build tarzan
 
+
+echo "${BLUE}Building Debian package for Tantor${NC}"
+cd $TMPBASE
+dpkg-deb --root-owner-group --build tantor
+
 ls -l jane.deb
 ls -l tarzan.deb
+ls -l tantor.deb
 
 echo "${BLUE}Attempting to build rpms${NC}"
 cd $TMPBASE
 
 alien -r -c -v jane.deb
 alien -r -c -v tarzan.deb
+alien -r -c -v tantor.deb
 
 ls -l *.rpm
 
@@ -112,6 +133,10 @@ lintian jane.deb
 echo "${BLUE}Linting tarzan.deb${NC}"
 cd $TMPBASE
 lintian tarzan.deb
+
+echo "${BLUE}Linting tantor.deb${NC}"
+cd $TMPBASE
+lintian tantor.deb
 
 echo "${BLUE}Compressing${NC}"
 cd $TMPBASE

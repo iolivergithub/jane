@@ -68,6 +68,7 @@ type TPMKey struct {
 	Handle string `json:"handle" bson:"handle"  yaml:"handle"`
 	// Public portion of the key marshalled as TPM2BPublic
 	Public string `json:"public" bson:"public"  yaml:"public"`
+	Name   string `json:"name" bson:"name"  yaml:"name"`
 }
 
 type MRCoordinator struct {

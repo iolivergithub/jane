@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/0x5a17ed/itkit v0.7.0
 	github.com/0x5a17ed/uefi v0.6.1
-	github.com/google/go-tpm v0.9.2
+	github.com/google/go-tpm v0.9.3
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.2
 )
@@ -19,8 +19,8 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/exp v0.0.0-20241215155358-4a5509556b9e // indirect
-	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
