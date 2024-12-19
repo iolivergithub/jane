@@ -24,10 +24,11 @@ element:
       handle: 0x810100AA
 provisionworklist:
   - tpmclear
-  - tpmprovision
+#  - tpmprovision
   - collectsysinfo
   - collectuefi
   - collectima
+  - createelement
   - createevs
   - firstattest
 evs:

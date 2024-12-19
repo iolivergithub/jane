@@ -30,6 +30,14 @@ func RunWorklist(ws []string) {
 			} else {
 				errormessage(err)
 			}
+		case v == "collectima":
+			f, err := CollectIMALogLocation()
+			if err == nil {
+				provisioningfile.ProvisioningData.Element.IMA.ASCIILog = f
+				successmessage()
+			} else {
+				errormessage(err)
+			}
 		case v == "tpmclear":
 			_, err := TPMClear()
 			if err == nil {
@@ -39,6 +47,20 @@ func RunWorklist(ws []string) {
 			}
 		case v == "tpmprovision":
 			_, err := TPMProvision()
+			if err == nil {
+				successmessage()
+			} else {
+				errormessage(err)
+			}
+		case v == "createevs":
+			_, err := CreateEVS()
+			if err == nil {
+				successmessage()
+			} else {
+				errormessage(err)
+			}
+		case v == "createelement":
+			_, err := CreateElement()
 			if err == nil {
 				successmessage()
 			} else {
