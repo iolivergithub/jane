@@ -22,6 +22,11 @@ func StartRESTInterface() {
 	//not necessary, but I will keep this here because this is now my example of how to use middlewares
 	//in echo, plus the import declaration above
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
+	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		Skipper:      middleware.DefaultSkipper,
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
+	}))
 	//router.Use(middleware.Logger())
 
 	//setup endpoints

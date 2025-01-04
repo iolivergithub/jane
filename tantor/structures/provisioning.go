@@ -5,4 +5,5 @@ type Provisioning struct {
 	Element           Element `yaml:"element"`
 
 	ProvisioningWorkList []string `yaml:"provisionworklist"`
+	Evs                  []string `yaml:"evs"`
 }
