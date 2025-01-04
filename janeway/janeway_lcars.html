@@ -23,7 +23,7 @@
 				<div class="banner"> <a href="">JANE LCARS</a> &#149; <span class="blink">Online</span> </div>
 				<div class="data-cascade-button-group">
 					<div class="cascade-wrapper">
-						<div class="data-cascade" id="default">
+						<div class="data-cascade" id="healthreport">
 							<div class="row-1">
 								<div class="dc1">101</div><div class="dc2">7109</div><div class="dc3">1966</div><div class="dc44">36</div><div class="dc55">880</div><div class="dc6">11.03</div><div class="dc77">1954</div><div class="dc8">03</div><div class="dc99">6.08</div><div class="dc100">241</div><div class="dc11">309</div><div class="dc12">7.08</div><div class="dc13">1935</div><div class="dc14">12.20</div><div class="dc150">53</div><div class="dc150">1961</div><div class="dc150">2.16</div>
 							</div>
@@ -32,10 +32,10 @@
 						</div>
 					</div>
 					<nav id="nav-standard"> 
-						<a href="" id="b-one" onclick="loadhealthupdate()">UPDATE</a>
-						<a href="" id="b-two">02</a>
-						<a href="" id="b-three">03</a>
-						<a href="" id="b-five">04</a>
+						<a href="#" id="b-one" onclick="loadwelcomemessage()">MESSAGE</a>						
+						<a href="#" id="b-two" onclick="loadconfiguration()">CONFIGURATION</a>
+						<a href="#" id="b-three" onclick="loadhealthupdate()">HEALTH STATUS</a>						
+						<a href="#" id="b-five"  onclick="clearmessages()">CLEAR</a>
 					</nav>
 				</div>
 				<div class="bar-panel first-bar-panel">
@@ -117,13 +117,80 @@ function renderhealthtable(xml) {
   var list="";
   var x = xmlDoc.getElementsByTagName("Counts");
   console.log("renderhealthtable")
-  console.log(x[0])
+  console.log(x[0].getElementsByTagName("Ne")[0])
    var list = "<div class=row-1>" +
-      x[0].getElementsByTagName("Ne") +
-    "</div>";
-  
-  document.getElementById("health").innerHTML = table;
+       "<div class=dc1>Ne " + x[0].getElementsByTagName("Ne")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc2>Nep " + x[0].getElementsByTagName("Np")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc3>Nev " + x[0].getElementsByTagName("Nev")[0].childNodes[0].nodeValue + "</div>" + 
+    "</div>" +
+    "<div class=row-2>" +
+       "<div class=dc1>Nc " + x[0].getElementsByTagName("Nc")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc2>Nr " + x[0].getElementsByTagName("Nr")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc3>Nh " + x[0].getElementsByTagName("Nh")[0].childNodes[0].nodeValue + "</div>" + 
+    "</div>" +
+      "<div class=row-3>" +
+       "<div class=dc1>Nrul " + x[0].getElementsByTagName("Nrul")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc2>Npol " + x[0].getElementsByTagName("Npol")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc3>*</div>" + 
+    "</div>" +
+      "<div class=row-4>" +
+       "<div class=dc1>Nlog " + x[0].getElementsByTagName("Nlog")[0].childNodes[0].nodeValue + "</div>" + 
+       "<div class=dc2>*</div>" + 
+       "<div class=dc3>^</div>" +        
+    "</div>" ;    
+  document.getElementById("healthreport").innerHTML = list;
 }
+
+function clearmessages() {
+	  console.log("<div class=row-"+i.toString()+">")
+	  let msg = "<div class=row-1>" +
+                  "<div class=dc1>Message Display</div>" +          
+                  "<div class=dc2>* cleared *</div>" + 
+                "</div>"
+	  document.getElementById("healthreport").innerHTML = msg;
+
+}
+
+
+function loadwelcomemessage() {
+  console.log("loadwelcomemessage")
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    	renderwelcomemessage(this)
+    }
+  };
+  xhttp.open("GET", "http://127.0.0.1:8520?form=xml", true);
+  xhttp.send();
+}
+
+function renderwelcomemessage(xml) {
+  var i;
+  var xmlDoc = xml.responseXML;
+  var list="";
+  var x = xmlDoc.getElementsByTagName("homepageData");
+
+  var list = ""
+
+  for (let i=0; i<x[0].childNodes.length; i++) {
+         let nn = x[0].childNodes[i].nodeName;
+         let tc =x[0].childNodes[i].textContent;
+	  console.log("<div class=row-"+i.toString()+">")
+
+         list += "<div class=row-"+(i+1).toString()+">" +
+                  "<div class=dc1>" + nn  + "</div>" +          
+                  "<div class=dc2>" + tc  + "</div>" + 
+                "</div>"
+
+     }
+   
+
+
+  document.getElementById("healthreport").innerHTML = list;
+}
+
+
 
 
 
