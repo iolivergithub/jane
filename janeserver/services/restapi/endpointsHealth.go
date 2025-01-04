@@ -89,5 +89,5 @@ func health(c echo.Context) error {
 
 	hstr := healthStructure{objectCount()}
 
-	return c.JSON(http.StatusOK, hstr)
+	return FormattedResponse(c, http.StatusOK, hstr)
 }

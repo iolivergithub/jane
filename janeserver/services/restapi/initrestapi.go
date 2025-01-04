@@ -133,16 +133,17 @@ func setUpLoggingEndpoints(router *echo.Echo) {
 }
 
 type homepageData struct {
-	Name           string `json:"name"`
-	WelcomeMessage string `json:"welcomeMessage"`
-	Prefix         string `json:"prefix"`
+	Name           string `json:"name" xml:"name"`
+	WelcomeMessage string `json:"welcomeMessage" xml:"welcomeMessage"`
+	Prefix         string `json:"prefix" xml:"prefix"`
 }
 
 func homepage(c echo.Context) error {
 	h := homepageData{"Jane", "Croeso, Tervetuola, Welcome", PREFIX}
-	return c.JSON(http.StatusOK, h)
+
+	return FormattedResponse(c, http.StatusOK, h)
 }
 
 func config(c echo.Context) error {
-	return c.JSON(http.StatusOK, configuration.ConfigData)
+	return FormattedResponse(c, http.StatusOK, configuration.ConfigData)
 }
