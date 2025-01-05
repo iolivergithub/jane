@@ -32,10 +32,10 @@ func getLogEntries(c echo.Context) error {
 	logentries, err := operations.GetLogEntries(max)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		rtn := returnLogEntries{logentries, len(logentries), max}
-		return c.JSON(http.StatusOK, rtn)
+		return FormattedResponse(c, http.StatusOK, rtn)
 	}
 }
 
@@ -51,9 +51,9 @@ func getLogEntriesSince(c echo.Context) error {
 	logentries, err := operations.GetLogEntriesSince(duration_query)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		rtn := returnLogEntriesSince{logentries, len(logentries), duration_query}
-		return c.JSON(http.StatusOK, rtn)
+		return FormattedResponse(c, http.StatusOK, rtn)
 	}
 }

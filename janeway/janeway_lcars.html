@@ -50,10 +50,10 @@
 		<div class="wrap" id="gap">
 			<div class="left-frame">
 				<div>
-					<div class="panel-3" onclick="loadhealthupdate()">03<span class="hop">-111968</span></div>
-					<div class="panel-4" onclick="loadElements()">04<span class="hop">-ELEMENTS</span></div>
-					<div class="panel-5" onclick="loadSessions()">05<span class="hop">-SESSIONS</span></div>
-					<div class="panel-6" onclick="loadLog('40')">06<span class="hop">-LOG</span></div>
+					<div class="panel-3" onclick="loadElements()">04<span class="hop">-ELEMENTS</span></div>
+					<div class="panel-4" onclick="loadSessions()">05<span class="hop">-SESSIONS</span></div>
+					<div class="panel-5" onclick="loadLog('40')">06<span class="hop">-LOG</span></div>
+					<div class="panel-6">03<span class="hop">-111968</span></div>					
 					<div class="panel-7">07<span class="hop">-081940</span></div>
 					<div class="panel-8">08<span class="hop">-47148</span></div>
 					<div class="panel-9">09<span class="hop">-081966</span></div>
@@ -74,27 +74,17 @@
 
 					<!-- Start your content here. -->
 
-					<h1>Elements</h1>
+					<h1 id="datatitle">...</h1>
 
-					
+					<table id="datatable">
+  <tr>
+    <th>Data</th>
+  </tr>
+  <tr>
+    <td>Awaiting feed selection</td>
+  </tr>
 
-<div id="demo">
-<h1>The XMLHttpRequest Object</h1>
-<button type="button" onclick="loadElements()">Change Content</button>
-</div>
-
-
-						<div class="data-cascade" id="health">
-							<div class="row-1">
-								This is a test
-							</div>
-							<div class="row-2">
-								This is a test
-							</div>
-							<div class="row-3">
-								This is a test
-							</div>
-						</div>
+</table>
 
 
 <script>
@@ -142,7 +132,6 @@ function renderhealthtable(xml) {
 }
 
 function clearmessages() {
-	  console.log("<div class=row-"+i.toString()+">")
 	  let msg = "<div class=row-1>" +
                   "<div class=dc1>Message Display</div>" +          
                   "<div class=dc2>* cleared *</div>" + 
@@ -194,18 +183,7 @@ function renderwelcomemessage(xml) {
 
 
 
-function loadLog(x) {
 
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-    	response = JSON.parse(this.responseText);
-      document.getElementById("demo").innerHTML = response
-    }
-  };
-  xhttp.open("GET", "http://127.0.0.1:8520/log?max="+x, true);
-  xhttp.send();
-}
 
 function loadSessions() {
   var xhttp = new XMLHttpRequest();
@@ -215,24 +193,167 @@ function loadSessions() {
       this.responseText;
     }
   };
-  xhttp.open("GET", "http://127.0.0.1:8520/sessions", true);
+  xhttp.open("GET", "http://127.0.0.1:8520/sessions?form=xml", true);
   xhttp.send();
    
 }
 
 function loadElements() {
+  console.log("loadhealthupdate")
 
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-      document.getElementById("demo").innerHTML =
-      this.responseText;
+    	renderelementstable(this)
     }
   };
-  xhttp.open("GET", "http://127.0.0.1:8520/elements", true);
+  xhttp.open("GET", "http://127.0.0.1:8520/elements?form=xml", true);
   xhttp.send();
+}
+
+function renderelementstable(xml) {
+  var i;
+  var xmlDoc = xml.responseXML;
+  var list="";
+  var x = xmlDoc.getElementsByTagName("returnElements");
+  console.log("renderelementstable")
+  console.log(x[0].childNodes)
+
+         list += "<tr> <th>Identifier</th> </tr>"
+
+  for (let i=0; i<x[0].childNodes.length; i++) {
+         let nn = x[0].childNodes[i].nodeName;
+         let tc =x[0].childNodes[i].textContent;
+
+         if (nn=="Elements") {
+             list += "<tr> <td> <a href=http://127.0.0.1:8540/element/"+tc+" target=_blank>"+tc+"</a></td></tr>"
+                 }
+
+     }
+
+    document.getElementById("datatable").innerHTML = list;
+    document.getElementById("datatitle").innerHTML = "ELEMENTS";
+
     
 }
+
+
+
+
+
+
+
+
+function loadLog() {
+  console.log("loadLog")
+
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    	renderelementstable(this)
+    }
+  };
+  xhttp.open("GET", "http://127.0.0.1:8520/log?max=40&form=xml", true);
+  xhttp.send();
+}
+
+function renderelementstable(xml) {
+  var i;
+  var xmlDoc = xml.responseXML;
+  var list="";
+  var x = xmlDoc.getElementsByTagName("returnLogEntries");
+  console.log(x[0].childNodes.entries())
+
+         list += "<tr> <th>Stardate</th><th>Channel</th> <th>Operation</th> <th>Message</th>  </tr>"
+
+  x[0].childNodes.forEach(
+  	 function(node,index) {
+      if (node.nodeName=="LogEntries") {
+      	  let id = node.childNodes[0].textContent
+      	  let ts = node.childNodes[1].textContent
+      	  let ch = node.childNodes[2].textContent
+      	  let op = node.childNodes[3].textContent
+      	  let ri = node.childNodes[5].textContent
+      	  let msg = node.childNodes[6].textContent
+
+
+      	  let stardate = calculateStardate( ts )
+      	  console.log("stardate ",stardate)
+
+
+      	  list += "<tr>"
+      	  list += "<td><a href=http://127.0.0.1:8540/log/"+id+" target=_blank>"+stardate+"</a></td>"
+      	  list += "<td>"+ch+"</td>" 
+      	  list += "<td>"+op+"</td>"      	  
+      	  list += "<td>"+ri+"</td>"      	  
+      	  list += "<td>"+msg+"</td>"      	  
+      	       	  
+      	  list += "</tr>"
+      }
+  	 }
+                 
+
+     )
+
+    document.getElementById("datatable").innerHTML = list;
+    document.getElementById("datatitle").innerHTML = "LOG";
+
+    
+}
+
+
+
+
+
+
+
+
+function leapYear(year)
+{
+  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+}
+
+
+function calculateStardate(ts)
+{
+		console.log("Calculating Stardate")
+    let ms = Date( Number(ts) )
+    let date = new Date(ms) 
+
+    // calculate n
+    let n=365
+    if  (leapYear(date.getYear())== true) {
+       n=366
+    }
+
+    //base star dates  - asssuming 24th century here
+    const b = 2323       // 2323, c=0.0,    2005, c=58000.00
+    const c = 0.0        
+
+    //month number
+    m = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24))
+        
+    //day
+    d = date.getDate()
+
+    //year
+    y = date.getYear()
+
+    // calculate stardate https://www.wikihow.com/Calculate-Stardates
+    // no idea if this is actually correct :-)
+
+    sd = c+(1000*(y-b))+ ( (1000/n) * (m+d-1) )
+    console.log(n,m,d,y,sd)
+
+  
+
+    return sd
+}
+
+
+
+
+
 </script>
 
 
@@ -255,7 +376,7 @@ function loadElements() {
 							<div class="footer-text">
 
 								<p> <!-- Your copyright information is only a suggestion. You can also choose to delete this paragraph. -->
-									Content Copyright &#169; 2023 *replace this text with your site's name or url*
+									Content Copyright &#169; 2025 Ian Oliver
 								</p>
 
 								<p>	<!-- This paragraph must not be removed. -->

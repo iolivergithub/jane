@@ -20,7 +20,7 @@ func getElements(c echo.Context) error {
 
 	if err != nil {
 		log.Println("err=", err)
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		//Convert elems from []structures.ID into a []string
 		var elems_str []string
@@ -31,7 +31,7 @@ func getElements(c echo.Context) error {
 		//Marshall into JSON
 		elems_struct := returnElements{elems_str, len(elems_str)}
 
-		return c.JSON(http.StatusOK, elems_struct)
+		return FormattedResponse(c, http.StatusOK, elems_struct)
 	}
 }
 
@@ -42,9 +42,9 @@ func getElement(c echo.Context) error {
 
 	if err != nil {
 		log.Println("err=", err)
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c,http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
-		return c.JSON(http.StatusOK, elem)
+		return FormattedResponse(c,http.StatusOK, elem)
 	}
 }
 
@@ -55,7 +55,7 @@ func getElementsByName(c echo.Context) error {
 
 	if err != nil {
 		log.Println("err=", err)
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c,http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		//Convert elems from []structures.ID into a []string
 		var elems_str []string
@@ -66,7 +66,7 @@ func getElementsByName(c echo.Context) error {
 		//Marshall into JSON
 		elems_struct := returnElements{elems_str, len(elems_str)}
 
-		return c.JSON(http.StatusOK, elems_struct)
+		return FormattedResponse(c,http.StatusOK, elems_struct)
 	}
 }
 
@@ -80,17 +80,17 @@ func postElement(c echo.Context) error {
 
 	if err := c.Bind(elem); err != nil {
 		clienterr := postElementReturn{"", err.Error()}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c,http.StatusBadRequest, clienterr)
 	}
 
 	res, err := operations.AddElement(*elem)
 
 	if err != nil {
 		response := postElementReturn{res, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c,http.StatusInternalServerError, response)
 	} else {
 		response := postElementReturn{res, ""}
-		return c.JSON(http.StatusCreated, response)
+		return FormattedResponse(c,http.StatusCreated, response)
 	}
 }
 
@@ -99,12 +99,12 @@ func putElement(c echo.Context) error {
 
 	if err := c.Bind(elem); err != nil {
 		clienterr := postElementReturn{"", err.Error()}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c,http.StatusBadRequest, clienterr)
 	}
 
 	if _, err := operations.GetElementByItemID(elem.ItemID); err != nil {
 		response := postElementReturn{"", err.Error()}
-		return c.JSON(http.StatusNotFound, response)
+		return FormattedResponse(c,http.StatusNotFound, response)
 	}
 
 	log.Println("adding elemenet")
@@ -115,11 +115,11 @@ func putElement(c echo.Context) error {
 		log.Println("err=", elem.ItemID)
 
 		response := postElementReturn{elem.ItemID, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c,http.StatusInternalServerError, response)
 	} else {
 		log.Println("res=", elem.ItemID)
 		response := postElementReturn{elem.ItemID, ""}
-		return c.JSON(http.StatusCreated, response)
+		return FormattedResponse(c,http.StatusCreated, response)
 	}
 }
 
@@ -132,15 +132,15 @@ func deleteElement(c echo.Context) error {
 
 	if err != nil {
 		response := postElementReturn{elem.ItemID, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c,http.StatusInternalServerError, response)
 	} else {
 		err = operations.DeleteElement(itemid)
 		if err != nil {
 			response := postElementReturn{itemid, err.Error()}
-			return c.JSON(http.StatusInternalServerError, response)
+			return FormattedResponse(c,http.StatusInternalServerError, response)
 		} else {
 			response := postElementReturn{itemid, ""}
-			return c.JSON(http.StatusOK, response)
+			return FormattedResponse(c,http.StatusOK, response)
 		}
 	}
 }

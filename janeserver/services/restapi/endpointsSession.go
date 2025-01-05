@@ -31,7 +31,7 @@ func getSessions(c echo.Context) error {
 		//Marshall into JSON
 		elems_struct := returnSessions{elems_str, len(elems_str)}
 
-		return c.JSON(http.StatusOK, elems_struct)
+		return FormattedResponse(c, http.StatusOK, elems_struct)
 	}
 }
 
