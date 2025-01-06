@@ -23,7 +23,7 @@ func getClaims(c echo.Context) error {
 
 	if err != nil {
 		log.Println("err=", err)
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		//Convert elems from []structures.ID into a []string
 		var claims_str []string
@@ -34,7 +34,7 @@ func getClaims(c echo.Context) error {
 		//Marshall into JSON
 		claims_struct := returnClaims{claims_str, len(claims_str)}
 
-		return c.JSON(http.StatusOK, claims_struct)
+		return FormattedResponse(c,http.StatusOK, claims_struct)
 	}
 }
 
@@ -43,9 +43,9 @@ func getClaim(c echo.Context) error {
 	claim, err := operations.GetClaimByItemID(itemid)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c,http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
-		return c.JSON(http.StatusOK, claim)
+		return FormattedResponse(c,http.StatusOK, claim)
 	}
 }
 
@@ -62,7 +62,7 @@ func getClaimsByElementID(c echo.Context) error {
 
 	if err != nil {
 		log.Println("err=", err)
-		return c.JSON(http.StatusInternalServerError, MakeRESTErrorMessage(err))
+		return FormattedResponse(c,http.StatusInternalServerError, MakeRESTErrorMessage(err))
 	} else {
 		//Convert elems from []structures.ID into a []string
 		var claims_str []string
@@ -73,7 +73,7 @@ func getClaimsByElementID(c echo.Context) error {
 		//Marshall into JSON
 		claims_struct := returnClaims{claims_str, len(claims_str)}
 
-		return c.JSON(http.StatusOK, claims_struct)
+		return FormattedResponse(c,http.StatusOK, claims_struct)
 	}
 }
 
@@ -87,16 +87,16 @@ func postClaim(c echo.Context) error {
 
 	if err := c.Bind(elem); err != nil {
 		clienterr := postClaimReturn{"", err.Error()}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c,http.StatusBadRequest, clienterr)
 	}
 
 	res, err := operations.AddClaim(*elem)
 
 	if err != nil {
 		response := postElementReturn{res, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c,http.StatusInternalServerError, response)
 	} else {
 		response := postElementReturn{res, ""}
-		return c.JSON(http.StatusCreated, response)
+		return FormattedResponse(c,http.StatusCreated, response)
 	}
 }

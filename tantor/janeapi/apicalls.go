@@ -121,7 +121,6 @@ type postSessionReturn struct {
 }
 
 func OpenSession(m string) (string, error) {
-
 	url := provisioningfile.ProvisioningData.AttestationServer + "/session"
 	msg := postSessionMessage{m}
 

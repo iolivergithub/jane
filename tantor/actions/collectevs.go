@@ -7,6 +7,11 @@ import (
 	"tantor/provisioningfile"
 )
 
+type postAttestReturn struct {
+	Itemid string `json:"itemid"`
+	Error  string `json:"error"`
+}
+
 func CreateEVS(eid string) (string, error) {
 
 	s, _ := janeapi.OpenSession("Tantor: Creating EVS for " + eid)
@@ -25,7 +30,6 @@ func CreateEVS(eid string) (string, error) {
 		fmt.Printf("<<<A r,err %v %v \n", r, err)
 
 		//TODO:  bind the result to a structure (copy from elsewhere)
-		//  then take the itemid, which is the claim, and then process from there - take into consideration the type of the claim - we probably
 		// only handle claims that require EVS, ie: TPM quotes
 		//  once that is done, make the EVS
 	}
