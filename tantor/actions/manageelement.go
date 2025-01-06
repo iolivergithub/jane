@@ -17,5 +17,5 @@ func CreateElement() (string, error) {
 
 	fmt.Printf("RESPONSE %v %w\n", r, err)
 
-	return "", nil
+	return r, nil
 }

@@ -53,31 +53,29 @@ func postAttest(c echo.Context) error {
 	element, err := operations.GetElementByItemID(eid)
 	if err != nil {
 		clienterr := postAttestReturn{"", "Element " + eid + " not found"}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c, http.StatusBadRequest, clienterr)
 	}
-
-	fmt.Printf("\n intent is ###%s###", pid)
 
 	intent, err := operations.GetIntentByItemID(pid)
 	if err != nil {
 		clienterr := postAttestReturn{"", "Intent " + pid + " not found"}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c, http.StatusBadRequest, clienterr)
 	}
 
 	session, err := operations.GetSessionByItemID(sid)
 	if err != nil {
 		clienterr := postAttestReturn{"", "Session " + sid + " not found"}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c, http.StatusBadRequest, clienterr)
 	}
 
 	res, err := operations.Attest(element, epn, intent, session, (*att).Parameters)
 
 	if err != nil {
 		response := postAttestReturn{res, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c, http.StatusInternalServerError, response)
 	} else {
 		response := postAttestReturn{res, ""}
-		return c.JSON(http.StatusAccepted, response)
+		return FormattedResponse(c, http.StatusAccepted, response)
 	}
 
 }
@@ -86,7 +84,7 @@ func postVerify(c echo.Context) error {
 	att := new(verifyStr)
 	if err := c.Bind(att); err != nil {
 		clienterr := postVerifyReturn{"", structures.VerifyCallFailure, err.Error()}
-		return c.JSON(http.StatusBadRequest, clienterr)
+		return FormattedResponse(c, http.StatusBadRequest, clienterr)
 	}
 
 	cid := (*att).CID
@@ -113,10 +111,10 @@ func postVerify(c echo.Context) error {
 
 	if err != nil {
 		response := postVerifyReturn{res, rv, err.Error()}
-		return c.JSON(http.StatusInternalServerError, response)
+		return FormattedResponse(c, http.StatusInternalServerError, response)
 	} else {
 		response := postVerifyReturn{res, rv, ""}
-		return c.JSON(http.StatusAccepted, response)
+		return FormattedResponse(c, http.StatusAccepted, response)
 	}
 
 }

@@ -7,7 +7,7 @@ element:
   endpoints:
     tarzan:
         endpoint: http://127.0.0.1:8530
-        protocol: A10HTTPREST
+        protocol: A10HTTPRESTv2
     ratds:
         endpoint: http://127.0.0.1:8531
         protocol: RATSD      

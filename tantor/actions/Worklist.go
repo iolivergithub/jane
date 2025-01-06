@@ -5,6 +5,8 @@ import (
 	"tantor/provisioningfile"
 )
 
+var eid string
+
 func RunWorklist(ws []string) {
 	for j, v := range ws {
 		fmt.Printf("Running item %v : %v\n", j, v)
@@ -13,12 +15,12 @@ func RunWorklist(ws []string) {
 		case v == "collectsysinfo":
 			h, _ := CollectSystemInfo()
 			provisioningfile.ProvisioningData.Element.Host = h
-			successmessage()
+			successmessage("Host identified")
 		case v == "collectuefi":
 			f, err := CollectUEFIEventLogLocation()
 			if err == nil {
 				provisioningfile.ProvisioningData.Element.UEFI.Eventlog = f
-				successmessage()
+				successmessage(f)
 			} else {
 				errormessage(err)
 			}
@@ -26,7 +28,7 @@ func RunWorklist(ws []string) {
 			f, err := CollectIMALogLocation()
 			if err == nil {
 				provisioningfile.ProvisioningData.Element.IMA.ASCIILog = f
-				successmessage()
+				successmessage(f)
 			} else {
 				errormessage(err)
 			}
@@ -34,35 +36,36 @@ func RunWorklist(ws []string) {
 			f, err := CollectIMALogLocation()
 			if err == nil {
 				provisioningfile.ProvisioningData.Element.IMA.ASCIILog = f
-				successmessage()
+				successmessage(f)
 			} else {
 				errormessage(err)
 			}
 		case v == "tpmclear":
 			_, err := TPMClear()
 			if err == nil {
-				successmessage()
+				successmessage("TPM cleared")
 			} else {
 				errormessage(err)
 			}
 		case v == "tpmprovision":
 			_, err := TPMProvision()
 			if err == nil {
-				successmessage()
+				successmessage("TPM Provisioned")
 			} else {
 				errormessage(err)
 			}
 		case v == "createevs":
-			_, err := CreateEVS()
+			_, err := CreateEVS(eid)
 			if err == nil {
-				successmessage()
+				successmessage("EVS Created")
 			} else {
 				errormessage(err)
 			}
 		case v == "createelement":
-			_, err := CreateElement()
+			e, err := CreateElement()
+			eid = e
 			if err == nil {
-				successmessage()
+				successmessage("Element Created " + eid)
 			} else {
 				errormessage(err)
 			}
@@ -72,8 +75,8 @@ func RunWorklist(ws []string) {
 	}
 }
 
-func successmessage() {
-	fmt.Println("* success")
+func successmessage(msg string) {
+	fmt.Printf("* success: %v\n", msg)
 }
 
 func errormessage(e error) {

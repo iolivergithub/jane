@@ -31,13 +31,7 @@ func main() {
 	fmt.Println("Collecting worklist")
 	worklist := provisioningfile.ProvisioningData.ProvisioningWorkList
 
-	for k, v := range worklist {
-		fmt.Printf(" ... %v : %v\n", k, v)
-	}
-
 	actions.RunWorklist(worklist)
-
-	fmt.Println("%v\n", provisioningfile.ProvisioningData)
 
 	exitMessage()
 

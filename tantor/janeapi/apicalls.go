@@ -34,6 +34,11 @@ func GetServerStatus() string {
 	return bodyString
 }
 
+type postAddElementReturn struct {
+	Itemid string `json:"itemid"`
+	Error  string `json:"error"`
+}
+
 func AddElement(e structures.Element) (string, error) {
 	url := provisioningfile.ProvisioningData.AttestationServer + "/element"
 
@@ -57,6 +62,16 @@ func AddElement(e structures.Element) (string, error) {
 	fmt.Println("response Headers:", resp.Header)
 	body, _ := io.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
+
+	var j postAddElementReturn
+	err = json.Unmarshal([]byte(body), &j)
+	if err != nil {
+		fmt.Printf("failed to unmarhall body %v\n", body)
+	}
+	fmt.Println("*********************")
+	fmt.Printf("Element ID is %v\n", j.Itemid)
+
+	return j.Itemid, err
 
 	return string(body), nil
 }
@@ -131,11 +146,19 @@ func OpenSession(m string) (string, error) {
 	body, _ := io.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
 
-	return string(body), nil
+	var j postSessionReturn
+	err = json.Unmarshal([]byte(body), &j)
+	if err != nil {
+		fmt.Printf("failed to unmarhall body %v\n", body)
+	}
+	fmt.Println("*********************")
+	fmt.Printf("Session ID is %v\n", j.Itemid)
+
+	return j.Itemid, err
 }
 
-func CloseSession() (string, error) {
-	url := provisioningfile.ProvisioningData.AttestationServer + "/session"
+func CloseSession(s string) (string, error) {
+	url := provisioningfile.ProvisioningData.AttestationServer + "/session/" + s
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	req.Header.Set("Content-Type", "application/json")

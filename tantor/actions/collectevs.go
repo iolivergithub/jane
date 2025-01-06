@@ -9,11 +9,10 @@ import (
 
 func CreateEVS(eid string) (string, error) {
 
-	eid := 
-	s, err := janeapi.OpenSession("test session")
+	s, _ := janeapi.OpenSession("Tantor: Creating EVS for " + eid)
 
-	for k, v := range provisioningfile.ProvisioningData.Evs {
-		fmt.Printf(" evs %v, %v\n", k, v)
+	for _, v := range provisioningfile.ProvisioningData.Evs {
+		fmt.Printf("A>>> evs %v\n", v)
 
 		a := janeapi.AttestStr{
 			EID: eid,
@@ -23,7 +22,12 @@ func CreateEVS(eid string) (string, error) {
 		}
 
 		r, err := janeapi.Attest(a)
-		fmt.Printf(" r,err %v %v", r, err)
+		fmt.Printf("<<<A r,err %v %v \n", r, err)
+
+		//TODO:  bind the result to a structure (copy from elsewhere)
+		//  then take the itemid, which is the claim, and then process from there - take into consideration the type of the claim - we probably
+		// only handle claims that require EVS, ie: TPM quotes
+		//  once that is done, make the EVS
 	}
 
 	janeapi.CloseSession(s)
