@@ -75,8 +75,8 @@ cp ../../tantor/tantor $TANTORBASE/opt/jane
 echo "${BLUE}Copying congfiguration files and temporary keys"
 cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
 
-cp REPLACE_ME.key $JANEBASE/opt/jane/REPLACE_ME.key
-cp REPLACE_ME.crt $JANEBASE/opt/jane/REPLACE_ME.crt
+cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
+cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
 
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
