@@ -1,5 +1,11 @@
 [
-
+    {
+        "itemid": "ratsd::test::chares",
+        "name": "RATSD Chares call",
+        "description": "Test call to the RATSD daemon",
+        "function": "ratsd/chares",
+        "parameters": {}
+    },
     {
         "itemid": "std::intent::sys::info",
         "name": "System Information",
