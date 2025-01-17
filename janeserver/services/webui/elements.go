@@ -80,7 +80,7 @@ func elementtemplate() string {
         },
         "ratsd":
         {
-            "endpoint": "http://127.0.0.1:8531",
+            "endpoint": "http://127.0.0.1:8853",
             "protocol": "RATSD"
         }
     },

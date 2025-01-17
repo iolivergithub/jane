@@ -47,7 +47,7 @@ func processNewIntent(c echo.Context) error {
 // This is the template for an element
 func intenttemplate() string {
 	raw := `{ 
-		"itemid" : "****", 
+  "itemid" : "****", 
   "name" : "****", 
   "description" : "****", 
   "function" : "****",
