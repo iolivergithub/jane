@@ -117,6 +117,7 @@ func Quote(c echo.Context) error {
 
 	// Here we parse the pcrSelection to obtain the []int structure for the pcrselections
 	s := strings.Split(params["pcrSelection"].(string), ",")
+	fmt.Println("pcr selection string: %v\n", s)
 	pcrsel := make([]int, len(s), len(s))
 	for i, r := range s {
 		v64, err := strconv.ParseUint(r, 10, 8)
@@ -146,6 +147,7 @@ func Quote(c echo.Context) error {
 	// This is a bit ugly but...that's the way go does things
 	// Strip the 0x, parse it as a Uint in base 16 with size 32 - returns a unit64, convert to a uint32 and then create the TPM handle
 	akh := strings.Replace(params["tpm2/akhandle"].(string), "0x", "", -1)
+
 	h, err := strconv.ParseUint(akh, 16, 32)
 	if err != nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable to parse AK handle %v", err.Error())}
@@ -171,6 +173,7 @@ func Quote(c echo.Context) error {
 	defer rwc.Close()
 
 	fmt.Println("Quoting")
+	fmt.Printf(" rwc %v, handle %v, noncebytes %v pcrbank %v pcrsel %v \n", rwc, handle, nonceBytes, pcrbank, pcrsel)
 
 	// Here we obtain the Quote
 	att, sig, err := tpm2.Quote(

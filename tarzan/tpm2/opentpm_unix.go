@@ -14,6 +14,7 @@ import (
 var TPMDEVICES = []string{"/dev/tpm0", "/dev/tpmrm0", "/dev/tpm1", "/dev/tpmrm1"}
 
 func OpenTPM(path string) (io.ReadWriteCloser, error) {
+	path = "/dev/tpmrm0"
 	fmt.Printf("TPM Device path >>> %v <<< passed as parameter. This is a Unix build: ", path)
 
 	// Check if the path is a known device, else treat it as a unix domain socket
