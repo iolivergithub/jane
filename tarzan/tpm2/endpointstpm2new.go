@@ -28,6 +28,8 @@ var npcrbanks = []tpm2.TPMIAlgHash{tpm2.TPMAlgSHA1, tpm2.TPMAlgSHA256, tpm2.TPMA
 
 func NewPCRs(c echo.Context) error {
 
+	results := []tpm2.PCRReadResponse{}
+
 	fmt.Println("NEW tpm2 pcrs called")
 
 	tpm, err := openTPM("/dev/tpmrm0")
@@ -49,10 +51,12 @@ func NewPCRs(c echo.Context) error {
 
 			pcrreadresponse, err := tpm2.PCRRead{PCRSelectionIn: selection}.Execute(tpm)
 			fmt.Printf("PCR pcrreadresponse is %w, %v\n", err, pcrreadresponse)
+
+			results = append(results, *pcrreadresponse)
 		}
 	}
 
-	return c.JSON(http.StatusOK, npcrbanks)
+	return c.JSON(http.StatusOK, results)
 }
 
 // IGNORE THIS CODE; IT WORKS SO I AM NOT TOUCHING IT
