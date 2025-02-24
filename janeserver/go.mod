@@ -14,7 +14,7 @@ require (
 
 require github.com/miekg/pkcs11 v1.1.1
 
-require github.com/go-jose/go-jose/v4 v4.0.4 // indirect
+require github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 
 require (
 	github.com/edgelesssys/ego v1.6.1
