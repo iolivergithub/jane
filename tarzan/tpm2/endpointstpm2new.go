@@ -7,12 +7,12 @@ import (
 	_ "encoding/hex"
 	"fmt"
 	"net/http"
+	"reflect"
 	_ "strconv"
 	_ "strings"
 
 	"github.com/labstack/echo/v4"
 
-	// this needs to be updated
 	"github.com/google/go-tpm/tpm2"
 	"github.com/google/go-tpm/tpm2/transport"
 	"github.com/google/go-tpm/tpm2/transport/linuxtpm"
@@ -24,11 +24,10 @@ func openTPM(dev string) (transport.TPMCloser, error) {
 	return tpm, err
 }
 
-var npcrbanks = []tpm2.TPMIAlgHash{tpm2.TPMAlgSHA1, tpm2.TPMAlgSHA256, tpm2.TPMAlgSHA384, tpm2.TPMAlgSHA512}
-
 func NewPCRs(c echo.Context) error {
 
-	results := []tpm2.PCRReadResponse{}
+	//results := []tpm2.PCRReadResponse{}
+	banks := make(map[string]pcrValue)
 
 	fmt.Println("NEW tpm2 pcrs called")
 
@@ -40,6 +39,7 @@ func NewPCRs(c echo.Context) error {
 	fmt.Printf("TPM device open by linuxtransport is %v\n", tpm)
 
 	for _, b := range npcrbanks {
+		pcrvs := make(map[int]string)
 		for i := 0; i <= 23; i++ {
 			fmt.Printf("Reading back %v, pcr %v -->\n", b, i)
 
@@ -50,13 +50,22 @@ func NewPCRs(c echo.Context) error {
 			fmt.Printf("PCR selection is %v\n", selection)
 
 			pcrreadresponse, err := tpm2.PCRRead{PCRSelectionIn: selection}.Execute(tpm)
-			fmt.Printf("PCR pcrreadresponse is %w, %v\n", err, pcrreadresponse)
+			pcrvalues := *pcrreadresponse
+			digests := pcrvalues.PCRValues.Digests[0]
+			digestsAsString := digests.Buffer
 
-			results = append(results, *pcrreadresponse)
+			fmt.Printf("PCR pcrreadresponse is %w, %v\n", err, pcrreadresponse)
+			ashex := fmt.Sprintf("%x", digestsAsString)
+			fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(digestsAsString), digestsAsString)
+			fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(ashex), ashex)
+			pcrvs[i] = ashex
+
+			//results = append(results, *pcrreadresponse)
 		}
+		banks[bankNames[b]] = pcrvs
 	}
 
-	return c.JSON(http.StatusOK, results)
+	return c.JSON(http.StatusOK, banks)
 }
 
 // IGNORE THIS CODE; IT WORKS SO I AM NOT TOUCHING IT
@@ -76,7 +85,7 @@ func xNewPCRs(c echo.Context) error {
 
 	pcrselections := []tpm2.TPMSPCRSelection{s1, s2}
 	selection := tpm2.TPMLPCRSelection{PCRSelections: pcrselections}
-	fmt.Printf("PCR selection is %v\n", selection)
+	fmt.Printf("PCR selection is  %v\n", selection)
 
 	pcrreadresponse, err := tpm2.PCRRead{PCRSelectionIn: selection}.Execute(tpm)
 	fmt.Printf("PCR pcrreadresponse is %w, %v\n", err, pcrreadresponse)

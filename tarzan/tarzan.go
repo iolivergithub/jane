@@ -134,8 +134,13 @@ func setupIMAendpoints(router *echo.Echo) {
 
 func setupTPM2endpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/tpm2/newpcrs", tpm2.NewPCRs)
-	router.POST(PREFIX+"/tpm2/pcrs", tpm2.PCRs)
-	router.POST(PREFIX+"/tpm2/quote", tpm2.Quote)
+	router.POST(PREFIX+"/tpm2/pcrs", tpm2.NewPCRs)
+
+	//router.POST(PREFIX+"/tpm2/newquote", tpm2.NewQuote)
+	//router.POST(PREFIX+"/tpm2/quote", tpm2.NewQuote)
+
+	//router.POST(PREFIX+"/tpm2/pcrs", tpm2.PCRs)
+	//router.POST(PREFIX+"/tpm2/quote", tpm2.Quote)
 }
 
 // This starts everything...here we "go" :-)
