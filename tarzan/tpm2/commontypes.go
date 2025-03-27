@@ -10,6 +10,11 @@ type tpm2taErrorReturn struct {
 	TPM2taError string `json:"tpm2taerror"`
 }
 
+type tpm2quoteReturn struct {
+	Quote     interface{} `json:"quote"`
+	Signature interface{} `json:"signature"`
+}
+
 var npcrbanks = []tpm2.TPMIAlgHash{tpm2.TPMAlgSHA1, tpm2.TPMAlgSHA256, tpm2.TPMAlgSHA384, tpm2.TPMAlgSHA512}
 
 type pcrValue map[int]string

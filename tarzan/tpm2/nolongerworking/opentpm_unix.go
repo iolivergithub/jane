@@ -4,23 +4,25 @@ package tpm2
 
 import (
 	"fmt"
+	"io"
+	"net"
 	"slices"
 
-	"github.com/google/go-tpm/tpm2/transport"
-	"github.com/google/go-tpm/tpm2/transport/linuxtpm"
+	"github.com/google/go-tpm/legacy/tpm2"
 )
 
 var TPMDEVICES = []string{"/dev/tpm0", "/dev/tpmrm0", "/dev/tpm1", "/dev/tpmrm1"}
 
-func OpenTPM(dev string) (transport.TPMCloser, error) {
-	fmt.Printf("TPM Device >>> %v <<< passed as parameter. This is a Unix build: ", dev)
+func OpenTPM(path string) (io.ReadWriteCloser, error) {
+	path = "/dev/tpmrm0"
+	fmt.Printf("TPM Device path >>> %v <<< passed as parameter. This is a Unix build: ", path)
 
 	// Check if the path is a known device, else treat it as a unix domain socket
-	if slices.Contains(TPMDEVICES, dev) {
+	if slices.Contains(TPMDEVICES, path) {
 		fmt.Printf("Treating it as a device\n")
-		return linuxtpm.Open(dev)
+		return tpm2.OpenTPM(path)
 	} else {
 		fmt.Printf("Treating it as a TCP Unix domain socket\n")
-		return linuxtpm.Open(dev)
+		return net.Dial("tcp", path)
 	}
 }
