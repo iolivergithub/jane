@@ -70,19 +70,19 @@ func NewPCRs(c echo.Context) error {
 
 			pcrreadresponse, err := tpm2.PCRRead{PCRSelectionIn: selection}.Execute(tpm)
 			if err != nil {
-				rtn := tpm2taErrorReturn{fmt.Sprintf("Could not read PCRs with error %v", err.Error())}
-				return c.JSON(http.StatusUnprocessableEntity, rtn)
+				//rtn := tpm2taErrorReturn{fmt.Sprintf("Could not read PCRs with error %v", err.Error())}
+				//return c.JSON(http.StatusUnprocessableEntity, rtn)
+				fmt.Printf("PCR %v on Bank %v does not exist\n", i, b)
+			} else {
+
+				pcrvalues := *pcrreadresponse
+				digests := pcrvalues.PCRValues.Digests[0]
+				digestsAsString := digests.Buffer
+
+				ashex := fmt.Sprintf("%x", digestsAsString)
+				fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(ashex), ashex)
+				pcrvs[i] = ashex
 			}
-
-			pcrvalues := *pcrreadresponse
-			digests := pcrvalues.PCRValues.Digests[0]
-			digestsAsString := digests.Buffer
-
-			//fmt.Printf("PCR pcrreadresponse is %w, %v\n", err, pcrreadresponse)
-			ashex := fmt.Sprintf("%x", digestsAsString)
-			//fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(digestsAsString), digestsAsString)
-			fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(ashex), ashex)
-			pcrvs[i] = ashex
 
 			//results = append(results, *pcrreadresponse)
 		}

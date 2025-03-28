@@ -72,6 +72,10 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		ips["tpm2/device"] = (e.TPM2).Device
 	}
 
+	if p.Function == "tpm2/newpcrs" {
+		ips["tpm2/device"] = (e.TPM2).Device
+	}
+
 	if p.Function == "tpm2/quote" {
 		ips["tpm2/device"] = (e.TPM2).Device
 		ips["tpm2/akhandle"] = (e.TPM2).AK.Handle

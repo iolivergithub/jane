@@ -1,0 +1,30 @@
+OS=linux
+ARCH=arm
+ARMCPU=6
+BINARY_NAME=tarzan_arm6
+#PIE_ON=-buildmode=pie
+BUILD_DATE=`date`
+VERSION=locally_compiled
+
+
+build: libs fmt
+	GOOS=${OS} GOARM=6 GOARCH=${ARCH} /usr/local/go/bin/go build  -ldflags="-X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
+
+
+
+fmt:
+	go fmt ./...
+
+libs:
+	go get -u
+	go mod tidy -v
+
+vet:
+	go vet -composites=false ./...
+
+run: build
+	./${BINARY_NAME}
+
+clean:
+	go clean
+	rm ${BINARY_NAME}

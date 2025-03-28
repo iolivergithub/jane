@@ -73,6 +73,11 @@
     {{ template "claim_tpm2pcrs.html" .Body }}
 {{ end }}
 
+{{ if eq .BodyType "tpm2/newpcrs" }}
+    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+    {{ template "claim_tpm2pcrs.html" .Body }}
+{{ end }}
+
 {{ if eq .BodyType "tpm2/quote" }}
     <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
     {{ template "claim_quote.html" .Body.parsed }}
