@@ -143,9 +143,9 @@ func NewQuote(c echo.Context) error {
 	fmt.Printf("Magic is %v\n", quotecontents.Magic)
 
 	qstr := quoteStructure{
-		Magic:           uint32(quotecontents.Magic),
-		Type:            uint16(quotecontents.Type),
-		QualifiedSigner: quotecontents.QualifiedSigner,
+		Magic: uint32(quotecontents.Magic),
+		Type:  uint16(quotecontents.Type),
+		//QualifiedSigner: fmt.Sprintf("%v", quotecontents.QualifiedSigner),
 	}
 
 	return c.JSON(http.StatusOK, tpm2quoteReturn{qstr, signaturepart})

@@ -3,14 +3,14 @@ package a10httprestv2
 import (
 	"bytes"
 	"crypto/rand"
-	"encoding/base64"
+	_ "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
 	"a10/structures"
-	"a10/utilities"
+	_ "a10/utilities"
 )
 
 const nonceSize int = 24
@@ -135,44 +135,46 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		return bodymap, cps, fmt.Errorf("TA reports error %v with response %v", resp.Status, taResponse)
 	}
 
-	if p.Function == "tpm2/quote" {
-		quoteValue, ok := bodymap["quote"]
-		if !ok {
-			return bodymap, cps, fmt.Errorf("missing quote data in response")
-		}
-		quoteStr, ok := quoteValue.(string)
-		if !ok {
-			return bodymap, cps, fmt.Errorf("quote value is not a string")
-		}
-		quoteBytes, err := base64.StdEncoding.DecodeString(quoteStr)
-		if err != nil {
-			return nil, cps, fmt.Errorf("could not base64 decode quote")
-		}
+	// Thore wrote stuff here...worked with tpm2.legacy but not now...thanks Google!
+	// if p.Function == "tpm2/quote" {
+	// 	quoteValue, ok := bodymap["quote"]
+	// 	if !ok {
+	// 		return bodymap, cps, fmt.Errorf("missing quote data in response")
+	// 	}
+	// 	quoteStr, ok := quoteValue.(string)
+	// 	if !ok {
+	// 		fmt.Printf("quote value is not a string ... why? %w\n", ok)
+	// 		return bodymap, cps, fmt.Errorf("quote value is not a string")
+	// 	}
+	// 	quoteBytes, err := base64.StdEncoding.DecodeString(quoteStr)
+	// 	if err != nil {
+	// 		return nil, cps, fmt.Errorf("could not base64 decode quote")
+	// 	}
 
-		signatureValue, ok := bodymap["signature"]
-		if !ok {
-			return bodymap, cps, fmt.Errorf("missing signature data in response")
-		}
-		signatureStr, ok := signatureValue.(string)
-		if !ok {
-			return bodymap, cps, fmt.Errorf("signature value is not a string")
-		}
-		signatureBytes, err := base64.StdEncoding.DecodeString(signatureStr)
-		if err != nil {
-			return nil, cps, fmt.Errorf("could not base64 decode signature")
-		}
+	// 	signatureValue, ok := bodymap["signature"]
+	// 	if !ok {
+	// 		return bodymap, cps, fmt.Errorf("missing signature data in response")
+	// 	}
+	// 	signatureStr, ok := signatureValue.(string)
+	// 	if !ok {
+	// 		return bodymap, cps, fmt.Errorf("signature value is not a string")
+	// 	}
+	// 	signatureBytes, err := base64.StdEncoding.DecodeString(signatureStr)
+	// 	if err != nil {
+	// 		return nil, cps, fmt.Errorf("could not base64 decode signature")
+	// 	}
 
-		var attestableData utilities.AttestableData
-		attestableData.Decode(quoteBytes, signatureBytes)
+	// 	var attestableData utilities.AttestableData
+	// 	attestableData.Decode(quoteBytes, signatureBytes)
 
-		// Try to parse the quote into a map representation for display purposes
-		parsed, err := attestableData.Parse()
-		if err != nil {
-			return bodymap, cps, err
-		}
-		bodymap["parsed"] = parsed
+	// 	// Try to parse the quote into a map representation for display purposes
+	// 	parsed, err := attestableData.Parse()
+	// 	if err != nil {
+	// 		return bodymap, cps, err
+	// 	}
+	// 	bodymap["parsed"] = parsed
 
-	}
+	// }
 
 	return bodymap, cps, nil
 }

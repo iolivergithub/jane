@@ -11,9 +11,13 @@ type tpm2taErrorReturn struct {
 }
 
 type quoteStructure struct {
-	Magic           uint32         `json:"magic"`
-	Type            uint16         `json:"type"`
-	QualifiedSigner tpm2.TPM2BName `json:"qualifiedsigner"`
+	Magic             uint32         `json:"magic"`
+	Type              uint16         `json:"type"`
+	QualifiedSigner   tpm2.TPM2BName `json:"qualifiedsigner"`
+	ExtraData         string         `json:"extradata"`
+	ClockInfo         string         `json:"clockinfo"`
+	FirmwareVersion   string         `json:"firmwareVersion"`
+	AttestedQuoteInfo string         `json:"quote"`
 }
 
 type tpm2quoteReturn struct {
