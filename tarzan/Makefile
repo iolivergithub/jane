@@ -1,6 +1,6 @@
 OS=linux
 ARCH=amd64
-BINARY_NAME=tarzan_arm6
+BINARY_NAME=tarzan
 PIE_ON=-buildmode=pie
 BUILD_DATE=`date`
 VERSION=locally_compiled

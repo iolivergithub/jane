@@ -3,7 +3,7 @@
 package tpm2
 
 import (
-	"bytes"
+	_ "bytes"
 	"encoding/base64"
 	_ "encoding/hex"
 	"fmt"
@@ -48,6 +48,13 @@ func NewQuote(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}
 
+	// Here we parse the bank
+	b := params["bank"].(string)
+	pcrbank := bankValues[b]
+	fmt.Printf("pcrbank %v\n", pcrbank)
+
+	// These need to be integration to generate teh PCRSelections, of type []tpm2.TPMSPCRSelection
+
 	// Here we parse the pcrSelection to obtain the []int structure for the pcrselections
 	s := strings.Split(params["pcrSelection"].(string), ",")
 	fmt.Println("pcr selection string: %v\n", s)
@@ -62,10 +69,15 @@ func NewQuote(c echo.Context) error {
 		}
 	}
 
-	// Here we parse the bank
-	b := params["bank"].(string)
-	pcrbank := bankValues[b]
-	fmt.Printf("pcrbank %v\n", pcrbank)
+	// PCR selection (selecting PCR 7 for this example)
+	pcrSelection := tpm2.TPMLPCRSelection{
+		PCRSelections: []tpm2.TPMSPCRSelection{
+			{
+				Hash:      pcrbank,
+				PCRSelect: tpm2.PCClientCompatible.PCRs(7),
+			},
+		},
+	}
 
 	// Here we parse the nonce
 	// If none then one will be generated
@@ -91,12 +103,11 @@ func NewQuote(c echo.Context) error {
 	}
 	h32 := uint32(h) // this is safe because we only create a 32bit unsigned value above.
 
-	//var signingHandle tpmutil.Handle = tpmutil.Handle(h32)
 	fmt.Printf("handle is %v\n", h32)
 	signingHandle := tpmutil.Handle(h32)
 	namedHandle := tpm2.NamedHandle{
 		Handle: tpm2.TPMHandle(signingHandle),
-		Name:   tpm2.TPM2BName{}, // You may need to set this to an appropriate value
+		Name:   tpm2.TPM2BName{}, // This seems to work....?
 	}
 
 	scheme := tpm2.TPMTSigScheme{
@@ -107,16 +118,6 @@ func NewQuote(c echo.Context) error {
 				HashAlg: tpm2.TPMAlgSHA256,
 			},
 		),
-	}
-
-	// PCR selection (selecting PCR 7 for this example)
-	pcrSelection := tpm2.TPMLPCRSelection{
-		PCRSelections: []tpm2.TPMSPCRSelection{
-			{
-				Hash:      pcrbank,
-				PCRSelect: tpm2.PCClientCompatible.PCRs(7),
-			},
-		},
 	}
 
 	// Here's the quote
@@ -130,31 +131,22 @@ func NewQuote(c echo.Context) error {
 	}
 
 	q := *quoteresponse
-	quotepart := q.Quoted
-	signaturepart := q.Signature
+	//fmt.Printf("quotereponse Type is %v and q is %v\n", reflect.TypeOf(quoteresponse), reflect.TypeOf(q))
 
-	fmt.Printf("Quoted is %v\nand Signature is %v\n", quotepart, signaturepart)
-	fmt.Printf("Types are %v and %v\n", reflect.TypeOf(quotepart), reflect.TypeOf(signaturepart))
-	fmt.Printf("attempting the decode")
-	_, err = DecodeTPM2BAttest(quotepart)
-	fmt.Printf("and we got back")
+	var quotepart tpm2.TPM2B[tpm2.TPMSAttest, *tpm2.TPMSAttest]
+	quotepart = q.Quoted         // see type above :-)
+	signaturepart := q.Signature // of type tpm2.TPMSSignature
 
-	//fmt.Printf("decoded attest %v, %v\n", err, dtpm2attest)
+	//fmt.Printf("Quoted is %v\nand Signature is %v\n", quotepart, signaturepart)
+	fmt.Printf(" &quotepart type is %v\n", reflect.TypeOf(&quotepart))
+	quotecontents, _ := quotepart.Contents()
+	fmt.Printf("Magic is %v\n", quotecontents.Magic)
 
-	qr := tpm2quoteReturn{quotepart, signaturepart}
-
-	return c.JSON(http.StatusOK, qr)
-}
-
-func DecodeTPM2BAttest(attestData tpm2.TPM2BAttest) (*tpm2.TPMSAttest, error) {
-	// Access the buffer using the Bytes() method
-	dataBuf := bytes.NewBuffer(attestData.Bytes())
-	//fmt.Printf("databuf=%v\n", dataBuf)
-	fmt.Printf("we got the databuf\n")
-	var attestationData tpm2.TPMSAttest
-	if err := tpmutil.UnpackBuf(dataBuf, &attestationData); err != nil {
-		fmt.Printf("error is %w\n", err)
-		return nil, fmt.Errorf("unmarshalling attestation data: %w", err)
+	qstr := quoteStructure{
+		Magic:           uint32(quotecontents.Magic),
+		Type:            uint16(quotecontents.Type),
+		QualifiedSigner: quotecontents.QualifiedSigner,
 	}
-	return &attestationData, nil
+
+	return c.JSON(http.StatusOK, tpm2quoteReturn{qstr, signaturepart})
 }
