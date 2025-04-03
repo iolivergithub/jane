@@ -1,7 +1,7 @@
 package webui
 
 import (
-	"fmt"
+	//"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -11,7 +11,6 @@ import (
 
 func showClaims(c echo.Context) error {
 	es, _ := operations.GetClaimsAll()
-	fmt.Printf("remdering element %v\n", len(es))
 
 	return c.Render(http.StatusOK, "claims.html", es)
 }
