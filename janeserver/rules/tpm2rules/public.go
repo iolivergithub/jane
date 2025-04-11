@@ -2,33 +2,34 @@ package tpm2rules
 
 import (
 	"bytes"
-	"crypto/sha256"
+	_ "crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"reflect"
-	"slices"
-	"strconv"
+	_ "slices"
+	_ "strconv"
 
-	"a10/operations"
+	_ "a10/operations"
 	"a10/structures"
 
-	"a10/utilities"
+	_ "a10/utilities"
 
+	"github.com/mitchellh/mapstructure" // from Hasicorp https://stackoverflow.com/questions/26744873/converting-map-to-struct
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func Registration() []structures.Rule {
 	attestedPCRDigest := structures.Rule{"tpm2_attestedValue", "Checks the TPM's reported attested value against the expected value", AttestedPCRDigest, true}
-	checkPCRSelection := structures.Rule{"tpm2_PCRSelection", "Checks if a quote includes the correct PCRs", checkPCRSelection, true}
-	checkQuoteDigest256 := structures.Rule{"tpm2_quoteDigest256", "Checks if a claim of PCRs match the hash in the quote (sha256)", checkQuoteDigest256, false}
+	//checkPCRSelection := structures.Rule{"tpm2_PCRSelection", "Checks if a quote includes the correct PCRs", checkPCRSelection, true}
+	//checkQuoteDigest256 := structures.Rule{"tpm2_quoteDigest256", "Checks if a claim of PCRs match the hash in the quote (sha256)", checkQuoteDigest256, false}
 	ruleFirmware := structures.Rule{"tpm2_firmware", "Checks the TPM firmware version against the expected value", FirmwareRule, true}
 	ruleMagic := structures.Rule{"tpm2_magicNumber", "Checks the quote magic number is 0xFF544347", MagicNumberRule, false}
 	ruleIsSafe := structures.Rule{"tpm2_safe", "Checks that the value of safe is 1", IsSafe, false}
-	ruleValidSignature := structures.Rule{"tpm2_validSignature", "Checks that the signature of rule is valid against the signing attestation key", ValidSignature, false}
+	//ruleValidSignature := structures.Rule{"tpm2_validSignature", "Checks that the signature of rule is valid against the signing attestation key", ValidSignature, false}
 	ruleValidNonce := structures.Rule{"tpm2_validNonce", "Checks that nonce used for the claim matches the nonce in the quote", ValidNonce, false}
 
-	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidSignature, ruleValidNonce, checkQuoteDigest256, checkPCRSelection}
+	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce}
 }
 
 func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
@@ -37,7 +38,7 @@ func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, se
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	if !q.Data.ClockInfo.Safe {
+	if q.ClockInfo.Safe == "false" {
 		return structures.Fail, "Uncommanded device/TPM shutdown", nil
 	}
 
@@ -50,10 +51,7 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	quoteData, err := q.Data.Attested.Quote()
-	if err != nil {
-		return structures.Fail, "Parsing TPM quote from Attested failed", err
-	}
+	pcrdigest := []byte(q.Attested.PCRDigest)
 
 	// THIS IS THE OLD LINE: DO NOT USE
 	//claimedAV := hex.EncodeToString(quoteData.PCRDigest.Buffer)
@@ -65,10 +63,10 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 
 	//claimedAV := fmt.Sprintf("%v",quoteData.PCRDigest.Buffer)
 	//claimedAV := string(quoteData.PCRDigest.Buffer[:])
-	claimedAV := base64.StdEncoding.EncodeToString(quoteData.PCRDigest.Buffer)
+	claimedAV := base64.StdEncoding.EncodeToString(pcrdigest)
 	expectedAV := (ev.EVS)["attestedValue"]
 
-	fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", quoteData.PCRDigest.Buffer, claimedAV, expectedAV)
+	fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", pcrdigest, claimedAV, expectedAV)
 
 	if expectedAV == claimedAV {
 		return structures.Success, "", nil
@@ -81,11 +79,15 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 
 func FirmwareRule(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 	q, err := getQuote(claim)
+
 	if err != nil {
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	claimedFirmware := fmt.Sprintf("%d", q.Data.FirmwareVersion)
+	fmt.Printf("GOT HERE WITH A GOOD QUOTE; ERR=%v\n", err)
+	fmt.Printf("Quote looks like this: \n %v \n\n", q)
+
+	claimedFirmware := fmt.Sprintf("%d", q.FirmwareVersion)
 	expectedFirmware := (ev.EVS)["firmwareVersion"]
 
 	if expectedFirmware == claimedFirmware {
@@ -103,41 +105,41 @@ func MagicNumberRule(claim structures.Claim, rule string, ev structures.Expected
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	if err := q.Data.Magic.Check(); err != nil {
+	if q.Magic != "ff45" {
 		return structures.Fail, "TPM magic number and/or TPMS_ATTEST type wrong", nil
 	}
 
 	return structures.Success, "", nil
 }
 
-func ValidSignature(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
-	quote, err := getQuote(claim)
-	if err != nil {
-		return structures.Fail, "Parsing TPM quote failed", err
-	}
+// func ValidSignature(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
+// 	quote, err := getQuote(claim)
+// 	if err != nil {
+// 		return structures.Fail, "Parsing TPM quote failed", err
+// 	}
 
-	akBytes, err := base64.StdEncoding.DecodeString(claim.Header.Element.TPM2.AK.Public)
-	if err != nil {
-		return structures.RuleCallFailure, "Base64 decoding the AK failed", err
-	}
-	akKey, err := utilities.ParseTPMKey(akBytes)
-	if err != nil {
-		return structures.Fail, "Parsing AK failed", err
-	}
+// 	akBytes, err := base64.StdEncoding.DecodeString(claim.Header.Element.TPM2.AK.Public)
+// 	if err != nil {
+// 		return structures.RuleCallFailure, "Base64 decoding the AK failed", err
+// 	}
+// 	akKey, err := utilities.ParseTPMKey(akBytes)
+// 	if err != nil {
+// 		return structures.Fail, "Parsing AK failed", err
+// 	}
 
-	if err := quote.VerifySignature(akKey); err != nil {
-		return structures.Fail, "Validation of the quote failed", nil
-	}
+// 	if err := quote.VerifySignature(akKey); err != nil {
+// 		return structures.Fail, "Validation of the quote failed", nil
+// 	}
 
-	return structures.Success, "Quote was validated successfully", nil
-}
+// 	return structures.Success, "Quote was validated successfully", nil
+// }
 
 func ValidNonce(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 	quote, err := getQuote(claim)
 	if err != nil {
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
-	quoteNonceBytes := quote.Data.ExtraData.Buffer
+	quoteNonceBytes := []byte(quote.ExtraData)
 
 	claimNonceValue, ok := claim.Header.CallParameters["tpm2/nonce"]
 	if !ok {
@@ -155,121 +157,160 @@ func ValidNonce(claim structures.Claim, rule string, ev structures.ExpectedValue
 	return structures.Success, "nonce matches", nil
 }
 
-func checkPCRSelection(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
-	quote, err := getQuote(claim)
-	if err != nil {
-		return structures.Fail, "Parsing TPM quote failed", err
-	}
+// func checkPCRSelection(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
+// 	quote, err := getQuote(claim)
+// 	if err != nil {
+// 		return structures.Fail, "Parsing TPM quote failed", err
+// 	}
 
-	data, err := quote.Data.Attested.Quote()
-	if err != nil {
-		return structures.Fail, "Parsing Attest structure into Quote failed", err
-	}
-	selection := utilities.TPMSPCRSelectionToList(data.PCRSelect.PCRSelections)
+// 	pcrdigest := quote.Attested.PCRDigest
+// 	if err != nil {
+// 		return structures.Fail, "Parsing Attest structure into Quote failed", err
+// 	}
+// 	selection := utilities.TPMSPCRSelectionToList(data.PCRSelect.PCRSelections)
 
-	evSelection, ok := ev.EVS["pcrselection"]
-	if !ok {
-		return structures.MissingExpectedValue, "pcrselection not given", err
-	}
-	var evSelectionList []int
-	for _, v := range evSelection.(primitive.A) {
-		index, err := strconv.Atoi(v.(string))
-		if err != nil {
-			return structures.Fail, "pcrselection contains non integer strings", err
-		}
-		evSelectionList = append(evSelectionList, index)
-	}
-	if len(evSelectionList) != len(selection) {
-		return structures.Fail, "not the same length", err
-	}
-	for _, v := range evSelectionList {
-		if !slices.Contains(selection, v) {
-			return structures.Fail, fmt.Sprintf("Index %d is missing in quote", v), err
-		}
-	}
-	return structures.Success, "", err
-}
+// 	evSelection, ok := ev.EVS["pcrselection"]
+// 	if !ok {
+// 		return structures.MissingExpectedValue, "pcrselection not given", err
+// 	}
+// 	var evSelectionList []int
+// 	for _, v := range evSelection.(primitive.A) {
+// 		index, err := strconv.Atoi(v.(string))
+// 		if err != nil {
+// 			return structures.Fail, "pcrselection contains non integer strings", err
+// 		}
+// 		evSelectionList = append(evSelectionList, index)
+// 	}
+// 	if len(evSelectionList) != len(selection) {
+// 		return structures.Fail, "not the same length", err
+// 	}
+// 	for _, v := range evSelectionList {
+// 		if !slices.Contains(selection, v) {
+// 			return structures.Fail, fmt.Sprintf("Index %d is missing in quote", v), err
+// 		}
+// 	}
+// 	return structures.Success, "", err
+// }
 
-func checkQuoteDigest256(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
-	quote, err := getQuote(claim)
-	if err != nil {
-		return structures.Fail, "Parsing TPM quote failed", err
-	}
-	pcrsClaimID := parameter["pcrscid"].(string)
+// func checkQuoteDigest256(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
+// 	quote, err := getQuote(claim)
+// 	if err != nil {
+// 		return structures.Fail, "Parsing TPM quote failed", err
+// 	}
+// 	pcrsClaimID := parameter["pcrscid"].(string)
 
-	pcrsClaim, err := operations.GetClaimByItemID(pcrsClaimID)
-	if err != nil {
-		return structures.Fail, "Could not get PCRs claim", err
-	}
+// 	pcrsClaim, err := operations.GetClaimByItemID(pcrsClaimID)
+// 	if err != nil {
+// 		return structures.Fail, "Could not get PCRs claim", err
+// 	}
 
-	data, err := quote.Data.Attested.Quote()
-	if err != nil {
-		return structures.Fail, "Parsing Attest structure into Quote failed", err
-	}
-	digest := data.PCRDigest.Buffer
-	selection := utilities.TPMSPCRSelectionToList(data.PCRSelect.PCRSelections)
+// 	data, err := quote.Attested.Quote()
+// 	if err != nil {
+// 		return structures.Fail, "Parsing Attest structure into Quote failed", err
+// 	}
+// 	digest := data.PCRDigest.Buffer
+// 	selection := utilities.TPMSPCRSelectionToList(data.PCRSelect.PCRSelections)
 
-	sha256Entries := make(map[string]string)
-	for k, v := range pcrsClaim.Body["sha256"].(map[string]interface{}) {
-		sha256Entries[k] = v.(string)
-	}
+// 	sha256Entries := make(map[string]string)
+// 	for k, v := range pcrsClaim.Body["sha256"].(map[string]interface{}) {
+// 		sha256Entries[k] = v.(string)
+// 	}
 
-	hash := sha256.New()
-	for _, pcrIndex := range selection {
-		pcrIndexS := fmt.Sprintf("%d", pcrIndex)
+// 	hash := sha256.New()
+// 	for _, pcrIndex := range selection {
+// 		pcrIndexS := fmt.Sprintf("%d", pcrIndex)
 
-		entry, ok := sha256Entries[pcrIndexS]
-		if !ok {
-			return structures.Fail, fmt.Sprintf("PCR index missing in PCR claim: %s", entry), err
-		}
-		entryBytes, err := hex.DecodeString(entry)
-		if err != nil {
-			return structures.Fail, "Entry not valid hex", err
-		}
-		hash.Write(entryBytes)
-	}
+// 		entry, ok := sha256Entries[pcrIndexS]
+// 		if !ok {
+// 			return structures.Fail, fmt.Sprintf("PCR index missing in PCR claim: %s", entry), err
+// 		}
+// 		entryBytes, err := hex.DecodeString(entry)
+// 		if err != nil {
+// 			return structures.Fail, "Entry not valid hex", err
+// 		}
+// 		hash.Write(entryBytes)
+// 	}
 
-	digestPCRs := hash.Sum([]byte{})
-	if !bytes.Equal(digestPCRs, digest) {
-		return structures.Fail, "PCRs and hash in quote do not match", err
-	}
+// 	digestPCRs := hash.Sum([]byte{})
+// 	if !bytes.Equal(digestPCRs, digest) {
+// 		return structures.Fail, "PCRs and hash in quote do not match", err
+// 	}
 
-	return structures.Success, "PCRs and hash in quote match", err
-}
+// 	return structures.Success, "PCRs and hash in quote match", err
+// }
 
 // Constructs AttestableData struct with signature
 // TODO find way to cache this in the session object
-func getQuote(claim structures.Claim) (*utilities.AttestableData, error) {
-	quoteData, ok := (claim.Body)["quote"]
-	if !ok {
-		return nil, fmt.Errorf("claim does not contain quote")
 
-	}
-	quoteStr := quoteData.(string)
-	quoteBytes, err := base64.StdEncoding.DecodeString(quoteStr)
-	if err != nil {
-		return nil, fmt.Errorf("could not base64 decode quote")
-	}
-	var signatureBytes []byte
-	signatureData, ok := (claim.Body)["signature"]
-	if !ok {
-		return nil, fmt.Errorf("claim does not contain a signature")
-	}
-	signatureStr := signatureData.(string)
-	signatureBytes, err = base64.StdEncoding.DecodeString(signatureStr)
-	if err != nil {
-		return nil, fmt.Errorf("could not base64 decode signature")
-	}
-
-	var quote utilities.AttestableData
-	err = quote.Decode(quoteBytes, signatureBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal TPM structures %w", err)
-	}
-
-	if !quote.IsQuote() {
-		return nil, fmt.Errorf("attestable data is not quote")
-	}
-
-	return &quote, nil
+type clockInfo struct {
+	Clock        string `json:"clock"`
+	ResetCount   string `json:"resetcount"`
+	RestartCount string `json:"restartcount"`
+	Safe         string `json:"safe"`
 }
+
+type attested struct {
+	PCRSelect string `json:"pcrselect"`
+	PCRDigest string `json:"pcrdigest"`
+}
+
+type quoteStructure struct {
+	Magic           string    `json:"magic"`
+	Type            string    `json:"type"`
+	QualifiedSigner string    `json:"qualifiedsigner"`
+	ExtraData       string    `json:"extradata"`
+	ClockInfo       clockInfo `json:"clockinfo"`
+	FirmwareVersion string    `json:"firmwareVersion"`
+	Attested        attested  `json:"attested"`
+}
+
+func getQuote(claim structures.Claim) (quoteStructure, error) {
+	quoteData, ok := (claim.Body)["quote"]
+	fmt.Printf("\n### GetQuote %v\n%v\n%v\n\n", reflect.TypeOf(quoteData), ok, quoteData)
+	if !ok {
+		return quoteStructure{}, fmt.Errorf("claim does not contain quote")
+
+	}
+	//return quoteStructure{}, nil
+	//return quoteData.attested(quoteStructure), nil
+
+	var qs quoteStructure
+	mapstructure.Decode(quoteData, &qs)
+	return qs, nil
+}
+
+// func getQuote2(claim structures.Claim) (*utilities.AttestableData, error) {
+// 	quoteData, ok := (claim.Body)["quote"]
+// 	fmt.Printf("### GetQuote %v , %v\n", ok, quoteData)
+// 	if !ok {
+// 		return nil, fmt.Errorf("claim does not contain quote")
+
+// 	}
+// 	quoteStr := quoteData.(string)
+// 	quoteBytes, err := base64.StdEncoding.DecodeString(quoteStr)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("could not base64 decode quote")
+// 	}
+// 	var signatureBytes []byte
+// 	signatureData, ok := (claim.Body)["signature"]
+// 	if !ok {
+// 		return nil, fmt.Errorf("claim does not contain a signature")
+// 	}
+// 	signatureStr := signatureData.(string)
+// 	signatureBytes, err = base64.StdEncoding.DecodeString(signatureStr)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("could not base64 decode signature")
+// 	}
+
+// 	var quote utilities.AttestableData
+// 	err = quote.Decode(quoteBytes, signatureBytes)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to unmarshal TPM structures %w", err)
+// 	}
+
+// 	if !quote.IsQuote() {
+// 		return nil, fmt.Errorf("attestable data is not quote")
+// 	}
+
+// 	return &quote, nil
+// }
