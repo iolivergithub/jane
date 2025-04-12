@@ -53,30 +53,27 @@ func NewQuote(c echo.Context) error {
 	pcrbank := bankValues[b]
 	fmt.Printf("pcrbank %v\n", pcrbank)
 
-	// These need to be integration to generate teh PCRSelections, of type []tpm2.TPMSPCRSelection
+	// These need to be integrated to generate the PCRSelections, of type []tpm2.TPMSPCRSelection
 
 	// Here we parse the pcrSelection to obtain the []int structure for the pcrselections
 	s := strings.Split(params["pcrSelection"].(string), ",")
-	fmt.Println("pcr selection string: %v\n", s)
-	pcrsel := make([]int, len(s), len(s))
-	for i, r := range s {
+	fmt.Printf("pcr selection string: %v\n", s)
+	pcrselectionlist := []tpm2.TPMSPCRSelection{}
+	for _, r := range s {
 		v64, err := strconv.ParseUint(r, 10, 8)
+		fmt.Printf("creating pcrselection for %v,%v,%v\n", err, pcrbank, v64)
 
-		if err != nil {
-			pcrsel[i] = 0
-		} else {
-			pcrsel[i] = int(v64)
+		if err == nil {
+			pcrsel := tpm2.TPMSPCRSelection{Hash: pcrbank, PCRSelect: tpm2.PCClientCompatible.PCRs(uint(v64))}
+
+			pcrselectionlist = append(pcrselectionlist, pcrsel)
 		}
+
 	}
 
 	// PCR selection (selecting PCR 7 for this example)
 	pcrSelection := tpm2.TPMLPCRSelection{
-		PCRSelections: []tpm2.TPMSPCRSelection{
-			{
-				Hash:      pcrbank,
-				PCRSelect: tpm2.PCClientCompatible.PCRs(7),
-			},
-		},
+		PCRSelections: pcrselectionlist,
 	}
 
 	// Here we parse the nonce
@@ -140,13 +137,32 @@ func NewQuote(c echo.Context) error {
 	//fmt.Printf("Quoted is %v\nand Signature is %v\n", quotepart, signaturepart)
 	fmt.Printf(" &quotepart type is %v\n", reflect.TypeOf(&quotepart))
 	quotecontents, _ := quotepart.Contents()
-	fmt.Printf("Magic is %v\n", quotecontents.Magic)
+
+	quoteinfo, _ := quotecontents.Attested.Quote()
+	attested := attested{
+		fmt.Sprintf("%v", quoteinfo.PCRSelect),
+		fmt.Sprintf("%x", quoteinfo.PCRDigest.Buffer),
+	}
+	clockinfo := clockInfo{
+		fmt.Sprintf("%v", quotecontents.ClockInfo.Clock),
+		fmt.Sprintf("%v", quotecontents.ClockInfo.ResetCount),
+		fmt.Sprintf("%v", quotecontents.ClockInfo.RestartCount),
+		fmt.Sprintf("%v", quotecontents.ClockInfo.Safe),
+	}
 
 	qstr := quoteStructure{
-		Magic: uint32(quotecontents.Magic),
-		Type:  uint16(quotecontents.Type),
-		//QualifiedSigner: fmt.Sprintf("%v", quotecontents.QualifiedSigner),
+		//Magic: string(quotecontents.Magic),
+		Magic:           fmt.Sprintf("%0x", quotecontents.Magic),
+		Type:            fmt.Sprintf("%0x", quotecontents.Type),
+		QualifiedSigner: fmt.Sprintf("%x", quotecontents.QualifiedSigner.Buffer),
+		ExtraData:       fmt.Sprintf("%x", quotecontents.ExtraData.Buffer),
+		FirmwareVersion: fmt.Sprintf("%x", quotecontents.FirmwareVersion),
+		ClockInfo:       clockinfo,
+		Attested:        attested,
 	}
+	fmt.Printf("QSTR is %v\n", qstr)
+
+	//return c.JSON(http.StatusOK, qstr)
 
 	return c.JSON(http.StatusOK, tpm2quoteReturn{qstr, signaturepart})
 }

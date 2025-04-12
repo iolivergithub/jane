@@ -10,14 +10,26 @@ type tpm2taErrorReturn struct {
 	TPM2taError string `json:"tpm2taerror"`
 }
 
+type clockInfo struct {
+	Clock        string `json:"clock"`
+	ResetCount   string `json:"resetcount"`
+	RestartCount string `json:"restartcount"`
+	Safe         string `json:"safe"`
+}
+
+type attested struct {
+	PCRSelect string `json:"pcrselect"`
+	PCRDigest string `json:"pcrdigest"`
+}
+
 type quoteStructure struct {
-	Magic             uint32         `json:"magic"`
-	Type              uint16         `json:"type"`
-	QualifiedSigner   tpm2.TPM2BName `json:"qualifiedsigner"`
-	ExtraData         string         `json:"extradata"`
-	ClockInfo         string         `json:"clockinfo"`
-	FirmwareVersion   string         `json:"firmwareVersion"`
-	AttestedQuoteInfo string         `json:"quote"`
+	Magic           string    `json:"magic"`
+	Type            string    `json:"type"`
+	QualifiedSigner string    `json:"qualifiedsigner"`
+	ExtraData       string    `json:"extradata"`
+	ClockInfo       clockInfo `json:"clockinfo"`
+	FirmwareVersion string    `json:"firmwareVersion"`
+	Attested        attested  `json:"attested"`
 }
 
 type tpm2quoteReturn struct {
