@@ -91,7 +91,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 			fmt.Println("dealing with the ev")
 
 			returnedRV = structures.MissingExpectedValue
-			returnedMSG = fmt.Sprintf("Rule %v requries an expected value for e,p pair %v and %v and one was not found: %w", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err)
+			returnedMSG = fmt.Sprintf("Rule %v requires an expected value for e,p pair %v and %v and one was not found: %v", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err)
 		} else {
 
 			// Now
@@ -105,7 +105,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 				fmt.Println("Step 3 -err")
 
 				returnedRV = structures.VerifyCallFailure
-				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %w", rule.Name, returnedMSG, err) // this should be the returnedMSG form the line above
+				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %v", rule.Name, returnedMSG, err) // this should be the returnedMSG form the line above
 			}
 		}
 
@@ -128,7 +128,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 
 	rid, err := AddResult(r) // cid a string with the claim ID
 	if err != nil {
-		return "", structures.NoResult, fmt.Errorf("Error adding result, session %v might still be open: %w", sid, err)
+		return "", structures.NoResult, fmt.Errorf("Error adding result, session %v might still be open: %v", sid, err)
 	}
 
 	// Step 7 ******************************************************
@@ -136,7 +136,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 
 	sderr := AddResultToSession(sid, rid)
 	if sderr != nil {
-		return rid, returnedRV, fmt.Errorf("Error adding result %v to session %v. Claim added, session may be still open: %w", rid, sid, err)
+		return rid, returnedRV, fmt.Errorf("Error adding result %v to session %v. Claim added, session may be still open: %v", rid, sid, err)
 	}
 
 	// Step 8 ******************************************************

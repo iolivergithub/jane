@@ -4,7 +4,7 @@ package tpm2
 
 import (
 	_ "bytes"
-	"encoding/base64"
+	_ "encoding/base64"
 	_ "encoding/hex"
 	"fmt"
 	_ "log"
@@ -44,7 +44,7 @@ func NewQuote(c echo.Context) error {
 
 	tpm, err := OpenTPM(tpm2device)
 	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not open TPM during Quote function with error %v", err.Error())}
+		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not open specified TPM %v during Quote function with error %v", tpm2device, err.Error())}
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}
 
@@ -79,20 +79,14 @@ func NewQuote(c echo.Context) error {
 	// Here we parse the nonce
 	// If none then one will be generated
 	nonce := params["tpm2/nonce"].(string)
-
-	nonceBytes, err := base64.StdEncoding.DecodeString(nonce)
-	if err != nil {
-		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not base64 decode nonce: %v", err.Error())}
-		return c.JSON(http.StatusInternalServerError, rtn)
-	}
-	nonceTPM2B := tpm2.TPM2BData{Buffer: nonceBytes}
+	fmt.Printf("Received nonce is %v\n", nonce)
+	nonceTPM2B := tpm2.TPM2BData{Buffer: []byte(nonce)}
 
 	// Here we parse the akhandle
 	// This is a bit ugly but...that's the way go does things
 	// Strip the 0x, parse it as a Uint in base 16 with size 32 - returns a unit64, convert to a uint32 and then create the TPM handle
 	akh := strings.Replace(params["tpm2/akhandle"].(string), "0x", "", -1)
 	fmt.Printf("akh is %v\n", akh)
-
 	h, err := strconv.ParseUint(akh, 16, 32)
 	if err != nil {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable to parse AK handle %v", err.Error())}
@@ -100,12 +94,13 @@ func NewQuote(c echo.Context) error {
 	}
 	h32 := uint32(h) // this is safe because we only create a 32bit unsigned value above.
 
-	fmt.Printf("handle is %v\n", h32)
 	signingHandle := tpmutil.Handle(h32)
 	namedHandle := tpm2.NamedHandle{
 		Handle: tpm2.TPMHandle(signingHandle),
 		Name:   tpm2.TPM2BName{}, // This seems to work....?
 	}
+
+	// This sets up the signing scheme, which is walsy RSASSA/SHA256
 
 	scheme := tpm2.TPMTSigScheme{
 		Scheme: tpm2.TPMAlgRSASSA,
@@ -128,15 +123,19 @@ func NewQuote(c echo.Context) error {
 	}
 
 	q := *quoteresponse
-	//fmt.Printf("quotereponse Type is %v and q is %v\n", reflect.TypeOf(quoteresponse), reflect.TypeOf(q))
-
 	var quotepart tpm2.TPM2B[tpm2.TPMSAttest, *tpm2.TPMSAttest]
 	quotepart = q.Quoted         // see type above :-)
 	signaturepart := q.Signature // of type tpm2.TPMSSignature
-
-	//fmt.Printf("Quoted is %v\nand Signature is %v\n", quotepart, signaturepart)
-	fmt.Printf(" &quotepart type is %v\n", reflect.TypeOf(&quotepart))
 	quotecontents, _ := quotepart.Contents()
+
+	fmt.Println("********************")
+	fmt.Printf("Received nonce is %v\n", nonce)
+	fmt.Printf(" type       : %v\n", reflect.TypeOf(quotecontents.ExtraData))
+	fmt.Printf("buffer type : %v\n", reflect.TypeOf(quotecontents.ExtraData.Buffer))
+	fmt.Printf("as hex : %x\n", quotecontents.ExtraData.Buffer)
+	fmt.Printf("as str : %v\n", string(quotecontents.ExtraData.Buffer))
+	fmt.Printf("as nor : %v\n\n", quotecontents.ExtraData.Buffer)
+	fmt.Println("********************")
 
 	quoteinfo, _ := quotecontents.Attested.Quote()
 	attested := attested{
@@ -150,19 +149,19 @@ func NewQuote(c echo.Context) error {
 		fmt.Sprintf("%v", quotecontents.ClockInfo.Safe),
 	}
 
+	fmt.Printf("Quote contents\n Magic, Type %v,%v \n", quotecontents.Magic, quotecontents.Type)
+
 	qstr := quoteStructure{
 		//Magic: string(quotecontents.Magic),
 		Magic:           fmt.Sprintf("%0x", quotecontents.Magic),
 		Type:            fmt.Sprintf("%0x", quotecontents.Type),
 		QualifiedSigner: fmt.Sprintf("%x", quotecontents.QualifiedSigner.Buffer),
-		ExtraData:       fmt.Sprintf("%x", quotecontents.ExtraData.Buffer),
+		ExtraData:       fmt.Sprintf("%v", string(quotecontents.ExtraData.Buffer)),
 		FirmwareVersion: fmt.Sprintf("%x", quotecontents.FirmwareVersion),
 		ClockInfo:       clockinfo,
 		Attested:        attested,
 	}
 	fmt.Printf("QSTR is %v\n", qstr)
-
-	//return c.JSON(http.StatusOK, qstr)
 
 	return c.JSON(http.StatusOK, tpm2quoteReturn{qstr, signaturepart})
 }
