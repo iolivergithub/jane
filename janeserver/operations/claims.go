@@ -59,8 +59,6 @@ func GetClaimsAll() ([]structures.Claim, error) {
 	dbcursor, _ := datalayer.DB.Collection("claims").Find(context.TODO(), filter, options)
 	dbcursorerror := dbcursor.All(context.TODO(), &claims)
 
-	fmt.Printf("\n********\nClaims\n error %w \n claims %v \n***  \n", claims, dbcursorerror)
-
 	return claims, dbcursorerror
 }
 
@@ -71,7 +69,6 @@ func GetClaimsByElementID(eid string, maximumAmount int64) ([]structures.Claim, 
 		return claims, fmt.Errorf("Maximum amount must be a positive number")
 	}
 
-	fmt.Println("Getting for claim by element eid = %v\n", eid)
 	filter := bson.D{{"header.element.itemid", eid}} // TODO search for itemIDs only
 	options := options.Find().SetSort(bson.D{{"header.timing.requested", -1}}).SetLimit(maximumAmount)
 	dbcursor, _ := datalayer.DB.Collection("claims").Find(context.TODO(), filter, options)

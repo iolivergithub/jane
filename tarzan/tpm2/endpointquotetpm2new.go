@@ -3,11 +3,9 @@
 package tpm2
 
 import (
-	_ "bytes"
-	_ "encoding/base64"
-	_ "encoding/hex"
+	"encoding/base64"
 	"fmt"
-	_ "log"
+
 	"net/http"
 	"reflect"
 	"strconv"
@@ -80,7 +78,13 @@ func NewQuote(c echo.Context) error {
 	// If none then one will be generated
 	nonce := params["tpm2/nonce"].(string)
 	fmt.Printf("Received nonce is %v\n", nonce)
-	nonceTPM2B := tpm2.TPM2BData{Buffer: []byte(nonce)}
+	decodedNonce, err := base64.StdEncoding.DecodeString(nonce)
+	if err != nil {
+		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable base64 undecode provided nonce %v with error %v", nonce, err.Error())}
+		return c.JSON(http.StatusUnprocessableEntity, rtn)
+	}
+	//nonceTPM2B := tpm2.TPM2BData{Buffer: []byte(nonce)}
+	nonceTPM2B := tpm2.TPM2BData{Buffer: decodedNonce}
 
 	// Here we parse the akhandle
 	// This is a bit ugly but...that's the way go does things
@@ -140,7 +144,8 @@ func NewQuote(c echo.Context) error {
 	quoteinfo, _ := quotecontents.Attested.Quote()
 	attested := attested{
 		fmt.Sprintf("%v", quoteinfo.PCRSelect),
-		fmt.Sprintf("%x", quoteinfo.PCRDigest.Buffer),
+		//fmt.Sprintf("%x", quoteinfo.PCRDigest.Buffer),
+		fmt.Sprintf("%v", base64.StdEncoding.EncodeToString(quoteinfo.PCRDigest.Buffer)),
 	}
 	clockinfo := clockInfo{
 		fmt.Sprintf("%v", quotecontents.ClockInfo.Clock),
@@ -155,8 +160,8 @@ func NewQuote(c echo.Context) error {
 		//Magic: string(quotecontents.Magic),
 		Magic:           fmt.Sprintf("%0x", quotecontents.Magic),
 		Type:            fmt.Sprintf("%0x", quotecontents.Type),
-		QualifiedSigner: fmt.Sprintf("%x", quotecontents.QualifiedSigner.Buffer),
-		ExtraData:       fmt.Sprintf("%v", string(quotecontents.ExtraData.Buffer)),
+		QualifiedSigner: fmt.Sprintf("%x", base64.StdEncoding.EncodeToString(quotecontents.QualifiedSigner.Buffer)),
+		ExtraData:       fmt.Sprintf("%v", base64.StdEncoding.EncodeToString(quotecontents.ExtraData.Buffer)),
 		FirmwareVersion: fmt.Sprintf("%x", quotecontents.FirmwareVersion),
 		ClockInfo:       clockinfo,
 		Attested:        attested,

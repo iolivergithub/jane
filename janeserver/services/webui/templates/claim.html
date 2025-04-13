@@ -80,7 +80,7 @@
 
 {{ if eq .BodyType "tpm2/quote" }}
     <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_quote.html" .Body.parsed }}
+    {{ template "claim_quote.html" .Body }}
 {{ end }}
 
 {{ if eq .BodyType "uefi/efivars" }}

@@ -3,7 +3,7 @@ package a10httprestv2
 import (
 	"bytes"
 	"crypto/rand"
-	_ "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -81,7 +81,7 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		ips["tpm2/akhandle"] = (e.TPM2).AK.Handle
 		nce := make([]byte, nonceSize)
 		_, _ = rand.Read(nce)
-		ips["tpm2/nonce"] = nce
+		ips["tpm2/nonce"] = base64.StdEncoding.EncodeToString(nce)
 	}
 
 	if p.Function == "uefi/eventlog" {

@@ -1,19 +1,11 @@
 package tpm2rules
 
 import (
-	_ "bytes"
-	_ "crypto/sha256"
 	"encoding/base64"
-	_ "encoding/hex"
 	"fmt"
 	"reflect"
-	_ "slices"
-	_ "strconv"
 
-	_ "a10/operations"
 	"a10/structures"
-
-	_ "a10/utilities"
 
 	"github.com/mitchellh/mapstructure" // from Hasicorp https://stackoverflow.com/questions/26744873/converting-map-to-struct
 )
@@ -161,11 +153,14 @@ func ValidNonce(claim structures.Claim, rule string, ev structures.ExpectedValue
 	// 	return structures.RuleCallFailure, "claim has no nonce", nil
 	// }
 
+	//fmt.Println("***\nNonce are not matching, got: %v, expected: %v, base64:", quoteNonceValue, claimNonceValue, base64.StdEncoding.EncodeToString(quoteNonceValue))
+
 	if claimNonceValue != quoteNonceValue {
 		return structures.Fail, fmt.Sprintf("Nonce are not matching, got: %v, expected: %v", quoteNonceValue, claimNonceValue), nil
 	}
 
-	return structures.Success, "nonce matches", nil
+	msg := fmt.Sprintf("Nonce matches: (base64) %v", quoteNonceValue)
+	return structures.Success, msg, nil
 }
 
 // func checkPCRSelection(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {

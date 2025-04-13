@@ -1,9 +1,56 @@
 {{define "claim_quote.html"}}
 
-{{ . }}
+
+<h5>Quote</h5>
+<table class="table table-sm table-striped">
+   <tbody>
+
+<tr><th>Field</th><th>Reported value</th></tr>
+
+<tr><td>PCR Digest</td><td>{{ .quote.attested.pcrdigest }}</td></tr>
+<tr><td>PCR Selection</td><td>{{ .quote.attested.pcrselect }}</td></tr>
+
+<tr><td>Firmware</td><td>{{ .quote.firmwareVersion }}</td></tr>
+<tr><td>Magic</td><td>{{ .quote.magic }}  (default value is <i>ff544347</i>)</td></tr>
+<tr><td>Type</td><td>{{ .quote.type }} (default value is <i>8018</i>)</td></tr>
+
+<tr><td>ClockInfo</td>
+	<td>
+
+		<table class="table table-sm table-striped">
+   		<tbody>
+   		    <tr><td>Clock</td><td>{{ .quote.clockinfo.clock }}</td></tr>
+   		    <tr><td>Reset</td><td>{{ .quote.clockinfo.resetcount }}</td></tr>
+   		    <tr><td>Restart</td><td>{{ .quote.clockinfo.restartcount }}</td></tr>
+   		    <tr><td>Safe</td><td>
+   		       {{ if .quote.clockinfo.safe }}
+            <span class="badge bg-success">Safe ({{ .quote.clockinfo.safe }})</span>
+        {{ else }}
+            <span class="badge bg-danger">Unsafe ({{ .quote.clockinfo.safe }})</span>        
+        {{ end }}
+   		       </td></tr>   		    
+   		</tbody>
+		</table>
+
+	</td>
+
+   <tr><td>Qualified Signer</td><td>{{ .quote.qualifiedsigner }}</td></tr>
 
 
+   </tbody>
+</table>
 
+
+<h5>Signature</h5>
+
+
+<table class="table table-sm table-striped">
+   <tbody>
+   	<tr><th>Field</th><th>Reported value</th></tr>
+    <tr><td>Algorithm</td><td>{{ .signature.SigAlg }} (default value is <i>20</i> for RSASSA)</td></tr>
+    <tr><td>Signature</td><td>{{ .signature.Signature }}</td></tr> 
+   </tbody>
+</table>
 {{end}}
 
    
