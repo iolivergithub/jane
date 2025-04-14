@@ -22,6 +22,7 @@ type homepagestructure struct {
 	Nses          int64
 	Nrus          int
 	Nlog          int64
+	Nmsg          int64
 	Szlog         int64
 	Cfg           *configuration.ConfigurationStruct
 	CmdLineLength int
@@ -52,6 +53,7 @@ func homepage(c echo.Context) error {
 
 	hps.Nlog = operations.CountLogEntries()
 	hps.Nses = operations.CountSessions()
+	hps.Nmsg = operations.CountMessages()
 
 	lsz, lerr := os.Stat(configuration.ConfigData.Logging.LogFileLocation)
 	if lerr != nil {

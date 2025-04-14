@@ -53,7 +53,7 @@ func CloseSession(itemid string) error {
 	//Get the session, return error if not found
 	session, err := GetSessionByItemID(itemid)
 	if err != nil {
-		return fmt.Errorf("Element not found %v : %v", itemid, err)
+		return fmt.Errorf("Session not found %v : %v", itemid, err)
 	}
 
 	//Check if the session isn't already closed

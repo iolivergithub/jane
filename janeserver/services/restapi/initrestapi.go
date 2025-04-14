@@ -98,6 +98,10 @@ func setUpOperationEndpoints(router *echo.Echo) {
 	router.PUT(PREFIX+"/session/:sid/claim/:cid", putSessionClaim)
 	router.PUT(PREFIX+"/session/:sid/result/:rid", putSessionResult)
 
+	//router.POST(PREFIX+"/message", postMessage)
+	router.GET(PREFIX+"/messages/session/:sid", getMessagesForSession)
+	router.GET(PREFIX+"/messages/element/:eid", getMessagesForElement)
+
 }
 
 func setupAuxillaryOperationEndpoints(router *echo.Echo) {
