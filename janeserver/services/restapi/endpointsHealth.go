@@ -25,7 +25,6 @@ type counts struct {
 	Npol int64 `json:"Npol"`
 
 	Nlog int64 `json:"Nlog"`
-	NMsg int64 `json:"Nmsg"`
 }
 
 // Returns a structure detailing the health of the attestation system
@@ -34,7 +33,7 @@ func objectCount() counts {
 
 	var wg sync.WaitGroup
 
-	wg.Add(10)
+	wg.Add(9)
 
 	nlog := func() int64 {
 		defer wg.Done()
@@ -81,14 +80,9 @@ func objectCount() counts {
 		return operations.CountProtocols()
 	}()
 
-	nmsg := func() int64 {
-		defer wg.Done()
-		return operations.CountMessages()
-	}()
-
 	wg.Wait()
 
-	return counts{ne, np, nev, nc, nr, nh, nrul, npro, nlog, nmsg}
+	return counts{ne, np, nev, nc, nr, nh, nrul, npro, nlog}
 }
 
 func health(c echo.Context) error {
