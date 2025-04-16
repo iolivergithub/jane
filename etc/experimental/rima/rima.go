@@ -53,7 +53,10 @@ func pcallHandler(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sid, out, err := callScript(data.EID, data.Pol, data.Msg)
+	sid, out, err := callScript(janeURL(), data.EID, data.Pol, data.Msg)
+
+	fmt.Printf("sid, out, err: %v,%v,%v\n",sid,out,err)
+
 	if err != nil {
  		eresponse := pcallErrorResponse{ Error:err.Error(), Out:out }
 		w.Header().Set("Content-Type","application/json")
@@ -69,6 +72,20 @@ func pcallHandler(w http.ResponseWriter, r *http.Request){
  		http.Error(w, err.Error(), http.StatusInternalServerError)
  		return
  	}   
+}
+
+
+//**************************************************************************
+//
+// Attestation Server Connection
+//
+//**************************************************************************
+
+var AtteststionServerURL string = "http://127.0.0.1"
+var AttestationServerPort string = "8520"
+
+func janeURL() string {
+	return AtteststionServerURL+":"+AttestationServerPort
 }
 
 //**************************************************************************
@@ -87,7 +104,7 @@ var SDB map[sdbKey]string
 func setupSDB() {
 	SDB = make(map[sdbKey]string)
 
-	SDB[ sdbKey{"a","1"} ] = "./script1.sh"
+	SDB[ sdbKey{"d1b09fae-c996-4b4c-9678-0724cf15fc8c","1"} ] = "./script1.sh"
 	SDB[ sdbKey{"a","2"} ] = "./script2.sh"
 
 }
@@ -103,14 +120,16 @@ func getEntry(eid string, pol string) (string,bool){
 //
 //**************************************************************************
 
-func callScript( eid string, pol string, msg string) (string, string, error) {
+func callScript( url string, eid string, pol string, msg string) (string, string, error) {
 	fmt.Printf("Call string %v, %v, %v",eid,pol,msg)
 
 	dbe,ok := getEntry(eid,pol)
-	fmt.Printf(", entry %v, %v\n",dbe,ok)
+	fmt.Printf(", entry %v, %v\n\n",dbe,ok)
 
-	cmd := exec.Command(dbe,eid,pol,msg)
-	out,_ := cmd.Output()
-	//fmt.Printf("\nerror is %v\n",err.Error())
+	cmd := exec.Command(dbe,url,eid,pol,msg)
+	out,err:= cmd.Output()
+	if err != nil {
+		fmt.Printf("\n\nerror is %v\n",err.Error())
+	}
 	return "alice", string(out), nil
 }
