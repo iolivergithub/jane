@@ -126,6 +126,7 @@ func StartWebUI() {
 	crt := configuration.ConfigData.Web.Crt
 	key := configuration.ConfigData.Web.Key
 	usehttp := configuration.ConfigData.Web.UseHTTP
+	listenon := configuration.ConfigData.Web.ListenOn
 
 	//start the server
 	if usehttp == true {
