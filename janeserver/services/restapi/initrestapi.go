@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -41,14 +42,17 @@ func StartRESTInterface() {
 	crt := configuration.ConfigData.Rest.Crt
 	key := configuration.ConfigData.Rest.Key
 	usehttp := configuration.ConfigData.Rest.UseHTTP
+	listenon := configuration.ConfigData.Web.ListenOn
 
 	//start the server
 	if usehttp == true {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", "REST API HTTP mode starting.")
+		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
 		router.Logger.Fatal(router.Start(port))
 
 	} else {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", "REST API HTTPS mode starting.")
+		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
 		router.Logger.Fatal(router.StartTLS(port, crt, key))
 
 	}

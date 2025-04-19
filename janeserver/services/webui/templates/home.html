@@ -74,13 +74,13 @@
                         <div class="card-body">
                            <table class="table table-sm table-striped">
                               <tbody>
-                                 <tr><td scope="col">REST</td> <td scope="col">  <b>:{{ .Cfg.Rest.Port }} </b>
+                                 <tr><td scope="col">REST</td> <td scope="col">  <b>{{ .Cfg.Rest.ListenOn }}:{{ .Cfg.Rest.Port }} </b>
                                  {{ if eq .Cfg.Rest.UseHTTP true }}
                                  <span class="badge bg-danger">http</span>
                                  {{ else }}
                                  <span class="badge bg-success">https</span>
                               {{ end }}</td> </tr>
-                              <tr><td scope="col">Web</td> <td scope="col">   <b> :{{ .Cfg.Web.Port }}</b>
+                              <tr><td scope="col">Web</td> <td scope="col">   <b>{{ .Cfg.Web.ListenOn }}:{{ .Cfg.Web.Port }}</b>
                               {{ if eq .Cfg.Web.UseHTTP true }}
                               <span class="badge bg-danger">http</span>
                               {{ else }}

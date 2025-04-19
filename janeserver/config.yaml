@@ -19,6 +19,7 @@ rest:
   crt: temporary.crt
   key: temporary.key
   usehttp: true
+  listenon: 0.0.0.0
 
 #Web Interface Configuration
 web:
@@ -26,6 +27,7 @@ web:
   crt: temporary.crt
   key: temporary.key
   usehttp: true  
+  listenon: 0.0.0.0
 
 
 #Web Interface Configuration

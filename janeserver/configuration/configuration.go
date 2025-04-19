@@ -27,6 +27,8 @@ import (
 //#REST Interface Configuration
 //rest:
 //  port: 8520                                  -- Port to use for the REST API, default is 8520
+//  listenOn: 0.0.0.0                           -- Which addresses to listen on, default is 0.0.0.0
+
 //  crt: temporary.crt                          -- File containing the certificate to use for the HTTPS server
 //  key: temporary.key                          -- File containing the private key for the HTTPS server
 //  usehttp: true                               -- Use HTTP (true) instead of HTTPS. Default is false
@@ -45,16 +47,18 @@ type ConfigurationStruct struct {
 		ClientID string
 	}
 	Rest struct {
-		Port    string
-		Crt     string
-		Key     string
-		UseHTTP bool
+		Port     string
+		Crt      string
+		Key      string
+		UseHTTP  bool
+		ListenOn string
 	}
 	Web struct {
-		Port    string
-		Crt     string
-		Key     string
-		UseHTTP bool
+		Port     string
+		Crt      string
+		Key      string
+		UseHTTP  bool
+		ListenOn string
 	}
 	X3270 struct {
 		Port string

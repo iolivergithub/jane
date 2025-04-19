@@ -130,10 +130,12 @@ func StartWebUI() {
 
 	//start the server
 	if usehttp == true {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", "WEB UI HTTP mode starting.")
+		msg := fmt.Sprintf("WEB UI HTTP mode starting, listening on %v at %v.", listenon, port)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", msg)
 		router.Logger.Fatal(router.Start(port))
 	} else {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", "WEB UI HTTPS mode starting.")
+		msg := fmt.Sprintf("WEB UI HTTPS mode starting, listening on %v at %v.", listenon, port)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", msg)
 		router.Logger.Fatal(router.StartTLS(port, crt, key))
 	}
 }
