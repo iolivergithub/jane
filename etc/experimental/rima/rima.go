@@ -91,7 +91,7 @@ func pcallHandler(w http.ResponseWriter, r *http.Request) {
 
 	sid, out, err := callScript(janeURL, data.EID, data.Pol, data.Msg)
 
-	fmt.Printf("sid, out, err: %v,%v,%v\n", sid, out, err)
+	fmt.Printf("sid: %v\nout: %v\n err: %v\n", sid, out, err)
 
 	if err != nil {
 		eresponse := pcallErrorResponse{Error: err.Error(), Out: out}
@@ -148,7 +148,8 @@ func setupSDB(fn string) {
 
 // Format of DB is   ElementItemID, Policy identifier, script name
 func populateSDB(data [][]string) {
-	for _, line := range data {
+	for j, line := range data {
+		fmt.Printf(" Entry #%v is %v %v %v\n", j, line[0], line[1], line[2])
 		SDB[sdbKey{line[0], line[1]}] = line[2]
 	}
 }
@@ -165,15 +166,20 @@ func getEntry(eid string, pol string) (string, bool) {
 //**************************************************************************
 
 func callScript(url string, eid string, pol string, msg string) (string, string, error) {
-	fmt.Printf("Call string %v, %v, %v", eid, pol, msg)
+	fmt.Printf("Call string %v, %v, %v\n", eid, pol, msg)
 
 	dbe, ok := getEntry(eid, pol)
-	fmt.Printf(", entry %v, %v\n\n", dbe, ok)
+	fmt.Printf(" ---> entry %v, %v\n", dbe, ok)
 
-	cmd := exec.Command(dbe, url, eid, pol, msg)
+	scriptlocation := fmt.Sprintf("%v/%v", scriptDir, dbe)
+	fmt.Printf(" ---> script %v\n\n", scriptlocation)
+
+	cmd := exec.Command(scriptlocation, url, eid, pol, msg)
 	out, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("\n\nerror is %v\n", err.Error())
 	}
+
+	//instead of alice we should be taking the contents of the last line - which according to convention should just be a sessionid
 	return "alice", string(out), nil
 }
