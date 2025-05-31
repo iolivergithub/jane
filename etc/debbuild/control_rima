@@ -1,0 +1,8 @@
+Package: rimapolicyengineforjane
+Version: 1.0
+Maintainer: Ian Oliver <ian.oliver@oulu.fi>
+Architecture: amd64
+Priority: optional
+Section: admin
+Description: Rima Policy Engine for Jane: 
+ Test DEB packaging

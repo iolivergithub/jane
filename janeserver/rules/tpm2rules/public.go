@@ -30,11 +30,13 @@ func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, se
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
+	msg := fmt.Sprintf("TPM safe value is %v", q.ClockInfo.Safe)
+
 	if q.ClockInfo.Safe == "false" {
-		return structures.Fail, "Uncommanded device/TPM shutdown", nil
+		return structures.Fail, "Uncommanded device/TPM shutdown. " + msg, nil
 	}
 
-	return structures.Success, "TPM shutdown normal", nil
+	return structures.Success, "TPM shutdown normal. " + msg, nil
 }
 
 func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
@@ -58,7 +60,7 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 	claimedAV := base64.StdEncoding.EncodeToString(pcrdigest)
 	expectedAV := (ev.EVS)["attestedValue"]
 
-	fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", pcrdigest, claimedAV, expectedAV)
+	//fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", pcrdigest, claimedAV, expectedAV)
 
 	if expectedAV == claimedAV {
 		return structures.Success, "", nil
@@ -76,8 +78,8 @@ func FirmwareRule(claim structures.Claim, rule string, ev structures.ExpectedVal
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	fmt.Printf("GOT HERE WITH A GOOD QUOTE; ERR=%v\n", err)
-	fmt.Printf("Quote looks like this: \n %v \n\n", q)
+	//fmt.Printf("GOT HERE WITH A GOOD QUOTE; ERR=%v\n", err)
+	//fmt.Printf("Quote looks like this: \n %v \n\n", q)
 
 	claimedFirmware := fmt.Sprintf("%v", q.FirmwareVersion)
 	expectedFirmware := (ev.EVS)["firmwareVersion"]

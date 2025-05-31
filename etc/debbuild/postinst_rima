@@ -1,0 +1,24 @@
+#!/bin/sh
+
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+echo "${PURPLE}Running post installation scripts${NC}"
+
+echo "${PURPLE}Enabling Rima with systemd${NC}"
+systemctl enable rima.service
+
+echo "${PURPLE}Starting Rima with systemd${NC}"
+systemctl start rima.service
+
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+echo "${RED}   *** CHECK!!!!! **** ${NC}"
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+echo "${RED} Edit the /etc/systemd/system/rima.service ${NC}"
+echo "${RED} Ensure Rima has the correct parameters (see below)${NC}"
+echo "${RED} NOTE: ${NC}"
+echo "${RED} It is possible that Rima will not have started correctly${NC}"
+echo "${RED} if it is configured incorrecly, eg: no Jane, no scripts, scripts not found etc${NC}"
+echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+
+echo "${PURPLE}Post installation scripts complete${NC}"
