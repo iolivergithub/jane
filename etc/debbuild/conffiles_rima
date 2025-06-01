@@ -1,1 +1,2 @@
 /etc/systemd/system/rima.service
+/opt/jane/rima.db

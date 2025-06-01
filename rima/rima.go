@@ -68,6 +68,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 type pcallRequest struct {
 	EID string `json:"eid"`
+	EPN string `json:"epn"`
 	Pol string `json:"pol"`
 	Msg string `json:"msg"`
 }
@@ -90,7 +91,7 @@ func pcallHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sid, out, err := callScript(janeURL, data.EID, data.Pol, data.Msg)
+	sid, out, err := callScript(janeURL, data.EID, data.EPN, data.Pol, data.Msg)
 
 	fmt.Printf("sid: %v\nout: %v\n err: %v\n", sid, out, err)
 
@@ -137,6 +138,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 type sdbKey struct {
 	Eid string
+	Epn string
 	Pol string
 }
 
@@ -168,13 +170,13 @@ func setupSDB(fn string) {
 // Format of DB is   ElementItemID, Policy identifier, script name
 func populateSDB(data [][]string) {
 	for j, line := range data {
-		fmt.Printf(" Entry #%v is %v %v %v\n", j, line[0], line[1], line[2])
-		SDB[sdbKey{line[0], line[1]}] = line[2]
+		fmt.Printf(" Entry #%v is %v %v %v\n", j, line[0], line[1], line[2], line[3])
+		SDB[sdbKey{line[0], line[1], line[2]}] = line[3]
 	}
 }
 
-func getEntry(eid string, pol string) (string, bool) {
-	val, ok := SDB[sdbKey{eid, pol}]
+func getEntry(eid string, epn string, pol string) (string, bool) {
+	val, ok := SDB[sdbKey{eid, epn, pol}]
 	return val, ok
 }
 
@@ -184,16 +186,16 @@ func getEntry(eid string, pol string) (string, bool) {
 //
 //**************************************************************************
 
-func callScript(url string, eid string, pol string, msg string) (string, string, error) {
-	fmt.Printf("Call string %v, %v, %v\n", eid, pol, msg)
+func callScript(url string, eid string, epn string, pol string, msg string) (string, string, error) {
+	fmt.Printf("Call string %v, %v, %v, %v\n", eid, epn, pol, msg)
 
-	dbe, ok := getEntry(eid, pol)
+	dbe, ok := getEntry(eid, epn, pol)
 	fmt.Printf(" ---> entry %v, %v\n", dbe, ok)
 
 	scriptlocation := fmt.Sprintf("%v/%v", scriptDir, dbe)
 	fmt.Printf(" ---> script %v\n\n", scriptlocation)
 
-	cmd := exec.Command(scriptlocation, url, eid, pol, msg)
+	cmd := exec.Command(scriptlocation, url, eid, epn, pol, msg)
 	out, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("\n\nerror is %v\n", err.Error())

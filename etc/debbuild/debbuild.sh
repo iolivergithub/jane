@@ -82,6 +82,8 @@ cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
 cp rima.service $RIMABASE/etc/systemd/system/rima.service
 
+cp rima.db $RIMABASE/opt/jane/rima.db
+
 
 #Copy control files
 echo "${BLUE}Copying Debian control, conffile and postinst files${NC}"
