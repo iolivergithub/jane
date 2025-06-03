@@ -7,7 +7,7 @@ VERSION=locally_compiled
 
 
 build: libs fmt
-	GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build  -ldflags="-v -X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
+	GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build  -ldflags="-X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
 	strip ${BINARY_NAME}
 	ls -l --color=auto ${BINARY_NAME}
 

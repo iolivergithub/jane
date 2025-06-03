@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"runtime"
+
+	"rima/restapi"
+	"rima/ui"
 )
 
 // Version number
@@ -34,100 +36,13 @@ func main() {
 	flag.Parse()
 
 	setupSDB(dbfile)
-	welcomeMessage()
+	ui.WelcomeMessage(VERSION, BUILD, port, listenOn, janeURL, len(SDB), dbfile, scriptDir)
 
-	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/pcall", pcallHandler)
-	http.HandleFunc("/status", statusHandler)
+	http.HandleFunc("/", restapi.RootHandler)
+	http.HandleFunc("/pcall", restapi.PcallHandler)
+	http.HandleFunc("/status", restapi.StatusHandler)
 
 	http.ListenAndServe(fmt.Sprintf("%v:%v", listenOn, port), nil)
-}
-
-func welcomeMessage() {
-	fmt.Printf("\n")
-	fmt.Printf("+========================================================\n")
-	fmt.Printf("|  RIMA\n")
-	fmt.Printf("|   + %v O/S on %v\n", runtime.GOOS, runtime.GOARCH)
-	fmt.Printf("|   + version %v, build %v\n", VERSION, BUILD)
-	fmt.Printf("|   + Listening on port %v bound to %v\n", port, listenOn)
-	fmt.Printf("|   + Jane is at %v\n", janeURL)
-	fmt.Printf("|   + DB %d entries in %v \n", len(SDB), dbfile)
-	fmt.Printf("|   + Scripts at %v\n", scriptDir)
-	fmt.Printf("+========================================================\n")
-}
-
-//**************************************************************************
-//
-// REST API Handlers
-//
-//**************************************************************************
-
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Welcome - Rima is running")
-}
-
-type pcallRequest struct {
-	EID string `json:"eid"`
-	EPN string `json:"epn"`
-	Pol string `json:"pol"`
-	Msg string `json:"msg"`
-}
-
-type pcallResponse struct {
-	Sid string `json:"sid"`
-	Out string `json:"out"`
-}
-
-type pcallErrorResponse struct {
-	Error string `json:"error"`
-	Out   string `json:"out"`
-}
-
-func pcallHandler(w http.ResponseWriter, r *http.Request) {
-	var data pcallRequest
-
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	sid, out, err := callScript(janeURL, data.EID, data.EPN, data.Pol, data.Msg)
-
-	fmt.Printf("sid: %v\nout: %v\n err: %v\n", sid, out, err)
-
-	if err != nil {
-		eresponse := pcallErrorResponse{Error: err.Error(), Out: out}
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(eresponse); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	response := pcallResponse{Sid: sid, Out: out}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-type rimaStatusResponse struct {
-	JaneURL   string `json:"janeurl"`
-	Port      string `json:"port"`
-	DBFile    string `json:"dbfile"`
-	ScriptDir string `json:"scriptDir"`
-	ListedOn  string `json:"listenOn"`
-}
-
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	response := rimaStatusResponse{JaneURL: janeURL, Port: port, DBFile: dbfile, ScriptDir: scriptDir, ListedOn: listenOn}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
 
 //**************************************************************************

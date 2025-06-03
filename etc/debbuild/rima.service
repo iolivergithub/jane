@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=ian
-ExecStart=/opt/jane/rima -jane=https://127.0.0.1:8540 -port=8522 -db=/opt/jane/rima.db -scripts=/opt/jane/rimascripts -listen=0.0.0.0
+ExecStart=/opt/jane/rima -jane=https://127.0.0.1:8520 -port=8522 -db=/opt/jane/rima.db -scripts=/opt/jane/rimascripts -listen=0.0.0.0
 
 [Install]
 WantedBy=multi-user.target
