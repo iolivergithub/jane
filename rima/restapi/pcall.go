@@ -1,8 +1,12 @@
 package restapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"rima/configuration"
+	"rima/processing"
 )
 
 type pcallRequest struct {
@@ -22,7 +26,7 @@ type pcallErrorResponse struct {
 	Out   string `json:"out"`
 }
 
-func pcallHandler(w http.ResponseWriter, r *http.Request) {
+func PcallHandler(w http.ResponseWriter, r *http.Request) {
 	var data pcallRequest
 
 	err := json.NewDecoder(r.Body).Decode(&data)
@@ -30,7 +34,7 @@ func pcallHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sid, out, err := callScript(janeURL, data.EID, data.EPN, data.Pol, data.Msg)
+	sid, out, err := processing.CallScript(configuration.ConfigData.JaneURL, data.EID, data.EPN, data.Pol, data.Msg)
 
 	fmt.Printf("sid: %v\nout: %v\n err: %v\n", sid, out, err)
 

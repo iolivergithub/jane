@@ -5,6 +5,6 @@ import (
 	"net/http"
 )
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
+func RootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Welcome - Rima is running")
 }

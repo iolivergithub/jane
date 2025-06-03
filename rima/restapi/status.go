@@ -1,20 +1,14 @@
 package restapi
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
+
+	"rima/configuration"
 )
 
-type rimaStatusResponse struct {
-	JaneURL   string `json:"janeurl"`
-	Port      string `json:"port"`
-	DBFile    string `json:"dbfile"`
-	ScriptDir string `json:"scriptDir"`
-	ListedOn  string `json:"listenOn"`
-}
-
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	response := rimaStatusResponse{JaneURL: janeURL, Port: port, DBFile: dbfile, ScriptDir: scriptDir, ListedOn: listenOn}
+func StatusHandler(w http.ResponseWriter, r *http.Request) {
+	response := configuration.ConfigData
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
