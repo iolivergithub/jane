@@ -21,6 +21,7 @@ type sysinfoReturn struct {
 	Ppid      int    `json:"ppid"`
 	Uid       int    `json:"uid"`
 	SessionID string `json:"sessionid"`
+	MachineID string `json:"machineid"`
 }
 
 func getHostname() string {
@@ -35,11 +36,19 @@ func getHostname() string {
 }
 
 func Sysinfo(c echo.Context) error {
+	var machineid string
+
 	fmt.Println("sysinfo called")
 
-	ncpus := runtime.NumCPU()
+	machineidbytes, err := os.ReadFile("/etc/machine-id")
+	if err != nil {
+		machineid = ""
+	} else {
+		machineid = string(machineidbytes)
+	}
 
-	s := sysinfoReturn{runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid(), os.Getuid(), utilities.RUNSESSION}
+	ncpus := runtime.NumCPU()
+	s := sysinfoReturn{runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid(), os.Getuid(), utilities.RUNSESSION, machineid}
 
 	return c.JSON(http.StatusOK, s)
 }

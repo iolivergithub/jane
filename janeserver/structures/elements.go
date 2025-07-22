@@ -34,9 +34,10 @@ type Endpoint struct {
 }
 
 type HostMachine struct {
-	OS       string `json:"os" bson:"os"  yaml:"os"`
-	Arch     string `json:"arch" bson:"arch"  yaml:"arch"`
-	Hostname string `json:"hostname" bson:"hostname"  yaml:"hostname"`
+	OS        string `json:"os" bson:"os"  yaml:"os"`
+	Arch      string `json:"arch" bson:"arch"  yaml:"arch"`
+	Hostname  string `json:"hostname" bson:"hostname"  yaml:"hostname"`
+	MachineID string `json:"machineid" bson:"machineid"  yaml:"machineid"`
 }
 
 type SSHKEY struct {

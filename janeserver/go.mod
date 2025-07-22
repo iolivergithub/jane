@@ -10,7 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/racingmars/go3270 v0.9.2
 	go.mongodb.org/mongo-driver v1.17.4
-	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
 	gopkg.in/yaml.v3 v3.0.1
 )
 

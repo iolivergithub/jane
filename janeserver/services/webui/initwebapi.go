@@ -113,7 +113,10 @@ func StartWebUI() {
 	// Middlewares
 	router.Use(middleware.Logger())
 	router.Use(middleware.Secure())
-	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
+
+	//Ignore this as it causes issues with nginx and rewriting of URLs
+	//Easier to let nginx deal with this anyway
+	//router.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
 
 	//setup endpoints
 	setupHomeEndpoints(router)

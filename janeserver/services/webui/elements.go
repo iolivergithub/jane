@@ -93,7 +93,8 @@ func elementtemplate() string {
     {
         "os": "****",
         "arch": "****",
-        "hostname": "****"
+        "hostname": "****",
+        "machineid": "****"
     },
     "tpm2":
     {
