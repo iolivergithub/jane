@@ -30,6 +30,8 @@ In following fields are part of the *hostmachine* entry
 | os | String | The operating system of the host machine |
 | arch | String | The CPU architecture of the host machine |
 | hostname | String | The hostname |
+| machineid | String | A unique identifier of a machine, typicallys /etc/machine-id as found in Debian and Ubuntu distributions |
+
 
 ### SSHKEY
 In following fields are part of the *sshkey* entry
@@ -122,6 +124,6 @@ The definition of the element structure can be found at https://github.com/ioliv
        "public" : "a104e0972158670651d901de333cb05990443e8088daa1cd1b52c274c23c83d637bbb95427da10c5ebe62a96da4570486d1bdd38563942f6fca15cd2890aed9018d0becc5231fe5139a18cd8d21e3844ec339da07729fa2615ad1ed542a3167a3696c4173e710a0346bf3d457034ce8cd861a21578fe07d407aee421275e06aed3840004042f99899392ac6ea17314c52839cd92ee37773a8bb6b3dc4d42e032c224a965561d555cd2b3f7ccfc7504eb2ba67dabd094e0c7633d7d9bdcab26f03859efaa0451e38213f2d173fdb8c8e03b24e934b74c5c114e64207fcea104e0972158670651d901de333cb05990443e8088daa1cd1b52c274c23c83d637bbb95427da10c5ebe62a96da4570486d1bdd38563942f6fca15cd2890aed9018d0becc5231fe5139a18cd8d21e3844ec339da07729fa2615ad1ed542a3167a3696c4173e710a0346bf3d457034ce8cd861a21578fe07d407aee421275e06aed3840004042f99899392ac6ea17314c52839cd92ee37773a8bb6b3dc4d42e032c224a965561d555cd2b3f7ccfc7504eb2ba67dabd094e0c7633d7d9bdcab26f03859efaa0451e38213f2d173fdb8c8e03b24e934b74c5c114e64207fce952082a32534a8900083150a617fa1bd4793a33d83aa3668983e8001f852aa353c12cb", 
        "name" : "000bbaff812d583ae10504643d252fb051ac9b6203d4d59be83d8514c9f55a93f61d" } 
       }, 
-     "host" : { "os" : "linux", "arch" : "arm", "hostname" : "testsys" }
+     "host" : { "os" : "linux", "arch" : "arm", "hostname" : "testsys", "machineid":"39086971-960e-422a-a636-cb8bc7f1ad72"}
  }
 ```

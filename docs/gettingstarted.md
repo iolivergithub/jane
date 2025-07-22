@@ -26,3 +26,6 @@ The top bar is available on all pages and clicking on the home icon on the left-
 
 If you need help or wish for more history of Jane, then use the Help menu which has these Help... and About... options
 
+# Creating an Element
+
+The element is the core description of the thing to be attested. Typically this might be a physical machine, virtual machine, container, IoT device etc
