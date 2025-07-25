@@ -72,7 +72,8 @@
             </p>     
             <p>
                <button type="button" class="btn btn-primary btn-sm" onClick="setEVTPMQuote()">TPM/Quote</button>&nbsp;
-               <button type="button" class="btn btn-primary btn-sm" onClick="setEVPCRSelection()">PCRSelection</button><br/>
+               <button type="button" class="btn btn-primary btn-sm" onClick="setEVPCRSelection()">TPM/PCRSelection</button><br/>
+               <button type="button" class="btn btn-primary btn-sm" onClick="setEVSYSMachineID()">SYS/MachineID</button><br/>               
             </p>
 
 
@@ -110,6 +111,10 @@
     function setEVBlank() {
         document.getElementById('evsparameters').value = "{}";
     }
+    function setEVSYSMachineID() {
+        document.getElementById('evsparameters').value = `{ "machineid":"****" }`;
+    }
+
 
 
 

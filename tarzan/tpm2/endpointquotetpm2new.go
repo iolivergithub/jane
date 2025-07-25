@@ -60,20 +60,17 @@ func NewQuote(c echo.Context) error {
 	for _, r := range s {
 		v64, err := strconv.ParseUint(r, 10, 8)
 		fmt.Printf("creating pcrselection for %v,%v,%v\n", err, pcrbank, v64)
-
 		if err == nil {
 			pcrsel := tpm2.TPMSPCRSelection{Hash: pcrbank, PCRSelect: tpm2.PCClientCompatible.PCRs(uint(v64))}
-
 			pcrselectionlist = append(pcrselectionlist, pcrsel)
 		}
-
 	}
 
 	// PCR selection (selecting PCR 7 for this example)
 	pcrSelection := tpm2.TPMLPCRSelection{
 		PCRSelections: pcrselectionlist,
 	}
-
+	fmt.Printf("PCRselectionlist is %v\n", pcrselectionlist)
 	// Here we parse the nonce
 	// If none then one will be generated
 	nonce := params["tpm2/nonce"].(string)
@@ -83,7 +80,6 @@ func NewQuote(c echo.Context) error {
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Unable base64 undecode provided nonce %v with error %v", nonce, err.Error())}
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}
-	//nonceTPM2B := tpm2.TPM2BData{Buffer: []byte(nonce)}
 	nonceTPM2B := tpm2.TPM2BData{Buffer: decodedNonce}
 
 	// Here we parse the akhandle
@@ -104,7 +100,7 @@ func NewQuote(c echo.Context) error {
 		Name:   tpm2.TPM2BName{}, // This seems to work....?
 	}
 
-	// This sets up the signing scheme, which is walsy RSASSA/SHA256
+	// This sets up the signing scheme, which is always RSASSA/SHA256
 
 	scheme := tpm2.TPMTSigScheme{
 		Scheme: tpm2.TPMAlgRSASSA,

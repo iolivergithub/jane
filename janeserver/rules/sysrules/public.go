@@ -3,6 +3,7 @@ package sysrules
 import (
 	"a10/structures"
 	"fmt"
+	"strings"
 )
 
 func Registration() []structures.Rule {
@@ -35,10 +36,12 @@ func CallrulemachineIDTA(claim structures.Claim, rule string, ev structures.Expe
 		return structures.RuleCallFailure, "TA not of correct type, or not reporting machineid parameter value", nil
 	}
 
-	claimedMachineID := fmt.Sprintf("%v", machineid)
+	claimedMachineID := strings.Trim(fmt.Sprintf("%v", machineid), " \t\n")
 
 	// We get this from the EXPECTED VALUES
 	expectedMachineID := (ev.EVS)["machineid"]
+
+	fmt.Printf("Comparison\n%v\n%v\n%v\n===\n", claimedMachineID, expectedMachineID, claimedMachineID == expectedMachineID)
 
 	// and now the check
 	if expectedMachineID == claimedMachineID {
@@ -57,11 +60,13 @@ func CallrulemachineIDCR(claim structures.Claim, rule string, ev structures.Expe
 		return structures.RuleCallFailure, "TA not of correct type, or not reporting machineid parameter value", nil
 	}
 
-	claimedMachineID := fmt.Sprintf("%v", machineid)
+	claimedMachineID := strings.Trim(fmt.Sprintf("%v", machineid), " \t\n")
 
 	// We get this from the CLAIM.ELEMENT.HOST.MACHINEID
 	expectedMachineID := claim.Header.Element.Host.MachineID
 	fmt.Printf("Claim machine ID is %v\n", expectedMachineID)
+
+	fmt.Printf("Comparison\n%v\n%v\n%v\n===\n", claimedMachineID, expectedMachineID, claimedMachineID == expectedMachineID)
 
 	// and now the check
 	if expectedMachineID == claimedMachineID {
