@@ -56,21 +56,41 @@ func NewQuote(c echo.Context) error {
 	// Here we parse the pcrSelection to obtain the []int structure for the pcrselections
 	s := strings.Split(params["pcrSelection"].(string), ",")
 	fmt.Printf("pcr selection string: %v\n", s)
-	pcrselectionlist := []tpm2.TPMSPCRSelection{}
-	for _, r := range s {
-		v64, err := strconv.ParseUint(r, 10, 8)
-		fmt.Printf("creating pcrselection for %v,%v,%v\n", err, pcrbank, v64)
-		if err == nil {
-			pcrsel := tpm2.TPMSPCRSelection{Hash: pcrbank, PCRSelect: tpm2.PCClientCompatible.PCRs(uint(v64))}
-			pcrselectionlist = append(pcrselectionlist, pcrsel)
-		}
+
+	// *** This is the old code which does not work
+	// pcrselectionlist := []tpm2.TPMSPCRSelection{}
+	// for _, r := range s {
+	// 	v64, err := strconv.ParseUint(r, 10, 8)
+	// 	fmt.Printf("creating pcrselection for %v,%v,%v\n", err, pcrbank, v64)
+	// 	if err == nil {
+	// 		pcrsel := tpm2.TPMSPCRSelection{Hash: pcrbank, PCRSelect: tpm2.PCClientCompatible.PCRs(uint(v64))}
+	// 		pcrselectionlist = append(pcrselectionlist, pcrsel)
+	// 	}
+	// }
+	// ***
+
+	var indcies = make([]uint, len(s))
+	for i, r := range s {
+		v, _ := strconv.ParseUint(r, 10, 8)
+		indcies[i] = uint(v)
+		// TODO err
+	}
+	pcrSelection := tpm2.TPMSPCRSelection{
+		Hash:      pcrbank,
+		PCRSelect: tpm2.PCClientCompatible.PCRs(indcies...),
 	}
 
+	pcrselectionlist := tpm2.TPMLPCRSelection{PCRSelections: []tpm2.TPMSPCRSelection{pcrSelection}}
+
+	// *** This is the old code which does not work
 	// PCR selection (selecting PCR 7 for this example)
-	pcrSelection := tpm2.TPMLPCRSelection{
-		PCRSelections: pcrselectionlist,
-	}
+	// pcrSelection := tpm2.TPMLPCRSelection{
+	//	PCRSelections: pcrselectionlist,
+	// }
+	//***
+
 	fmt.Printf("PCRselectionlist is %v\n", pcrselectionlist)
+
 	// Here we parse the nonce
 	// If none then one will be generated
 	nonce := params["tpm2/nonce"].(string)
@@ -114,7 +134,7 @@ func NewQuote(c echo.Context) error {
 
 	// Here's the quote
 
-	quoteresponse, err := tpm2.Quote{SignHandle: namedHandle, QualifyingData: nonceTPM2B, InScheme: scheme, PCRSelect: pcrSelection}.Execute(tpm)
+	quoteresponse, err := tpm2.Quote{SignHandle: namedHandle, QualifyingData: nonceTPM2B, InScheme: scheme, PCRSelect: pcrselectionlist}.Execute(tpm)
 	if err != nil {
 		fmt.Printf("Could not make Quote with error %v\n", err.Error())
 
