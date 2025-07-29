@@ -218,7 +218,7 @@ func ValidateIMA(claim structures.Claim, rule string, ev structures.ExpectedValu
 
 	resp, err := postIMARequest(req)
 	if err != nil {
-		return structures.Fail, fmt.Sprintf("Communication with Keylime failed %w", err), nil
+		return structures.Fail, fmt.Sprintf("Communication with Keylime failed %v", err.Error()), nil
 	}
 
 	if resp.Failure != "" {

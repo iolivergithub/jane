@@ -125,6 +125,4 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 		return bodymap, cps, fmt.Errorf("RATSD reports error %v with response %v", resp.Status, taResponse)
 	}
 
-	// should never get here
-	return bodymap, cps, nil
 }

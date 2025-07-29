@@ -30,7 +30,7 @@ func StartX3270() {
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service failed to start: "+err.Error())
-		fmt.Printf("X3270 failed to start service: " + err.Error())
+		fmt.Printf("X3270 failed to start service: %v\n", err.Error())
 		//panic(err)
 	}
 
@@ -40,7 +40,7 @@ func StartX3270() {
 		conn, err := ln.Accept()
 		if err != nil {
 			logging.MakeLogEntry("SYS", "x3270", configuration.ConfigData.System.Name, "JANE", "X3270 failed to accept connnection: "+err.Error())
-			fmt.Printf("X3270 failed to accept connnection: " + err.Error())
+			fmt.Printf("X3270 failed to accept connnection: %v\n", err.Error())
 			//panic(err)
 		}
 		go handle(conn)
@@ -67,7 +67,7 @@ func handle(conn net.Conn) {
 		4, 20,                         // the row and column to place the cursor
 		conn)
 	if err != nil {
-		fmt.Printf("X3270 handle screen error %w", err)
+		fmt.Printf("X3270 handle screen error %v\n", err.Error())
 		fmt.Println(err)
 		return
 	}

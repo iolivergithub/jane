@@ -28,7 +28,7 @@ func NewQuote(c echo.Context) error {
 	ps := new(map[string]interface{})
 
 	if err := c.Bind(&ps); err != nil {
-		fmt.Printf("NewQuote BIND err %w\n", err)
+		fmt.Printf("NewQuote BIND err %v\n", err.Error())
 		rtn := tpm2taErrorReturn{fmt.Sprintf("Could not decode parameters %v", err.Error())}
 		return c.JSON(http.StatusUnprocessableEntity, rtn)
 	}

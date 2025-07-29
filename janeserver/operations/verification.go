@@ -51,13 +51,13 @@ func getEV(claim structures.Claim, rule structures.Rule) (structures.ExpectedVal
 		p := claim.Header.Intent.ItemID
 		n := claim.Header.EndpointName
 
-		fmt.Println("    e = %v", claim.Header.Element.ItemID)
-		fmt.Println("    p = %v", claim.Header.Intent.ItemID)
-		fmt.Println("    n = %v", claim.Header.EndpointName)
+		//fmt.Printf("    e = %v\n", claim.Header.Element.ItemID)
+		//fmt.Printf("    p = %v\n", claim.Header.Intent.ItemID)
+		//fmt.Printf("    n = %v\n", claim.Header.EndpointName)
 
 		ev, err := GetExpectedValueByElementAndPolicy(e, p, n)
 
-		fmt.Printf("  GET EV error=%w,  ev=%v\n", err, ev)
+		fmt.Printf("  GET EV error=%v,  ev=%v\n", err.Error(), ev)
 
 		return ev, err
 	}

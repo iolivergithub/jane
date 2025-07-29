@@ -64,7 +64,7 @@ func ValidateCoordinator(claim structures.Claim, rule string, ev structures.Expe
 	// Validate the report itself. Requires access to PCCS
 	report, err := eclient.VerifyRemoteReport(reportBytes)
 	if err != nil {
-		return structures.Fail, fmt.Sprintf("verification of report failed %w", err), nil
+		return structures.Fail, fmt.Sprintf("verification of report failed %v", err.Error()), nil
 	}
 
 	caCertRaw := certs[len(certs)-1].Bytes
@@ -247,7 +247,7 @@ func ValidatePackage(claim structures.Claim, rule string, ev structures.Expected
 }
 
 func ValidateMarble(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
-	log.Printf("parameters", parameter)
+	log.Printf("parameters %v", parameter)
 	marbleName, ok := parameter["marble"]
 	if !ok {
 		return structures.MissingExpectedValue, "No marble specified in parameter", nil

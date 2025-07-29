@@ -21,5 +21,4 @@ func FormattedResponse(c echo.Context, s int, v interface{}) error {
 		return c.JSON(s, v)
 	}
 
-	panic("If you get here, then a switch statement ignored its default in restapi.FormattedResponse!")
 }
