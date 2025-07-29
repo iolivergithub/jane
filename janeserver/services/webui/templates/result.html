@@ -11,7 +11,7 @@
    </thead>
    <tbody>
       <tr><td scope="col">Rule Name</th> <td scope="col">{{ .R.RuleName }}</td> </tr>     
-      <tr><td scope="col">VerifiedAt</th> <td scope="col">{{ epochToUTC .R.VerifiedAt }}</td> </tr>     
+      <tr><td scope="col">VerifiedAt</th> <td scope="col">{{ epochToUTCdetailed .R.VerifiedAt }}</td> </tr>     
       <tr><td scope="col">Result</th> <td scope="col"> {{ template "resultvalue.html" .R.Result }} </td></tr>     
       <tr><td scope="col">Expected Value</th> <td scope="col"><a href="/expectedvalue/{{ .R.EV_ItemID }}">{{ .R.EV_Name }}</a></td> </tr>     
       <tr><td scope="col">Element</th> <td scope="col">{{ .R.EVEName }}</td> </tr>     

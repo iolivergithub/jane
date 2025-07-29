@@ -23,7 +23,7 @@
       <tr><td scope="col">Session</td> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td> </tr>     
       <tr><td scope="col">Additional Parameters</td> <td scope="col">{{ .Header.AdditionalParameters }}</td> </tr>              
       <tr><td scope="col">Call Parameters</td> <td scope="col">{{ .Header.CallParameters }}</td> </tr>                    
-      <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTC .Header.Timing.Requested }} &nbsp; {{ epochToUTC .Header.Timing.Received }}</td> </tr>     
+      <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTCdetailed .Header.Timing.Requested }} &nbsp; {{ epochToUTCdetailed .Header.Timing.Received }}</td> </tr>     
    </tbody>
 </table>
 

@@ -12,12 +12,12 @@
    <tbody>
       {{ range . }} 
         <tr> 
-         <td><a href="/session/{{ .ItemID }}">{{ epochToUTC .Timing.Opened }}</a></td>
+         <td><a href="/session/{{ .ItemID }}">{{ epochToUTCdetailed .Timing.Opened }}</a></td>
          <td>
             {{ if eq .Timing.Closed 0 }}
              <span class="badge bg-warning">session open</span> 
             {{ else }}
-             {{ epochToUTC .Timing.Closed }}
+             {{ epochToUTCdetailed .Timing.Closed }}
             {{ end }}
          </td>
          <td>{{ .Message }}</td>

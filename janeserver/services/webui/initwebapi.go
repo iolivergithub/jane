@@ -43,7 +43,7 @@ func StartWebUI() {
 	//dev.to/ykyuen/setup-nested-html-template-in-go-echo-web-framework-d9b
 
 	functions := template.FuncMap{
-		"defaultMessage": DefaultMessage, "epochToUTC": EpochToUTC, "base64decode": Base64decode,
+		"defaultMessage": DefaultMessage, "epochToUTCdetailed": EpochToUTCdetailed, "epochToUTC": EpochToUTCsimple, "base64decode": Base64decode,
 		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
 		"opaqueObject": GetOpaqueObjectByValue,
 	}

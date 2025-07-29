@@ -17,19 +17,31 @@ import (
 	"github.com/google/go-tpm/legacy/tpm2"
 )
 
-// No idea if this works but it is supposed to be in the html files
-func EpochToUTC(epoch structures.Timestamp) string {
+func EpochToUTCdetailed(epoch structures.Timestamp) string {
+	return epochToUTCformat(epoch, true)
+}
+
+func EpochToUTCsimple(epoch structures.Timestamp) string {
+	return epochToUTCformat(epoch, false)
+}
+
+func epochToUTCformat(epoch structures.Timestamp, detailed bool) string {
+	// if detailed = true then format goes down to microseconds
+	var tfmt = "2006-01-02 15:04:05"
+	if detailed == true {
+		tfmt = "2006-01-02 15:04:05.0000000"
+	}
 	sec, err := strconv.ParseInt(fmt.Sprintf("%v", epoch), 10, 64)
 	if err != nil {
 		t := time.Unix(0, 0)
-		return fmt.Sprintf("%v", t.UTC())
+		return fmt.Sprintf("%v", t.UTC().Format(tfmt))
 	}
 	t := time.Unix(0, sec)
-	return fmt.Sprintf("%v", t.UTC())
+	return fmt.Sprintf("%v", t.UTC().Format(tfmt))
 }
 
 func DefaultMessage() string {
-	return "Single invocation from WebUI at " + EpochToUTC(utilities.MakeTimestamp())
+	return "Invocation from Jane WebUI initiated " + EpochToUTCdetailed(utilities.MakeTimestamp())
 }
 
 func Base64decode(u string) string {
