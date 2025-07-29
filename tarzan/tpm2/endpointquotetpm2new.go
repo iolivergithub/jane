@@ -57,38 +57,24 @@ func NewQuote(c echo.Context) error {
 	s := strings.Split(params["pcrSelection"].(string), ",")
 	fmt.Printf("pcr selection string: %v\n", s)
 
-	// *** This is the old code which does not work
-	// pcrselectionlist := []tpm2.TPMSPCRSelection{}
-	// for _, r := range s {
-	// 	v64, err := strconv.ParseUint(r, 10, 8)
-	// 	fmt.Printf("creating pcrselection for %v,%v,%v\n", err, pcrbank, v64)
-	// 	if err == nil {
-	// 		pcrsel := tpm2.TPMSPCRSelection{Hash: pcrbank, PCRSelect: tpm2.PCClientCompatible.PCRs(uint(v64))}
-	// 		pcrselectionlist = append(pcrselectionlist, pcrsel)
-	// 	}
-	// }
-	// ***
+	// TPM PCR Selection stuff fixed: https://github.com/google/go-tpm/issues/407
 
 	var indcies = make([]uint, len(s))
 	for i, r := range s {
-		v, _ := strconv.ParseUint(r, 10, 8)
+		v, err := strconv.ParseUint(r, 10, 8)
+		if err != nil {
+			rtn := tpm2taErrorReturn{fmt.Sprintf("Unable to parse PCRSelection %v in selection %s", v, s)}
+			return c.JSON(http.StatusUnprocessableEntity, rtn)
+		}
 		indcies[i] = uint(v)
-		// TODO err
 	}
+
 	pcrSelection := tpm2.TPMSPCRSelection{
 		Hash:      pcrbank,
 		PCRSelect: tpm2.PCClientCompatible.PCRs(indcies...),
 	}
 
 	pcrselectionlist := tpm2.TPMLPCRSelection{PCRSelections: []tpm2.TPMSPCRSelection{pcrSelection}}
-
-	// *** This is the old code which does not work
-	// PCR selection (selecting PCR 7 for this example)
-	// pcrSelection := tpm2.TPMLPCRSelection{
-	//	PCRSelections: pcrselectionlist,
-	// }
-	//***
-
 	fmt.Printf("PCRselectionlist is %v\n", pcrselectionlist)
 
 	// Here we parse the nonce
