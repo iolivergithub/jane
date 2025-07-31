@@ -120,12 +120,12 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	defer resp.Body.Close()
 
 	taResponse, _ := io.ReadAll(resp.Body)
-	fmt.Println("*****************")
-	fmt.Printf("taReponse is %v", taResponse)
+	//fmt.Println("*****************")
+	//fmt.Printf("taReponse is %v", taResponse)
 	err = json.Unmarshal(taResponse, &bodymap)
-	fmt.Println("bodymap")
-	fmt.Printf("%v", bodymap)
-	fmt.Println("*****************")
+	//fmt.Println("bodymap")
+	//fmt.Printf("%v", bodymap)
+	//fmt.Println("*****************")
 
 	if err != nil {
 		return empty, cps, fmt.Errorf("JSON Unmarshalling reponse from TA: %w", err)

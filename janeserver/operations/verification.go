@@ -2,7 +2,6 @@ package operations
 
 import (
 	"fmt"
-	"reflect"
 
 	"a10/structures"
 	"a10/utilities"
@@ -38,26 +37,26 @@ func checkRuleObjectExists(rule structures.Rule) (structures.ResultValue, string
 }
 
 func getEV(claim structures.Claim, rule structures.Rule) (structures.ExpectedValue, error) {
-	fmt.Println("Step 2 - getting EV")
+	//fmt.Println("Step 2 - getting EV")
 
 	// if the rule does need an EV, then we get it and return whatever comes back
 	// if err is not nil then there was some error, usualy no EV for that E,P pair
 	// but it could be something worse, eg: datalayer failure, but this is unlikely
 
-	fmt.Printf("  Rule needs EV is %v\n", rule.NeedsEV)
+	//fmt.Printf("  Rule needs EV is %v\n", rule.NeedsEV)
 
 	if rule.NeedsEV == true {
 		e := claim.Header.Element.ItemID
 		p := claim.Header.Intent.ItemID
 		n := claim.Header.EndpointName
 
-		fmt.Printf("    e = %v\n", claim.Header.Element.ItemID)
-		fmt.Printf("    p = %v\n", claim.Header.Intent.ItemID)
-		fmt.Printf("    n = %v\n", claim.Header.EndpointName)
+		//fmt.Printf("    e = %v\n", claim.Header.Element.ItemID)
+		//fmt.Printf("    p = %v\n", claim.Header.Intent.ItemID)
+		//fmt.Printf("    n = %v\n", claim.Header.EndpointName)
 
 		ev, err := GetExpectedValueByElementAndPolicy(e, p, n)
 
-		fmt.Printf("  GET EV error=%v,  ev=%v\n", err.Error(), ev)
+		//fmt.Printf("  GET EV error=%v,  ev=%v\n", err, ev)
 
 		return ev, err
 	}
@@ -81,28 +80,28 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 	returnedRV, returnedMSG = checkClaimError(claim)
 
 	eid = claim.Header.Element.ItemID
-	fmt.Printf("Verify eid %v\n", eid)
+	//fmt.Printf("Verify eid %v\n", eid)
 
 	// if we are still unset then we proceed with the verification
 	if returnedRV == structures.UnsetResultValue {
-		fmt.Println("dealing with the ev")
+		//fmt.Println("dealing with the ev")
 		ev, err := getEV(claim, rule)
 		if err != nil {
-			fmt.Println("dealing with the ev")
+			//fmt.Println("dealing with the ev")
 
 			returnedRV = structures.MissingExpectedValue
 			returnedMSG = fmt.Sprintf("Rule %v requires an expected value for e,p pair %v and %v and one was not found: %v", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err)
 		} else {
 
 			// Now
-			fmt.Printf("Calling %v with %v %v %v \n", rule.Name, ev, session, rps)
-			fmt.Printf("Calling %v with %v %v %v \n", reflect.TypeOf(rule.Name), reflect.TypeOf(ev), reflect.TypeOf(session), reflect.TypeOf(rps))
+			//fmt.Printf("Calling %v with %v %v %v \n", rule.Name, ev, session, rps)
+			//fmt.Printf("Calling %v with %v %v %v \n", reflect.TypeOf(rule.Name), reflect.TypeOf(ev), reflect.TypeOf(session), reflect.TypeOf(rps))
 
 			aCALL := rule.CallFunction
 			returnedRV, returnedMSG, err = aCALL(claim, rule.Name, ev, session, rps)
 			if err != nil {
 
-				fmt.Println("Step 3 -err")
+				//fmt.Println("Step 3 -err")
 
 				returnedRV = structures.VerifyCallFailure
 				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %v", rule.Name, returnedMSG, err) // this should be the returnedMSG form the line above
@@ -112,7 +111,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 	}
 
 	// Step 4 ******************************************************
-	fmt.Println("Step 4")
+	//fmt.Println("Step 4")
 
 	verifiedAt := utilities.MakeTimestamp()
 

@@ -3,7 +3,6 @@ package tpm2rules
 import (
 	"encoding/base64"
 	"fmt"
-	"reflect"
 
 	"a10/structures"
 
@@ -274,7 +273,7 @@ type quoteStructure struct {
 
 func getQuote(claim structures.Claim) (quoteStructure, error) {
 	quoteData, ok := (claim.Body)["quote"]
-	fmt.Printf("\n### GetQuote %v\n%v\n%v\n\n", reflect.TypeOf(quoteData), ok, quoteData)
+	//fmt.Printf("\n### GetQuote %v\n%v\n%v\n\n", reflect.TypeOf(quoteData), ok, quoteData)
 	if !ok {
 		return quoteStructure{}, fmt.Errorf("claim does not contain quote")
 

@@ -48,7 +48,7 @@ type multipleresultsummary struct {
 func processAttest(c echo.Context) error {
 	var attreq attestrequest
 
-	fmt.Printf("\n processAttest\n")
+	//fmt.Printf("\n processAttest\n")
 
 	err := c.Bind(&attreq)
 	if err != nil {
@@ -60,7 +60,7 @@ func processAttest(c echo.Context) error {
 	eid := strings.Split(attreq.EidEpn, ",")[0]
 	epn := strings.Split(attreq.EidEpn, ",")[1]
 
-	fmt.Printf(" eid, epn: %v %v \n ", eid, epn)
+	//fmt.Printf(" eid, epn: %v %v \n ", eid, epn)
 
 	// Get the objects
 	e, _ := operations.GetElementByItemID(eid)
@@ -87,7 +87,7 @@ func processAttest(c echo.Context) error {
 
 	//
 
-	fmt.Printf("return after attests %v %v\n", err, cid)
+	//fmt.Printf("return after attests %v %v\n", err, cid)
 
 	//Check if we are attesting only
 	// if so, close the session and redirect to the claim page
@@ -108,10 +108,11 @@ func processAttest(c echo.Context) error {
 
 	for _, rn := range attreq.Rn {
 		r, _ := operations.GetRule(rn)
-		fmt.Printf("** verify %v\n", r)
+		//fmt.Printf("** verify %v\n", r)
 
-		rid, rv, err := operations.Verify(cl, r, s, empty) // rps conversion goes here
-		fmt.Printf("results of verify %v - %v - %v\n", err, rv, rid)
+		//rid, rv, err := operations.Verify(cl, r, s, empty) // rps conversion goes here
+		operations.Verify(cl, r, s, empty) // rps conversion goes here
+		//fmt.Printf("results of verify %v - %v - %v\n", err, rv, rid)
 
 	}
 	// end of parallelism

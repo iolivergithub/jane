@@ -2,7 +2,6 @@ package operations
 
 import (
 	"context"
-	"fmt"
 
 	"a10/datalayer"
 	"a10/structures"
@@ -32,7 +31,7 @@ func GetLogEntriesSince(duration string) ([]structures.LogEntry, error) {
 	var logentries []structures.LogEntry
 
 	ts := utilities.TimeStampHoursAgo(duration)
-	fmt.Printf("Duration is %v, ts is %v\n", duration, ts)
+	//fmt.Printf("Duration is %v, ts is %v\n", duration, ts)
 
 	filter := bson.D{{"timestamp", bson.D{{"$gt", ts}}}} // Get all since given point in time
 

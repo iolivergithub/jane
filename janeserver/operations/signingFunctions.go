@@ -15,7 +15,7 @@ var publickey *rsa.PublicKey
 var privatekey *rsa.PrivateKey
 
 func init() {
-	fmt.Printf("generating private, public key pair for claim signing - just for this session so no chance to verify later. THese keys MUST be external\n")
+	fmt.Printf("WARNING: generating private, public key pair for claim signing - just for this session so no chance to verify later. These keys MUST be external\n")
 
 	privatekey, _ = rsa.GenerateKey(rand.Reader, 2048)
 	publickey = &privatekey.PublicKey

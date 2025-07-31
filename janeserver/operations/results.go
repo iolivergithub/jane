@@ -60,7 +60,7 @@ func GetResultsAll() ([]structures.Result, error) {
 func GetResultsByElementID(eid string, maximumAmount int64) ([]structures.Result, error) {
 	var Results []structures.Result
 
-	fmt.Printf("getting results for %v\n", eid)
+	//fmt.Printf("getting results for %v\n", eid)
 
 	filter := bson.D{{"elementid", eid}} // Get all   // TODO search for itemIDs only
 	options := options.Find().SetSort(bson.D{{"verifiedat", -1}}).SetLimit(maximumAmount)

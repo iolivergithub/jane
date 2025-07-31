@@ -84,7 +84,7 @@ func Attest(element structures.Element, endpointname string, intent structures.I
 		return "", fmt.Errorf("Error adding claim, session %v might still be open: %w", sid, err)
 	}
 
-	fmt.Printf("Added claim %v\n", cid)
+	//fmt.Printf("Added claim %v\n", cid)
 
 	// if AddClaim fails, we have a bigger problem, see above note
 	// If there is an error here, then we need a new claim type of "internal error"

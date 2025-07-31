@@ -149,6 +149,8 @@ func GetExpectedValuesByElement(name string) ([]structures.ExpectedValue, error)
 func GetExpectedValueByElementAndPolicy(eid string, pid string, epn string) (structures.ExpectedValue, error) {
 	var elem structures.ExpectedValue
 
+	//fmt.Printf("GetExpectedValueByElementAndPolicy %v %v %v\n", eid, pid, epn)
+
 	// discard the cursor, it will be an empty entry if nothing exists
 	filter := bson.D{
 		{"$and",
@@ -159,11 +161,18 @@ func GetExpectedValueByElementAndPolicy(eid string, pid string, epn string) (str
 			},
 		},
 	}
-	dbcursorerror := datalayer.DB.Collection("expectedvalues").FindOne(context.TODO(), filter).Decode(&elem)
+
+	//dbcursorerror := datalayer.DB.Collection("expectedvalues").FindOne(context.TODO(), filter).Decode(&elem)
+	datalayer.DB.Collection("expectedvalues").FindOne(context.TODO(), filter).Decode(&elem)
+
+	//fmt.Printf("got the cursor, error = %v \n", dbcursorerror)
+	//fmt.Printf("elem = %v\n", elem)
 
 	if elem.ItemID == "" {
+		//fmt.Println("I am returning the dbcursorerror from earlier")
 		return structures.ExpectedValue{}, ErrorItemNotFound
 	} else {
-		return elem, dbcursorerror
+		//fmt.Printf("elem ItemID = %v\n", elem.ItemID)
+		return elem, nil
 	}
 }
