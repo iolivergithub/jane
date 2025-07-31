@@ -120,12 +120,8 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	defer resp.Body.Close()
 
 	taResponse, _ := io.ReadAll(resp.Body)
-	//fmt.Println("*****************")
-	//fmt.Printf("taReponse is %v", taResponse)
 	err = json.Unmarshal(taResponse, &bodymap)
-	//fmt.Println("bodymap")
-	//fmt.Printf("%v", bodymap)
-	//fmt.Println("*****************")
+	fmt.Printf("bodymap %v\n", bodymap)
 
 	if err != nil {
 		return empty, cps, fmt.Errorf("JSON Unmarshalling reponse from TA: %w", err)
@@ -134,47 +130,6 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	if resp.Status != "200 OK" { // is it always 200 ? This might cause issues later if the TA reponds otherwise!
 		return bodymap, cps, fmt.Errorf("TA reports error %v with response %v", resp.Status, taResponse)
 	}
-
-	// Thore wrote stuff here...worked with tpm2.legacy but not now...thanks Google!
-	// if p.Function == "tpm2/quote" {
-	// 	quoteValue, ok := bodymap["quote"]
-	// 	if !ok {
-	// 		return bodymap, cps, fmt.Errorf("missing quote data in response")
-	// 	}
-	// 	quoteStr, ok := quoteValue.(string)
-	// 	if !ok {
-	// 		fmt.Printf("quote value is not a string ... why? %w\n", ok)
-	// 		return bodymap, cps, fmt.Errorf("quote value is not a string")
-	// 	}
-	// 	quoteBytes, err := base64.StdEncoding.DecodeString(quoteStr)
-	// 	if err != nil {
-	// 		return nil, cps, fmt.Errorf("could not base64 decode quote")
-	// 	}
-
-	// 	signatureValue, ok := bodymap["signature"]
-	// 	if !ok {
-	// 		return bodymap, cps, fmt.Errorf("missing signature data in response")
-	// 	}
-	// 	signatureStr, ok := signatureValue.(string)
-	// 	if !ok {
-	// 		return bodymap, cps, fmt.Errorf("signature value is not a string")
-	// 	}
-	// 	signatureBytes, err := base64.StdEncoding.DecodeString(signatureStr)
-	// 	if err != nil {
-	// 		return nil, cps, fmt.Errorf("could not base64 decode signature")
-	// 	}
-
-	// 	var attestableData utilities.AttestableData
-	// 	attestableData.Decode(quoteBytes, signatureBytes)
-
-	// 	// Try to parse the quote into a map representation for display purposes
-	// 	parsed, err := attestableData.Parse()
-	// 	if err != nil {
-	// 		return bodymap, cps, err
-	// 	}
-	// 	bodymap["parsed"] = parsed
-
-	// }
 
 	return bodymap, cps, nil
 }

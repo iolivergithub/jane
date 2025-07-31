@@ -1,7 +1,6 @@
 package tpm2rules
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"a10/structures"
@@ -44,22 +43,8 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
 
-	pcrdigest := []byte(q.Attested.PCRDigest)
-
-	// THIS IS THE OLD LINE: DO NOT USE
-	//claimedAV := hex.EncodeToString(quoteData.PCRDigest.Buffer)
-
-	//looks like Thore in his utilities/tpm2.go encoded the PCRDigest as Base64...so further doing this with
-	// hex to string of that base64 is overkill and complicates the expected values
-	// which if the above claimedAV line is written means that we have to write the expectedvalue for a PCRDigest
-	// in hex, but we see only base64 in the claim
-
-	//claimedAV := fmt.Sprintf("%v",quoteData.PCRDigest.Buffer)
-	//claimedAV := string(quoteData.PCRDigest.Buffer[:])
-	claimedAV := base64.StdEncoding.EncodeToString(pcrdigest)
+	claimedAV := q.Attested.PCRDigest
 	expectedAV := (ev.EVS)["attestedValue"]
-
-	//fmt.Printf("\n\nPCRDigest %v \n claimedAV %v \nexpectedAV %v\n\n", pcrdigest, claimedAV, expectedAV)
 
 	if expectedAV == claimedAV {
 		return structures.Success, "", nil
@@ -67,7 +52,6 @@ func AttestedPCRDigest(claim structures.Claim, rule string, ev structures.Expect
 		msg := fmt.Sprintf("Got %v as attested value but expected %v", claimedAV, expectedAV)
 		return structures.Fail, msg, nil
 	}
-
 }
 
 func FirmwareRule(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
@@ -76,9 +60,6 @@ func FirmwareRule(claim structures.Claim, rule string, ev structures.ExpectedVal
 	if err != nil {
 		return structures.Fail, "Parsing TPM quote failed", err
 	}
-
-	//fmt.Printf("GOT HERE WITH A GOOD QUOTE; ERR=%v\n", err)
-	//fmt.Printf("Quote looks like this: \n %v \n\n", q)
 
 	claimedFirmware := fmt.Sprintf("%v", q.FirmwareVersion)
 	expectedFirmware := (ev.EVS)["firmwareVersion"]
@@ -150,11 +131,6 @@ func ValidNonce(claim structures.Claim, rule string, ev structures.ExpectedValue
 	quoteNonceValue := quote.ExtraData
 
 	claimNonceValue := fmt.Sprintf("%s", claim.Header.CallParameters["tpm2/nonce"])
-	// if !ok {
-	// 	return structures.RuleCallFailure, "claim has no nonce", nil
-	// }
-
-	//fmt.Println("***\nNonce are not matching, got: %v, expected: %v, base64:", quoteNonceValue, claimNonceValue, base64.StdEncoding.EncodeToString(quoteNonceValue))
 
 	if claimNonceValue != quoteNonceValue {
 		return structures.Fail, fmt.Sprintf("Nonce are not matching, got: %v, expected: %v", quoteNonceValue, claimNonceValue), nil
