@@ -9,14 +9,13 @@
       </tr>
    </thead>
    <tbody>
-      <tr><td scope="col">ItemID</td> <td scope="col">{{ .S.ItemID }}</td> </tr>     
-      <tr><td scope="col">Opened</td> <td scope="col">{{ epochToUTCdetailed .S.Timing.Opened }}</td> </tr>    
-      <tr><td scope="col">Closed</td>
-      {{ if eq .S.Timing.Closed 0 }}
-         <td><span class="badge bg-warning">Session still open</span> </td>   
-      {{ else }} 
-         <td scope="col">{{ epochToUTCdetailed .S.Timing.Closed }}</td>     
-      {{ end }}   
+      <tr><td scope="col">ItemID</td> <td scope="col">{{ .S.ItemID }} </td> </tr>     
+      <tr><td scope="col">Timing</td> <td scope="col">{{ epochToUTCdetailed .S.Timing.Opened }} &nbsp;&rarr;&nbsp; 
+         {{ if eq .S.Timing.Closed 0 }}
+            <span class="badge bg-warning">Session still open</span> </td>   
+         {{ else }} 
+            <b>{{ .TDIFF }}</b> &nbsp;&rarr;&nbsp; {{ epochToUTCdetailed .S.Timing.Closed }}</td>     
+         {{ end }}   
       </tr> 
       <tr><td scope="col">#Claims / #Results</td> <td scope="col">{{ len .S.ClaimList }} / {{ len .S.ResultList }}</td> </tr>     
       <tr><td scope="col">Message</td> <td scope="col">{{ .S.Message }}</td> </tr>     

@@ -1,8 +1,10 @@
 package webui
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"time"
 
 	"a10/operations"
 	"a10/structures"
@@ -45,11 +47,12 @@ type resultanalytics struct {
 }
 
 type sessionsummary struct {
-	S  structures.Session
-	CS []claimsummary
-	RS []resultsummary
-	CA claimanalytics
-	RA resultanalytics
+	S     structures.Session
+	CS    []claimsummary
+	RS    []resultsummary
+	CA    claimanalytics
+	RA    resultanalytics
+	TDIFF string
 }
 
 func showSession(c echo.Context) error {
@@ -67,8 +70,19 @@ func showSession(c echo.Context) error {
 		rs = append(rs, resultsummary{rl.ItemID, rl.Result, rl.RuleName, rl.VerifiedAt})
 	}
 
-	sstr := sessionsummary{s, cs, rs, genclaimanalytics(cs), genresultanalytics(rs)}
+	sstr := sessionsummary{s, cs, rs, genclaimanalytics(cs), genresultanalytics(rs), gettimediff(s)}
 	return c.Render(http.StatusOK, "session.html", sstr)
+}
+
+func gettimediff(s structures.Session) string {
+	t_o := time.Unix(0, int64(s.Timing.Closed))
+	t_c := time.Unix(0, int64(s.Timing.Opened))
+	t_diff := t_o.Sub(t_c)
+	fmt.Printf("S.closed is %v\n", t_o)
+	fmt.Printf("S.opened is %v\n", t_c)
+	fmt.Printf("S.diff is %v\n", t_diff)
+
+	return fmt.Sprintf("%v", t_diff)
 }
 
 func genclaimanalytics(cs []claimsummary) claimanalytics {
