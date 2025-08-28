@@ -1,101 +1,81 @@
 {{define "content"}}
-
-<h3>Claim</h3>
-
 <div class="container-fluid">
-   <div class="row">
-      <div class="col-xxl-6">
+    <div class="row">
+        <div class="col-md-8">
+            <h5>Header</h5>
+            <table class="table table-xxl table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Field</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td scope="col">ItemID, BodyType</th> <td scope="col">{{ .ItemID }}&nbsp;<span class="badge bg-primary">{{ .BodyType }}</span></td> </tr>
+                    <tr><td scope="col">Element</td> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a> &nbsp; <span class="badge bg-primary">{{ .Header.EndpointName }}</span> <span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td> </tr>
+                    
+                    <tr><td scope="col">Intent</td> <td scope="col"><a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a> <span class="badge bg-primary">{{ .Header.Intent.Function }}</span> </td> </tr>
+                    
+                    <tr><td scope="col">Session</td> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td> </tr>
+                    <tr><td scope="col">Additional Parameters</td> <td scope="col">{{ .Header.AdditionalParameters }}</td> </tr>
+                    <tr><td scope="col">Call Parameters</td> <td scope="col">{{ .Header.CallParameters }}</td> </tr>
+                    <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTCdetailed .Header.Timing.Requested }} &nbsp; {{ epochToUTCdetailed .Header.Timing.Received }}</td> </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="col-md-4">
+            <h5>Footer</h5>
+            <table class="table table-xxl table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Field</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td scope="col">Hash</td> <td scope="col"  style="word-break: break-all;">{{ encodeAsHexString .Footer.Hash }}</td> </tr>
+                    <tr><td scope="col">Signature</td> <td scope="col" style="word-break: break-all;" >{{ encodeAsHexString .Footer.Signature }}</td> </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<h5>Header</h5>
-<table class="table table-xxl table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">ItemID, BodyType</th> <td scope="col">{{ .ItemID }}&nbsp;<span class="badge bg-primary">{{ .BodyType }}</span></td> </tr>      
-      <tr><td scope="col">Element</td> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a> &nbsp; <span class="badge bg-primary">{{ .Header.EndpointName }}</span> <span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td> </tr> 
-                  
-      <tr><td scope="col">Intent</td> <td scope="col"><a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a> <span class="badge bg-primary">{{ .Header.Intent.Function }}</span> </td> </tr>     
-              
-      <tr><td scope="col">Session</td> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td> </tr>     
-      <tr><td scope="col">Additional Parameters</td> <td scope="col">{{ .Header.AdditionalParameters }}</td> </tr>              
-      <tr><td scope="col">Call Parameters</td> <td scope="col">{{ .Header.CallParameters }}</td> </tr>                    
-      <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTCdetailed .Header.Timing.Requested }} &nbsp; {{ epochToUTCdetailed .Header.Timing.Received }}</td> </tr>     
-   </tbody>
-</table>
-
-      </div>
-     
-      <div class="col-xxl-6">
-
-
-<h5>Footer</h5>
-<table class="table table-xxl table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Hash</th> <td scope="col"  style="word-break: break-all;">{{ encodeAsHexString .Footer.Hash }}</td> </tr>     
-      <tr><td scope="col">Signature</th> <td scope="col" style="word-break: break-all;" >{{ encodeAsHexString .Footer.Signature }}</td> </tr>      
-   </tbody>
-</table>
-
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Body: </h5>
+            {{ if eq .BodyType "*ERROR" }}
+            <p><span class="badge bg-danger"> {{ .BodyType }}</span></p>
+            {{ template "claim_ERROR.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "sys/info" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "genericList.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "ima/asciilog" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "claim_ima.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "tpm2/pcrs" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "claim_tpm2pcrs.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "tpm2/newpcrs" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "claim_tpm2pcrs.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "tpm2/quote" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "claim_quote.html" .Body }}
+            {{ end }}
+            {{ if eq .BodyType "uefi/efivars" }}
+            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
+            {{ template "claim_efivars.html" .Body }}
+            {{ end }}
+        </div>
+    </div>
 </div>
-
-
- <div class="col-xxl-12">
-
-<h5>Body: </h5>
-
-{{ if eq .BodyType "*ERROR" }}
-    <p><span class="badge bg-danger"> {{ .BodyType }}</span></p>
-    {{ template "claim_ERROR.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "sys/info" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "genericList.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "ima/asciilog" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_ima.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "tpm2/pcrs" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_tpm2pcrs.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "tpm2/newpcrs" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_tpm2pcrs.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "tpm2/quote" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_quote.html" .Body }}
-{{ end }}
-
-{{ if eq .BodyType "uefi/efivars" }}
-    <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-    {{ template "claim_efivars.html" .Body }}
-{{ end }}
-
-      </div>
-
-   </div>
-</div>
-
-
 <hr/>
 <h5>Raw</h5>
 {{ .Body }}
-
 {{end}}

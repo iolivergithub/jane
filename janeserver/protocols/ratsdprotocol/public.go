@@ -2,19 +2,20 @@ package ratsdprotocol
 
 import (
 	"bytes"
-	//"crypto/rand"
-	//"encoding/base64"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"a10/structures"
 	//"a10/utilities"
 )
 
-const nonceSize int = 24
+const nonceSize int = 8
 
 func Registration() structures.Protocol {
 	intents := []string{"ratsd/chares"}
@@ -66,9 +67,13 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 	// For sanity reasons (and Go's strong typing, the parameters is a plain key,value list)
 	var ips map[string]interface{} = make(map[string]interface{})
 
-	// always supply which device to use
-
-	// for specific intents for the a10httprestv2
+	// create None for RATSD call
+	nce := make([]byte, nonceSize)
+	_, _ = rand.Read(nce)
+	ips["nonce"] = base64.StdEncoding.EncodeToString(nce)
+	ips["nonce"] = strings.TrimRight(ips["nonce"].(string), "=")
+	ips["nonce"] = "TUlEQk5IMjhpaW9pc2pQeXh4eHh4eHh4eHh4eHh4eHhNSURCTkgyOGlpb2lzalB5eHh4eHh4eHh4eHh4eHh4eA"
+	fmt.Printf("Nonce is %v\n", ips["nonce"])
 
 	// merge ips with policy parameters. The policy parameters take precidence
 
@@ -85,7 +90,7 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 	url := ep.Endpoint + "/" + p.Function
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(postbody))
 	req.Header.Set("Content-Type", "application/vnd.veraison.chares+json")
-	req.Header.Set("Accept", "application/eat+jwt; eat_profile=tag:github.com,2024:veraison/ratsd")
+	//req.Header.Set("Accept", "application/eat+jwt; eat_profile=tag:github.com,2024:veraison/ratsd")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

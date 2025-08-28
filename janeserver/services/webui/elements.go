@@ -84,7 +84,7 @@ func elementtemplate() string {
             "protocol": "RATSD"
         }
     },
-    "tag":
+    "tags":
     [
         "****1",
         "****2"

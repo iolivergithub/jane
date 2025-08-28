@@ -4,7 +4,6 @@
       {{ range $key, $value := . }}
             <tr><td scope="col"><b>{{ $key }}</b></td> 
                 <td scope="col">
-
                         <table class="table table-sm table-striped">
                            <tbody>
                               {{ range $pkey, $pvalue :=  $value  }}
@@ -14,8 +13,8 @@
                               {{ end }}
                            </tbody>
                         </table> 
-
-                </td> </tr>     
+                </td> 
+            </tr>     
       {{ end }}
    </tbody>
 </table>
