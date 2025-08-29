@@ -15,7 +15,7 @@ import (
 	//"a10/utilities"
 )
 
-const nonceSize int = 8
+const nonceSize int = 64
 
 func Registration() structures.Protocol {
 	intents := []string{"ratsd/chares"}
@@ -70,9 +70,8 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 	// create None for RATSD call
 	nce := make([]byte, nonceSize)
 	_, _ = rand.Read(nce)
-	ips["nonce"] = base64.StdEncoding.EncodeToString(nce)
+	ips["nonce"] = base64.URLEncoding.EncodeToString(nce)
 	ips["nonce"] = strings.TrimRight(ips["nonce"].(string), "=")
-	ips["nonce"] = "TUlEQk5IMjhpaW9pc2pQeXh4eHh4eHh4eHh4eHh4eHhNSURCTkgyOGlpb2lzalB5eHh4eHh4eHh4eHh4eHh4eA"
 	fmt.Printf("Nonce is %v\n", ips["nonce"])
 
 	// merge ips with policy parameters. The policy parameters take precidence
@@ -90,7 +89,7 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 	url := ep.Endpoint + "/" + p.Function
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(postbody))
 	req.Header.Set("Content-Type", "application/vnd.veraison.chares+json")
-	//req.Header.Set("Accept", "application/eat+jwt; eat_profile=tag:github.com,2024:veraison/ratsd")
+	req.Header.Set("Accept", "application/eat-ucs+json; eat_profile=\"tag:github.com,2024:veraison/ratsd\"")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
