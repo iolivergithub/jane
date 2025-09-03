@@ -1,0 +1,42 @@
+#A Sample Provisioning File
+
+attestationserver: http://127.0.0.1:8520
+element:
+  name: sample
+  description: this is a longer description
+  tags:
+    - tag1
+    - tag2
+    - tag3  
+endpoints:
+  tarzan:
+      endpoint: http://127.0.0.1:8530
+      protocol: A10HTTPRESTv2
+  ratds:
+      endpoint: http://127.0.0.1:8531
+      protocol: RATSD      
+tpm2:
+  device:   /dev/tpmrm0   
+  ekcerthandle: 0x1C000002   
+  ek:
+    handle: 0x810100EE
+  ak:
+    handle: 0x810100AA
+provisionworklist:
+  - tpmclear
+  - tpmprovision
+  - collecthostinfo
+  - collectuefi
+  - collectima
+  - processelement
+#  - processevs
+  - processevs_withrules
+
+evs:
+  - std::intent::sys::info :
+      protocol: tarzan
+      type: sysmachineid
+      rules: 
+        - sys_taRunningSafely  
+        - sys_machineID_Agent 
+        - sys_machineID_CrossRef 
