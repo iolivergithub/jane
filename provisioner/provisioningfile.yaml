@@ -2,12 +2,13 @@
 
 attestationserver: http://127.0.0.1:8520
 element:
-  name: sample
-  description: this is a longer description
+  name: cofiwch
+  description: This is the Cofwich Dryweryn Machine
   tags:
-    - tag1
-    - tag2
-    - tag3  
+    - linux
+    - x86
+    - tpm2
+    - uefi  
 endpoints:
   tarzan:
       endpoint: http://127.0.0.1:8530
@@ -17,15 +18,16 @@ endpoints:
       protocol: RATSD      
 tpm2:
   device:   /dev/tpmrm0   
-  ekcerthandle: 0x1C000002   
+  ekcerthandle: '0x1C000002'   
   ek:
-    handle: 0x810100EE
+    handle: '0x810100EE'
   ak:
-    handle: 0x810100AA
+    handle: '0x810100AA'
 provisionworklist:
-  - tpmclear
-  - tpmprovision
+# - tpmclear
+#  - tpmprovision
   - collecthostinfo
+  - collecttpm2
   - collectuefi
   - collectima
   - processelement
@@ -40,3 +42,27 @@ evs:
         - sys_taRunningSafely  
         - sys_machineID_Agent 
         - sys_machineID_CrossRef 
+  - std::intent::sha256::crtm::pcr0 :
+      protocol: tarzan
+      type: tpm2quote      
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_safe
+        - tpm2_validNonce 
+  - std::intent::sha256::crtm::firmware :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_safe
+        - tpm2_validNonce           
+  - std::intent::linux::ima::asciilog :
+      protocol: tarzan         
+  - std::intent::tpm::pcrs :
+      protocol: tarzan  
+  - std::intent::uefi::efivars :
+      protocol: tarzan 
