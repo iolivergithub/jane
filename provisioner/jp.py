@@ -1,5 +1,3 @@
-#!/bin/python3
-
 import sys
 import pathlib
 import yaml
@@ -208,7 +206,7 @@ def processWorklist(pdata,cmd):
 # Main
 #
 
-def main():
+def runjp():
 	print("Jane Element Configuration")
 
 	if len(sys.argv) != 3:
@@ -239,5 +237,4 @@ def main():
 
 	print("Complete.")
 
-if __name__ == "__main__":
-	main()
+
