@@ -3,11 +3,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
-	"sync"
+	_ "sync"
+	"syscall"
 
 	"a10/configuration"
 	"a10/datalayer"
@@ -33,7 +36,7 @@ var RUNSESSION string = utilities.MakeID()
 // Command line flags
 var flagREST = flag.Bool("startREST", true, "Start the REST API, defaults to true")
 var flagWEB = flag.Bool("startWebUI", true, "Start the HTML Web UI, defaults to true")
-var flagX3270 = flag.Bool("startx3270", false, "Start the X3270 UI, defaults to false")
+var flagX3270 = flag.Bool("startx3270", true, "Start the X3270 UI, defaults to true")
 
 var configFile = flag.String("config", "./config.yaml", "Location and name of the configuration file, default to a config.yaml in the current directory")
 
@@ -80,31 +83,49 @@ func main() {
 	msg = fmt.Sprintf("DB,MQTT,Rules initialised. Starting services: web %v, rest %v, x3720 %v", *flagWEB, *flagREST, *flagX3270)
 	logging.MakeLogEntry("SYS", "startup", RUNSESSION, configuration.ConfigData.System.Name, msg)
 
+	// start the internal services
+	internalservices()
+
+	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologies for the inconvience (42)")
+	fmt.Println("+=== Final message: We apologies for the inconvience (42) ===")
+
+}
+
+func internalservices() {
 	// Start (or not) the various internal services
 	// As these run as threads, we put them in a wait group
 	// Need to implement a proper graceful shutdown mechanism
 	//
 	// If any of these internal services fail to start, then the system may panic
 
-	var wg sync.WaitGroup
+	// Create a context that can be canceled
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // Ensure cancel is called at the end to clean up
 
+	// Channel to listen for system signals (e.g., Ctrl+C)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Bring up the services
 	if *flagX3270 == true {
-		wg.Add(1)
-		go x3270.StartX3270()
+		go x3270.StartX3270(ctx)
 	}
 	if *flagREST == true {
-		wg.Add(1)
-		go restapi.StartRESTInterface()
+		go restapi.StartRESTInterface(ctx)
 	}
 	if *flagWEB == true {
-		wg.Add(1)
-		go webui.StartWebUI()
+		go webui.StartWebUI(ctx)
 	}
 
-	wg.Wait()
-	// ...and exit here (if graceful!) which does not happen in the current version
+	// Wait for an interrupt signal to initiate graceful shutdown
+	select {
+	case <-sigChan:
+		// Handle shutdown signal (Ctrl+C or SIGTERM)
+		logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Received shutdown signal. Shutting down gracefully")
+		fmt.Println("+=== Received shutdown signal. Shutting down gracefully ===")
 
-	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Clean shutdown sequence completed. System is now stopped")
-	fmt.Println("+=== Exiting. ================================================")
+		// Cancel the context to notify all goroutines to stop
+		cancel()
+	}
 
 }

@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"a10/configuration"
 	"a10/logging"
+
+	"context"
 )
 
 // file embedding
@@ -34,8 +38,7 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 	return tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
-func StartWebUI() {
-
+func StartWebUI(ctx context.Context) {
 	// Parse the templates
 	templates := make(map[string]*template.Template)
 
@@ -135,12 +138,31 @@ func StartWebUI() {
 	if usehttp == true {
 		msg := fmt.Sprintf("WEB UI HTTP mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", msg)
-		router.Logger.Fatal(router.Start(port))
+		go func() {
+			if err := router.Start(port); err != nil && err != http.ErrServerClosed {
+				router.Logger.Fatal("shutting down the server")
+			}
+		}()
 	} else {
 		msg := fmt.Sprintf("WEB UI HTTPS mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "WEBUI", msg)
-		router.Logger.Fatal(router.StartTLS(port, crt, key))
+		go func() {
+			if err := router.StartTLS(port, crt, key); err != nil && err != http.ErrServerClosed {
+				router.Logger.Fatal("shutting down the server")
+			}
+		}()
 	}
+
+	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := router.Shutdown(ctx); err != nil {
+		router.Logger.Fatal(err)
+	}
+
+	msg := fmt.Sprintf("WEB UI graceful shutdown")
+	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "WEBUI", msg)
 }
 
 func setupEditEndpoints(router *echo.Echo) {

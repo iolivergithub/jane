@@ -1,11 +1,11 @@
 package x3270
 
 import (
-	_ "net/http"
-
+	"context"
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"a10/configuration"
 	"a10/logging"
@@ -18,34 +18,61 @@ func init() {
 	go3270.Debug = os.Stderr
 }
 
-func StartX3270() {
-
-	//get configuration data
+func StartX3270(ctx context.Context) {
 	port := configuration.ConfigData.X3270.Port
-	//crt := configuration.ConfigData.Rest.Crt
-	//key:= configuration.ConfigData.Rest.Key
-	//usehttp := configuration.ConfigData.Rest.UseHTTP
+
+	fmt.Println(" -> 3270 starting")
 
 	//start the server
-	ln, err := net.Listen("tcp", ":"+port)
+	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service failed to start: "+err.Error())
-		fmt.Printf("X3270 failed to start service: %v\n", err.Error())
-		//panic(err)
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service listener failed to start: "+err.Error())
+		fmt.Printf("X3270 service listener failed to start: %v\n", err.Error())
+		return
 	}
 
-	logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service started.")
-	fmt.Printf("X3270 service listening on port %v\n", port)
+	tcpListener, ok := listener.(*net.TCPListener)
+	if !ok {
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 tcp assertion failed: "+err.Error())
+		fmt.Printf("X3270 tcp assertion failed: %v\n", err.Error())
+		return
+	}
+
+	// Set a deadline for the Accept() call
+	deadline := time.Now().Add(10 * time.Second)
+	if err := tcpListener.SetDeadline(deadline); err != nil {
+		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 setting deadline failed: "+err.Error())
+		fmt.Printf("X3270 setting deadline failed: %v\n", err.Error())
+		return
+	}
+
+	msg := fmt.Sprintf("X3270 service started on port %v", port)
+	logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", msg)
+
+	go func() {
+		<-ctx.Done()
+		tcpListener.Close()
+	}()
+
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			logging.MakeLogEntry("SYS", "x3270", configuration.ConfigData.System.Name, "JANE", "X3270 failed to accept connnection: "+err.Error())
-			fmt.Printf("X3270 failed to accept connnection: %v\n", err.Error())
-			//panic(err)
+		select {
+		default:
+			conn, err := tcpListener.Accept()
+			if err != nil {
+				//fmt.Println("An error occured:", err.Error(), " Will reset timeout deadline anyway")
+				deadline = time.Now().Add(10 * time.Second)
+				tcpListener.SetDeadline(deadline)
+			} else {
+				//fmt.Println("Accepting a connection")
+				go func() { handle(conn) }()
+			}
+		case <-ctx.Done():
+			//fmt.Println("X3270 DONE SIGNAL RECEIVED")
+			msg := fmt.Sprintf("X3270 graceful shutdown")
+			logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "X3270", msg)
+			return
 		}
-		go handle(conn)
 	}
-
 }
 
 // handle is the handler for individual user connections.

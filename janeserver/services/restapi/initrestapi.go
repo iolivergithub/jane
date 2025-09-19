@@ -3,19 +3,22 @@ package restapi
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"a10/configuration"
 	"a10/logging"
+
+	"context"
 )
 
 const PREFIX = ""
 
 //const PREFIX="/v3"
 
-func StartRESTInterface() {
+func StartRESTInterface(ctx context.Context) {
 	router := echo.New()
 
 	router.HideBanner = true
@@ -48,14 +51,32 @@ func StartRESTInterface() {
 	if usehttp == true {
 		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
-		router.Logger.Fatal(router.Start(port))
-
+		go func() {
+			if err := router.Start(port); err != nil && err != http.ErrServerClosed {
+				router.Logger.Fatal("shutting down the server")
+			}
+		}()
 	} else {
 		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
-		router.Logger.Fatal(router.StartTLS(port, crt, key))
-
+		go func() {
+			if err := router.StartTLS(port, crt, key); err != nil && err != http.ErrServerClosed {
+				router.Logger.Fatal("shutting down the server")
+			}
+		}()
 	}
+
+	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := router.Shutdown(ctx); err != nil {
+		router.Logger.Fatal(err)
+	}
+	msg := fmt.Sprintf("RESI API graceful shutdown")
+	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "RESTAPI", msg)
+
 }
 
 func setUpOperationEndpoints(router *echo.Echo) {
