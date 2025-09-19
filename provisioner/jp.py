@@ -5,6 +5,7 @@ import platform
 import socket
 import requests
 import subprocess
+import datetime
 
 #
 # TPM Functions
@@ -168,6 +169,14 @@ def intialiseElementStructure(pdata):
 	e['endpoints']=pdata['endpoints']
 
 	return e
+
+def makebetterdescription(pdata):
+	d=""
+	d = pdata['element']['description']
+	d = d + "Element name: ("+pdata['element']['name']+") "
+	d = d + "Entry added at "+str(datetime.datetime.now(datetime.timezone.utc))+" UTC"
+	return d
+
 #
 # Worklist
 #
@@ -181,6 +190,8 @@ def processWorklist(pdata,cmd):
 			tpmclear(pdata)
 		elif (w=='tpmprovision'):
 			tpmprovision(pdata)
+		elif (w=='makebetterdescription'):
+			e['description']=makebetterdescription(pdata)		
 		elif (w=='collecthostinfo'):
 			e["host"] = collecthostinfo()
 		elif (w=='collectuefi'):

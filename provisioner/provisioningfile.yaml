@@ -30,6 +30,7 @@ provisionworklist:
   - collecttpm2
   - collectuefi
   - collectima
+  - makebetterdescription
   - processelement
 #  - processevs
   - processevs_withrules
@@ -42,27 +43,27 @@ evs:
         - sys_taRunningSafely  
         - sys_machineID_Agent 
         - sys_machineID_CrossRef 
-  - std::intent::sha256::crtm::pcr0 :
-      protocol: tarzan
-      type: tpm2quote      
-      rules:
-        - tpm2_attestedValue
-        - tpm2_firmware
-        - tpm2_magicNumber
-        - tpm2_safe
-        - tpm2_validNonce 
-  - std::intent::sha256::crtm::firmware :
-      protocol: tarzan
-      type: tpm2quote
-      rules:
-        - tpm2_attestedValue
-        - tpm2_firmware
-        - tpm2_magicNumber
-        - tpm2_safe
-        - tpm2_validNonce           
-  - std::intent::linux::ima::asciilog :
-      protocol: tarzan         
-  - std::intent::tpm::pcrs :
-      protocol: tarzan  
-  - std::intent::uefi::efivars :
-      protocol: tarzan 
+  # - std::intent::sha256::crtm::pcr0 :
+  #     protocol: tarzan
+  #     type: tpm2quote      
+  #     rules:
+  #       - tpm2_attestedValue
+  #       - tpm2_firmware
+  #       - tpm2_magicNumber
+  #       - tpm2_safe
+  #       - tpm2_validNonce 
+  # - std::intent::sha256::crtm::firmware :
+  #     protocol: tarzan
+  #     type: tpm2quote
+  #     rules:
+  #       - tpm2_attestedValue
+  #       - tpm2_firmware
+  #       - tpm2_magicNumber
+  #       - tpm2_safe
+  #       - tpm2_validNonce           
+  # - std::intent::linux::ima::asciilog :
+  #     protocol: tarzan         
+  # - std::intent::tpm::pcrs :
+  #     protocol: tarzan  
+  # - std::intent::uefi::efivars :
+  #     protocol: tarzan 
