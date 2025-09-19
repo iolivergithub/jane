@@ -62,6 +62,7 @@ func setUpOperationEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/elements", getElements)
 	router.GET(PREFIX+"/element/:itemid", getElement)
 	router.GET(PREFIX+"/elements/name/:name", getElementsByName)
+	router.GET(PREFIX+"/elements/tag/:tag", getElementsByTag)
 	router.POST(PREFIX+"/element", postElement)
 	router.PUT(PREFIX+"/element", putElement)
 	router.DELETE(PREFIX+"/element/:itemid", deleteElement)

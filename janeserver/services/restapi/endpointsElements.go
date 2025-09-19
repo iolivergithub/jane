@@ -71,6 +71,28 @@ func getElementsByName(c echo.Context) error {
 	}
 }
 
+func getElementsByTag(c echo.Context) error {
+	tag := c.Param("tag")
+
+	elems, err := operations.GetElementsByTag(tag)
+
+	if err != nil {
+		log.Println("err=", err)
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
+	} else {
+		//Convert elems from []structures.ID into a []string
+		var elems_str []string
+		for _, e := range elems {
+			elems_str = append(elems_str, e.ItemID)
+		}
+
+		//Marshall into JSON
+		elems_struct := returnElements{elems_str, len(elems_str)}
+
+		return FormattedResponse(c, http.StatusOK, elems_struct)
+	}
+}
+
 type postElementReturn struct {
 	Itemid string `json:"itemid"`
 	Error  string `json:"error"`

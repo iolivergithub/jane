@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.5.0
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/racingmars/go3270 v0.9.3
@@ -22,9 +22,9 @@ require (
 require github.com/go-jose/go-jose/v4 v4.1.2 // indirect
 
 require (
-	github.com/edgelesssys/ego v1.7.2
+	github.com/edgelesssys/ego v1.8.0
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/go-tpm v0.9.5
+	github.com/google/go-tpm v0.9.6
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
