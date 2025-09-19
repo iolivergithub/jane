@@ -103,7 +103,9 @@ def	processevs(pdata,eid,cmd,rr):
 def processexpectedvaluetypes(e,pid,eid,epn,c,pdata):
 	if e[pid]["type"]=="sysmachineid":
 		cb = c.json()
-		evs = {"name":eid+"-"+pid,"description":"this should be much longer","evs":{"machineid":cb["body"]["machineid"]},"elementid":eid,"intentid":pid,"endpointname":epn}
+		d = pdata['element']['name']+"---"+e[pid]["type"]+" at "+timenow()+" UTC"
+		n = pdata['element']['name']+"---"+pid
+		evs = {"name":n,"description":d,"evs":{"machineid":cb["body"]["machineid"]},"elementid":eid,"intentid":pid,"endpointname":epn}
 		print(evs)
 		evsurl = pdata["attestationserver"]+"/expectedValue"
 		t = requests.post(evsurl, json=evs)
@@ -116,7 +118,9 @@ def processexpectedvaluetypes(e,pid,eid,epn,c,pdata):
 		print(q["body"]["quote"]["firmwareVersion"])			
 		print("*********************")
 
-		evs = {"name":eid+"-"+pid,"description":"this should be much longer",
+		d = pdata['element']['name']+"---"+e[pid]["type"]+" at "+timenow()+" UTC"
+		n = pdata['element']['name']+"---"+pid
+		evs = {"name":n+"-"+pid,"description": d,
 		   "evs":{"attestedValue":q["body"]["quote"]["attested"]["pcrdigest"], 
 		          "firmwareVersion":q["body"]["quote"]["firmwareVersion"]},
 		   "elementid":eid,"intentid":pid,"endpointname":epn}
@@ -174,8 +178,11 @@ def makebetterdescription(pdata):
 	d=""
 	d = pdata['element']['description']
 	d = d + "Element name: ("+pdata['element']['name']+") "
-	d = d + "Entry added at "+str(datetime.datetime.now(datetime.timezone.utc))+" UTC"
+	d = d + "Entry added at "+timenow()+" UTC"
 	return d
+
+def timenow():
+	return str(datetime.datetime.now(datetime.timezone.utc))
 
 #
 # Worklist

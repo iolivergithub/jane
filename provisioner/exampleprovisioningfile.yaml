@@ -2,8 +2,8 @@
 
 attestationserver: http://127.0.0.1:8520
 element:
-  name: cofiwch
-  description: This is the Cofwich Dryweryn Machine
+  name: Llewellyn
+  description: This is the Llewellyn Machine
   tags:
     - linux
     - x86
