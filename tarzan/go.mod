@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/0x5a17ed/itkit v0.7.0
 	github.com/0x5a17ed/uefi v0.7.0
-	github.com/google/go-tpm v0.9.5
+	github.com/google/go-tpm v0.9.6
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.4
 )

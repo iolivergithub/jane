@@ -145,13 +145,27 @@ echo "${BLUE}Linting rima.deb${NC}"
 cd $TMPBASE
 lintian rima.deb
 
-echo "${BLUE}Compressing${NC}"
+echo "${BLUE}Compressing deb and rpm files${NC}"
 cd $TMPBASE
 
 gzip *.deb 
 gzip *.rpm 
+gzip *.pyz
 
+echo "${BLUE}Building the python distributables${NC}"
+
+cd $DEBBUILDDIR/../..
+python3 -m venv provisioner
+python3 -m provisioner/bin/activate
+python3 -m pip3 install -r provisioner/requirements.txt
+python3 -m zipapp -c provisioner -o $TMPBASE/provisioner.pyz
+deactivate
+
+echo "${BLUE}Listing files${NC}"
+
+cd $TMPBASE
 ls -l *.gz
+ls -l *.pyz
 
 #Completion
 echo "${BLUE}Complete${NC}"
