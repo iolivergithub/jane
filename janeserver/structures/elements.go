@@ -19,6 +19,8 @@ type Element struct {
 	Host             HostMachine      `json:"host,omitempty" bson:"host,omitempty"  yaml:"host,omitempty"`
 	MRCoordinator    MRCoordinator    `json:"mrcoordinator,omitempty" bson:"mrcoordinator,omitempty"  yaml:"mrcoordinator,omitempty"`
 	MRMarbleInstance MRMarbleInstance `json:"mrmarbleinstance,omitempty" bson:"mrmarbleinstance,omitempty"  yaml:"mrmarbleinstance,omitempty"`
+
+	Archive Archive `json:"archive,omitempty" bson:"archive,omitempty"  yaml:"archive,omitempty"`
 }
 
 // ELEMENTSUMMARY MUST BE A SUBSET OF THE ELEMENT TYPE

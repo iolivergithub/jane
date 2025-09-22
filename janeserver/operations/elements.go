@@ -4,6 +4,7 @@ package operations
 
 import (
 	"context"
+	"fmt"
 
 	"a10/datalayer"
 	"a10/logging"
@@ -52,6 +53,7 @@ func UpdateElement(replacement structures.Element) error {
 // DeleteElement takes an itemid as input
 func DeleteElement(itemid string) error {
 	filter := bson.D{{"itemid", itemid}}
+	fmt.Printf("Archving information is %v\n", createArchiveStructure("this is no reason"))
 	deleteresult, err := datalayer.DB.Collection("elements").DeleteOne(context.TODO(), filter)
 
 	if err != nil {
