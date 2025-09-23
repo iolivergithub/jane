@@ -28,6 +28,8 @@ func AddElement(e structures.Element) (string, error) {
 		return "", ErrorItemIDIncluded
 	} else {
 		e.ItemID = utilities.MakeID()
+		e.RecordHistory = recordInformationCreation()
+		fmt.Println("New element %v\n", e)
 		_, dberr := datalayer.DB.Collection("elements").InsertOne(context.TODO(), e)
 		logging.MakeLogEntry("IM", "add", e.ItemID, "element", "")
 
@@ -37,6 +39,7 @@ func AddElement(e structures.Element) (string, error) {
 
 // UpdateElement requires the complete structure, that is, it replaces the structure with the given itemid
 func UpdateElement(replacement structures.Element) error {
+	replacement.RecordHistory = recordInformationUpdate(replacement.RecordHistory)
 	filter := bson.D{{"itemid", replacement.ItemID}}
 	updateresult, err := datalayer.DB.Collection("elements").ReplaceOne(context.TODO(), filter, replacement)
 
@@ -53,7 +56,7 @@ func UpdateElement(replacement structures.Element) error {
 // DeleteElement takes an itemid as input
 func DeleteElement(itemid string) error {
 	filter := bson.D{{"itemid", itemid}}
-	fmt.Printf("Archving information is %v\n", createArchiveStructure("this is no reason"))
+
 	deleteresult, err := datalayer.DB.Collection("elements").DeleteOne(context.TODO(), filter)
 
 	if err != nil {

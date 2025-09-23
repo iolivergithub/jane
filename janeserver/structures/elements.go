@@ -20,7 +20,7 @@ type Element struct {
 	MRCoordinator    MRCoordinator    `json:"mrcoordinator,omitempty" bson:"mrcoordinator,omitempty"  yaml:"mrcoordinator,omitempty"`
 	MRMarbleInstance MRMarbleInstance `json:"mrmarbleinstance,omitempty" bson:"mrmarbleinstance,omitempty"  yaml:"mrmarbleinstance,omitempty"`
 
-	Archive Archive `json:"archive,omitempty" bson:"archive,omitempty"  yaml:"archive,omitempty"`
+	RecordHistory RecordHistory `json:"recordhistory,omitempty" bson:"recordhistory,omitempty"  yaml:"recordhistory,omitempty"`
 }
 
 // ELEMENTSUMMARY MUST BE A SUBSET OF THE ELEMENT TYPE

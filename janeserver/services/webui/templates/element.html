@@ -30,15 +30,26 @@
 </div>
 </div>
 <hr/>
+
+
 <div class="row">
-<div class="col-sm-6 border border-primary rounded">
+<div class="col-sm-4 border border-primary rounded">
    {{ if not .E.TPM2.Device }}
-   <i>No TPM Device Present</i>
+   <i>No TPM device present</i>
    {{ else }}
    {{ template "tpm2.html" .E.TPM2 }}
    {{ end }}
 </div>
-<div class="col-sm-6 border border-primary rounded">
+
+<div class="col-sm-4 border border-primary rounded">
+   {{ if not .E.RecordHistory }}
+   <i>No record history</i>
+   {{ else }}
+   {{ template "recordhistory.html" .E.RecordHistory }}
+   {{ end }}   
+</div>
+
+<div class="col-sm-4 border border-primary rounded">
    {{ if not .E.Host.Arch }}
    <ul>
       <li><i>No host information specified</i>

@@ -78,7 +78,7 @@ func processNewExpectedValue(c echo.Context) error {
 		return c.Redirect(http.StatusSeeOther, "/new/expectedvalue")
 	}
 
-	var newev = structures.ExpectedValue{itemid, name, description, theelement, endpointname, intentselect, evsparams}
+	var newev = structures.ExpectedValue{itemid, name, description, theelement, endpointname, intentselect, evsparams, structures.RecordHistory{}}
 
 	fmt.Printf("  fv%v\n", newev)
 	eid, err := operations.AddExpectedValue(newev)

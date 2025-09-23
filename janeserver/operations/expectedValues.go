@@ -27,6 +27,8 @@ func AddExpectedValue(e structures.ExpectedValue) (string, error) {
 		return "", ErrorItemIDIncluded
 	} else {
 		e.ItemID = utilities.MakeID()
+		e.RecordHistory = recordInformationCreation()
+
 		_, dberr := datalayer.DB.Collection("expectedvalues").InsertOne(context.TODO(), e)
 		logging.MakeLogEntry("IM", "add", e.ItemID, "expectedvalue", "")
 
@@ -36,6 +38,7 @@ func AddExpectedValue(e structures.ExpectedValue) (string, error) {
 
 // UpdateExpectedValue requires the complete structure, that is, it replaces the structure with the given itemid
 func UpdateExpectedValue(replacement structures.ExpectedValue) error {
+	replacement.RecordHistory = recordInformationUpdate(replacement.RecordHistory)
 	filter := bson.D{{"itemid", replacement.ItemID}}
 	updateresult, err := datalayer.DB.Collection("expectedvalues").ReplaceOne(context.TODO(), filter, replacement)
 

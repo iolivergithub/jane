@@ -17,6 +17,8 @@ type ExpectedValue struct {
 	IntentID     string `json:"intentid" bson:"intentid"`
 
 	EVS map[string]interface{} `json:"evs" bson:"evs"`
+
+	RecordHistory RecordHistory `json:"recordhistory,omitempty" bson:"recordhistory,omitempty"  yaml:"recordhistory,omitempty"`
 }
 
 type KeylimeMBEV struct {

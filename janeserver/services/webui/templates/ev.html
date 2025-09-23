@@ -24,5 +24,12 @@
    </tbody>
 </table>
 
+<hr />
+
+   {{ if not .EV.RecordHistory }}
+   <i>No record history</i>
+   {{ else }}
+   {{ template "recordhistory.html" .EV.RecordHistory }}
+   {{ end }}   
 
 {{end}}

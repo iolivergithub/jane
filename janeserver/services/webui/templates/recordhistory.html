@@ -1,0 +1,22 @@
+{{define "recordhistory.html"}}
+<table class="table  table-striped">
+
+   <tbody>
+      <tr><th scope="col">Created</th> <th scope="col">{{ epochToUTC .Created }}</th>  </tr>
+
+      {{ if not .LastUpdated }}
+      <tr><td scope="col">Last Updated</td> <td scope="col"><i>No updates</i></td>  </tr>
+      {{ else }}
+      <tr><td scope="col">Last Updated</td> <td scope="col">{{ epochToUTC .LastUpdated }}</td>  </tr>
+      {{ end }}   
+
+      {{ if not .Archived }}
+      <tr><td scope="col">Archived</td> <td scope="col"><i>Not archived</i></td>  </tr>
+      {{ else }}
+      <tr><td scope="col">Archived</td> <td scope="col">{{ epochToUTC .Archived }}</td>  </tr>
+      <tr><td scope="col">Archival Reason</td> <td scope="col">{{ .Reason }}</td>  </tr> 
+      {{ end }}       
+     
+   </tbody>
+</table>
+{{end}}

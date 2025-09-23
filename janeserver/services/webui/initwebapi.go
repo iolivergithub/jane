@@ -58,7 +58,10 @@ func StartWebUI(ctx context.Context) {
 
 	templates["elements.html"] = template.Must(template.New("elements.html").Funcs(functions).ParseFS(WPFS, T+"elements.html", T+"elementsummarylist.html", T+"base.html"))
 	templates["intents.html"] = template.Must(template.New("intents.html").Funcs(functions).ParseFS(WPFS, T+"intents.html", T+"intentsummarylist.html", T+"base.html"))
-	templates["evs.html"] = template.Must(template.New("evs.html").Funcs(functions).ParseFS(WPFS, T+"evs.html", T+"evsummarylist.html", T+"base.html"))
+	templates["evs.html"] = template.Must(template.New("evs.html").Funcs(functions).ParseFS(WPFS, T+"evs.html",
+		T+"evsummarylist.html",
+		T+"recordhistory.html",
+		T+"base.html"))
 
 	templates["element.html"] = template.Must(template.New("element.html").Funcs(functions).ParseFS(WPFS, T+"element.html", T+"base.html",
 		T+"uefi.html",
@@ -71,7 +74,9 @@ func StartWebUI(ctx context.Context) {
 
 	templates["intent.html"] = template.Must(template.New("intent.html").Funcs(functions).ParseFS(WPFS, T+"intent.html", T+"base.html",
 		T+"genericList.html"))
-	templates["ev.html"] = template.Must(template.New("ev.html").Funcs(functions).ParseFS(WPFS, T+"ev.html", T+"base.html",
+	templates["ev.html"] = template.Must(template.New("ev.html").Funcs(functions).ParseFS(WPFS, T+"ev.html",
+		T+"base.html",
+		T+"recordhistory.html",
 		T+"genericList.html"))
 
 	templates["claims.html"] = template.Must(template.New("claims.html").Funcs(functions).ParseFS(WPFS, T+"claims.html", T+"base.html"))
