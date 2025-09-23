@@ -70,6 +70,7 @@ func StartWebUI(ctx context.Context) {
 		T+"tpm2.html",
 		T+"tpm2key.html",
 		T+"hostinformation.html",
+		T+"recordhistory.html",
 		T+"resultvalue.html"))
 
 	templates["intent.html"] = template.Must(template.New("intent.html").Funcs(functions).ParseFS(WPFS, T+"intent.html", T+"base.html",

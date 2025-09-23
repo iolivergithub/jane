@@ -86,8 +86,8 @@ func main() {
 	// start the internal services
 	internalservices()
 
-	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologies for the inconvience (42)")
-	fmt.Println("+=== Final message: We apologies for the inconvience (42) ===")
+	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologise for the inconvience (bring 42 towels)")
+	fmt.Println("+=== Final message: We apologise for the inconvience (42). Next time, bring a towel ===")
 
 }
 
