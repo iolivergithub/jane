@@ -20,10 +20,11 @@ vet:
 libs:
 	go get -u
 	go mod tidy -v
+	go mod verify
 
 run: 
 	./${BINARY_NAME}
 
 clean:
-	go clean
+	go clean -r
 	rm ${BINARY_NAME}

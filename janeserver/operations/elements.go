@@ -29,7 +29,7 @@ func AddElement(e structures.Element) (string, error) {
 	} else {
 		e.ItemID = utilities.MakeID()
 		e.RecordHistory = recordInformationCreation()
-		fmt.Println("New element %v\n", e)
+		fmt.Printf("New element %v\n", e)
 		_, dberr := datalayer.DB.Collection("elements").InsertOne(context.TODO(), e)
 		logging.MakeLogEntry("IM", "add", e.ItemID, "element", "")
 

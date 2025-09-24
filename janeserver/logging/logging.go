@@ -58,7 +58,7 @@ func writeToLogfile(wgrp *sync.WaitGroup, l structures.LogEntry) {
 	defer f.Close()
 
 	if _, err := f.WriteString(makeCSVText(l)); err != nil {
-		log.Println("Error writring to log file ", configuration.ConfigData.Logging.LogFileLocation)
+		log.Println("Error writing to log file ", configuration.ConfigData.Logging.LogFileLocation)
 	}
 
 	wgrp.Done()
