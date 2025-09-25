@@ -31,17 +31,19 @@ func Callrulesafe(claim structures.Claim, rule string, ev structures.ExpectedVal
 
 func CallrulemachineIDTA(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 
+	// NB: there's a lot of trimming of strings going on here, this is because we want to drop any newline etc
+	// characters, just in case.  Tarzan however does now strip these, but done here as an addition precaution
+	// because reading /etc/machineid as tarzan does introduce these characters, even though they are not
+	// present in the original file.
+
 	machineid, ok := claim.Body["machineid"]
 	if !ok {
 		return structures.RuleCallFailure, "TA not of correct type, or not reporting machineid parameter value", nil
 	}
-
 	claimedMachineID := strings.Trim(fmt.Sprintf("%v", machineid), " \t\n")
 
-	// We get this from the EXPECTED VALUES
-	expectedMachineID := (ev.EVS)["machineid"]
-
-	fmt.Printf("Comparison\n%v\n%v\n%v\n===\n", claimedMachineID, expectedMachineID, claimedMachineID == expectedMachineID)
+	emachineid := ((ev.EVS)["machineid"]).(string)
+	expectedMachineID := strings.Trim(fmt.Sprintf("%v", emachineid), " \t\n")
 
 	// and now the check
 	if expectedMachineID == claimedMachineID {
