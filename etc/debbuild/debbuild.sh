@@ -9,6 +9,7 @@ DEBBUILDDIR=`pwd`
 TMPBASE=/tmp/janedebbuild
 JANEBASE=$TMPBASE/jane
 TARZANBASE=$TMPBASE/tarzan
+PROVBASE=$TMPBASE/provisioner
 
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"

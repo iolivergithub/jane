@@ -2,13 +2,14 @@
 
 attestationserver: http://127.0.0.1:8520
 element:
-  name: Llewellyn
-  description: This is the Llewellyn Machine
+  name: Debian13VM
+  description: Debian 13 VM
   tags:
     - linux
     - x86
     - tpm2
     - uefi  
+    - vbox
 endpoints:
   tarzan:
       endpoint: http://127.0.0.1:8530
@@ -60,10 +61,19 @@ evs:
         - tpm2_firmware
         - tpm2_magicNumber
         - tpm2_safe
-        - tpm2_validNonce           
-  #- std::intent::linux::ima::asciilog :
-  #    protocol: tarzan         
+        - tpm2_validNonce
+  - std::intent::sha256::crtm::bootloaderonly  :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_safe
+        - tpm2_validNonce
+  - std::intent::linux::ima::asciilog :
+      protocol: tarzan
   - std::intent::tpm::pcrs :
       protocol: tarzan  
-  # - std::intent::uefi::efivars :
-  #     protocol: tarzan 
+  - std::intent::uefi::efivars :
+      protocol: tarzan

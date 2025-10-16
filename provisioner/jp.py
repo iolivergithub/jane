@@ -8,6 +8,13 @@ import subprocess
 import datetime
 import argparse
 
+
+#
+# Global
+
+safemode=True
+
+#
 #
 # TPM Functions
 #
@@ -128,13 +135,14 @@ def processexpectedvaluetypes(e,pid,eid,epn,c,pdata,cmd):
 def createupdateEVS(pdata,evs,eid,pid,epn,cmd):
 	evsurl = pdata["attestationserver"]+"/expectedValue"
 
-	if cmd=='update':
-		evsid=getEVSID(pdata,eid,pid,epn)
+	evsid=getEVSID(pdata,eid,pid,epn)
+
+	if evsid!='x':
 		print(" ... updating evs...",evsid)
-		evs["itemid"]=eid
+		evs["itemid"]=evsid
 		t = requests.put(evsurl, json=evs)
 	else:
-		print(" ... createing evs")
+		print(" ... creating evs")
 		t = requests.post(evsurl, json=evs)
 		print(" ... evs ... ",t.status_code,t.json())
 
@@ -144,6 +152,8 @@ def getEVSID(pdata,eid,pid,epn):
 	r = requests.get(jurl)
 	print(" ... status ",r.status_code)
 	evs = r.json()
+	if r.status_code!=200:
+		return "x"
 	print(" ... evs",evs["itemid"])
 	return evs["itemid"]
 
@@ -230,9 +240,11 @@ def processWorklist(pdata,cmd):
 
 	for w in pdata['provisionworklist']:
 		if (w=='tpmclear'):
-			tpmclear(pdata)
+			if continueQuestion("TPM Clear?")==True:
+				tpmclear(pdata)
 		elif (w=='tpmprovision'):
-			tpmprovision(pdata)
+			if continueQuestion("TPM Provision?")==True:
+				tpmprovision(pdata)
 		elif (w=='makebetterdescription'):
 			e['description']=makebetterdescription(pdata)		
 		elif (w=='collecthostinfo'):
@@ -257,11 +269,35 @@ def processWorklist(pdata,cmd):
 			print("Unknown provision work command",w)
 
 	return e
+
+#
+# Question
+#
+
+def continueQuestion(msg):
+	if safemode==True:
+		return True
+
+	while True:
+		a = input("Safety check: "+msg+" (ynq) >")
+		if a=="y":
+			return True
+		elif a=="n":
+			return False
+		elif a=="q":
+			print("Terminating immediately")
+			quit()
+		else:
+			print("valid reponses are y=yes, n=no and q=quit now")
+
+
+
 #
 # Main
 #
 
 def runjp():
+	global safemode
 	print("Jane Element Configuration")
 
 	parser = argparse.ArgumentParser(
@@ -272,8 +308,9 @@ def runjp():
 	parser.add_argument('pfile')
 	parser.add_argument('-u','--unsafe',action='store_true')
 	args=parser.parse_args()
-	print(args.operation, args.pfile, args.unsafe)
 
+	safemode = args.unsafe
+	print("safe mode is ",safemode)
 
 	if not( args.operation in ["create","update"]):
 		print("Unknown command, not one of: create, update")
@@ -294,6 +331,15 @@ def runjp():
 	except:
 		print("Error processing",args.pfile)
 		quit()	
+
+	print(args.operation=="create",IDfileExists(), args.operation=="create" and IDfileExists())
+
+	if (args.operation=="create" and IDfileExists()==True):
+		print("######################################################")
+		if continueQuestion("Create mode and element ID file exists?")==False:
+			print("Terminating safely.")
+			quit()
+
 
 	e = {}
 	e = processWorklist(pdata,args.operation)
