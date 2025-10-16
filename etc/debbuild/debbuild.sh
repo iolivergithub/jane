@@ -124,18 +124,6 @@ lintian tarzan.deb
 
 
 
-# echo "${BLUE}Building the python distributables${NC}"
-
-# cd $DEBBUILDDIR/../..
-# python3 -m venv provisioner
-# source provisioner/bin/activate
-# python3 -m pip install -r provisioner/requirements.txt --target provisioner
-# python3 -m zipapp -c -p "/usr/bin/python3"  -o $TMPBASE/provisioner.pyz provisioner
-# deactivate
-# ls -l  $TMPBASE/provisioner.pyz
-
-echo "${BLUE}Compressing deb and rpm files${NC}"
-cd $TMPBASE
 
 gzip *.deb 
 gzip *.rpm 
