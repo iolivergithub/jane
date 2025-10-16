@@ -117,7 +117,7 @@ func getExpectedValuesByPolicy(c echo.Context) error {
 func getExpectedValueByElementAndPolicy(c echo.Context) error {
 	eid := c.Param("eid")
 	pid := c.Param("pid")
-	epn := c.Param("postExpectedValueReturn")
+	epn := c.Param("epn")
 
 	elem, err := operations.GetExpectedValueByElementAndPolicy(eid, pid, epn)
 

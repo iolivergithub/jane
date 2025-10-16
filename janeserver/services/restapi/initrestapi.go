@@ -100,7 +100,7 @@ func setUpOperationEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/expectedValues/name/:name", getExpectedValuesByName)
 	router.GET(PREFIX+"/expectedValues/element/:itemid", getExpectedValuesByElement)
 	router.GET(PREFIX+"/expectedValues/intent/:itemid", getExpectedValuesByPolicy)
-	router.GET(PREFIX+"/expectedValue/:eid/:pid", getExpectedValueByElementAndPolicy)
+	router.GET(PREFIX+"/expectedValue/:eid/:pid/:epn", getExpectedValueByElementAndPolicy)
 
 	router.POST(PREFIX+"/expectedValue", postExpectedValue)
 	router.PUT(PREFIX+"/expectedValue", putExpectedValue)

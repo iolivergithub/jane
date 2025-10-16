@@ -6,6 +6,7 @@ import socket
 import requests
 import subprocess
 import datetime
+import argparse
 
 #
 # TPM Functions
@@ -90,7 +91,7 @@ def	processevs(pdata,eid,cmd,rr):
 		# if there is a type field then process the result to create an EVS
 
 		if "type" in e[pid].keys():
-			processexpectedvaluetypes(e,pid,eid,epn,c,pdata)
+			processexpectedvaluetypes(e,pid,eid,epn,c,pdata,cmd)
 		
 
 		if rr==True:
@@ -100,16 +101,14 @@ def	processevs(pdata,eid,cmd,rr):
 	closeSession(pdata["attestationserver"],sid)
 
 
-def processexpectedvaluetypes(e,pid,eid,epn,c,pdata):
+def processexpectedvaluetypes(e,pid,eid,epn,c,pdata,cmd):
 	if e[pid]["type"]=="sysmachineid":
 		cb = c.json()
 		d = pdata['element']['name']+"---"+e[pid]["type"]+" at "+timenow()+" UTC"
 		n = pdata['element']['name']+"---"+pid
 		evs = {"name":n,"description":d,"evs":{"machineid":cb["body"]["machineid"]},"elementid":eid,"intentid":pid,"endpointname":epn}
 		print(evs)
-		evsurl = pdata["attestationserver"]+"/expectedValue"
-		t = requests.post(evsurl, json=evs)
-		print(" ... evs ... ",t.status_code,t.json())
+		createupdateEVS(pdata,evs,eid,pid,epn,cmd)
 
 	if e[pid]["type"]=="tpm2quote":
 		q = c.json()
@@ -124,10 +123,29 @@ def processexpectedvaluetypes(e,pid,eid,epn,c,pdata):
 		   "evs":{"attestedValue":q["body"]["quote"]["attested"]["pcrdigest"], 
 		          "firmwareVersion":q["body"]["quote"]["firmwareVersion"]},
 		   "elementid":eid,"intentid":pid,"endpointname":epn}
-		evsurl = pdata["attestationserver"]+"/expectedValue"
-		t = requests.post(evsurl, json=evs)
-		print(" ... evs ... ",t.status_code,t.json())	
+		createupdateEVS(pdata,evs,eid,pid,epn,cmd)
 
+def createupdateEVS(pdata,evs,eid,pid,epn,cmd):
+	evsurl = pdata["attestationserver"]+"/expectedValue"
+
+	if cmd=='update':
+		evsid=getEVSID(pdata,eid,pid,epn)
+		print(" ... updating evs...",evsid)
+		evs["itemid"]=eid
+		t = requests.put(evsurl, json=evs)
+	else:
+		print(" ... createing evs")
+		t = requests.post(evsurl, json=evs)
+		print(" ... evs ... ",t.status_code,t.json())
+
+def getEVSID(pdata,eid,pid,epn):
+	jurl = pdata["attestationserver"]+"/expectedValue/"+eid+"/"+pid+"/"+epn
+	print(" ... evs, checking:",jurl)
+	r = requests.get(jurl)
+	print(" ... status ",r.status_code)
+	evs = r.json()
+	print(" ... evs",evs["itemid"])
+	return evs["itemid"]
 
 def processelement(pdata, e, cmd):
 	jurl = pdata["attestationserver"]+"/element"
@@ -136,7 +154,9 @@ def processelement(pdata, e, cmd):
 		print("creating...")
 		r = requests.post(jurl, json=e)
 	elif cmd=="update":
-		print("updating...")		
+		eid=getIDfile()
+		print("updating element...",eid)
+		e["itemid"]=eid
 		r = requests.put(jurl, json=e)
 	else:
 		print("Unknown processelement command, I do not understand what is",cmd)
@@ -184,6 +204,22 @@ def makebetterdescription(pdata):
 def timenow():
 	return str(datetime.datetime.now(datetime.timezone.utc))
 
+
+def writeIDtoFile(i):
+	# this writes the itemID to a file /etc/janeelementid
+	with open("/etc/janeelementid","w") as f:
+		f.write(i)
+
+def getIDfile():
+	# the reads the janeelementid file
+	with open("/etc/janeelementid","r") as f:
+		c = f.read().splitlines()
+	return c[0]
+
+def IDfileExists():
+	f = pathlib.Path("/etc/janeelementid")
+	return f.is_file()
+
 #
 # Worklist
 #
@@ -212,6 +248,7 @@ def processWorklist(pdata,cmd):
 			e["ima"]["asciilog"] = collectima()
 		elif (w=='processelement'):
 			i=processelement(pdata,e,cmd)
+			writeIDtoFile(i)
 		elif (w=='processevs'):
 			processevs(pdata,i,cmd,False)
 		elif (w=='processevs_withrules'):
@@ -227,31 +264,39 @@ def processWorklist(pdata,cmd):
 def runjp():
 	print("Jane Element Configuration")
 
-	if len(sys.argv) != 3:
-		print("Incorrect arguments: jp <cmd> <provisioning file>")
-		quit()    	
+	parser = argparse.ArgumentParser(
+		prog="jp",
+		description="Jane Element Configuator",
+		epilog="this is the epilog")
+	parser.add_argument('operation')
+	parser.add_argument('pfile')
+	parser.add_argument('-u','--unsafe',action='store_true')
+	args=parser.parse_args()
+	print(args.operation, args.pfile, args.unsafe)
 
-	cmd = sys.argv[1]
-	pfile = sys.argv[2]
 
-	if not( cmd in ["create","update"]):
+	if not( args.operation in ["create","update"]):
 		print("Unknown command, not one of: create, update")
 		quit()
 
-	f = pathlib.Path(pfile)
+	f = pathlib.Path(args.pfile)
 	if not f.is_file():
-		print("Provisioning file",pfile,"does not exist")
+		print("Provisioning file",args.pfile,"does not exist")
+		quit()
+
+	if ((not IDfileExists()) and args.operation=="update"):
+		print("/etc/janelementid file is missing for an update operation")
 		quit()
 
 	try:
-		with open(pfile,'r') as f:
+		with open(args.pfile,'r') as f:
 			pdata = yaml.safe_load(f)
 	except:
-		print("Error processing",pfile)
+		print("Error processing",args.pfile)
 		quit()	
 
 	e = {}
-	e = processWorklist(pdata,cmd)
+	e = processWorklist(pdata,args.operation)
 
 	print("Complete.")
 

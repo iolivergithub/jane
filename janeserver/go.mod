@@ -8,9 +8,9 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/racingmars/go3270 v0.9.3
+	github.com/racingmars/go3270 v0.9.4
 	go.mongodb.org/mongo-driver v1.17.4
-	golang.org/x/exp v0.0.0-20250911091902-df9299821621
+	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 )
 
-require github.com/go-jose/go-jose/v4 v4.1.2 // indirect
+require github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 
 require (
 	github.com/edgelesssys/ego v1.8.0
@@ -37,10 +37,10 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	golang.org/x/crypto v0.42.0 // indirect
-	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
-	golang.org/x/time v0.13.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 )
