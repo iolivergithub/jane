@@ -18,7 +18,7 @@ cd $PROVBASE/..
 python3 -m venv provisioner
 chmod a+x provisioner/bin/*
 ./provisioner/bin/activate
-python3 -m pip3 install -r provisioner/requirements.txt --target provisioner
+python3 -m pip install -r provisioner/requirements.txt --target provisioner --upgrade
 python3 -m zipapp -c -p "/usr/bin/python3"  -o $TMPBASE/provisioner.pyz provisioner
 deactivate
 ls -l  $TMPBASE/provisioner.pyz
