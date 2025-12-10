@@ -30,13 +30,14 @@ COPY . /app
 # Download Go modules
 COPY go.mod go.sum ./
 
-#These have been deprecated for the Makefile way of doing things
-#RUN /usr/local/go/bin/go mod download
-#RUN /usr/local/go/bin/go mod tidy
-#RUN . /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 /usr/local/go/bin/go #build -ldflags="-X 'main.BUILD=docker'" -o /janeserver   janeserver.go
-#RUN strip /janeserver
 
-RUN make build
+#These have been deprecated for the Makefile way of doing things
+RUN /usr/local/go/bin/go mod download
+RUN /usr/local/go/bin/go mod tidy
+RUN . /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 /usr/local/go/bin/go build -ldflags="-X 'main.BUILD=docker'" -o /janeserver   janeserver.go
+RUN strip /janeserver
+
+#RUN make build
 
 FROM  amd64/ubuntu:24.04
 
