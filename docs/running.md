@@ -27,10 +27,16 @@ NOTE: you'll find `temporary.key` and `temporary.crt` in a few places in this re
 
 EDIT the `config.yaml` configuration file so that the locations of these keys are recorded there.
 
-To start `janeserver` run and point the config option to where the config file is
+To start `janeserver` run and point the config option to where the config file is. NB: the actual executable name might vary - for example in the binaries only release each binary also has information about the operating system and CPU architecture - you can rename which ever one work for you to just `janeserver'.
 
 ```bash
 ./janeserver -config=config.yaml
+```
+
+NOTE: On Windows the `.exe` MUST be preserved:
+
+```bash
+./janeserver.exe -config=config.yaml
 ```
 
 You should see something similar to the following. If a config file is not found it will exit immediately. If Mosquitto or Mongo are not available then it will eventually time out. Finally if you are using https for the webui service, if the keys are not found it will exit with an error. The name of the database, location of config file and session identifier will all be different of course.
@@ -119,6 +125,7 @@ logging:
 ```
 
 ## Using Keylime for Measured Boot evaluation
+You probably don't need this...
 
 JANESERVER supports calling Keylime to validate a Measured Boot log.  For this currently it requires a special version found here: https://github.com/THS-on/keylime/tree/api/standalone-validation
 
@@ -146,11 +153,16 @@ keylime:
 
 # Running TARZAN
 
-Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Running tarzan is simple, just speicfy which services you want started, eg: sys and tpm2...
+Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Running tarzan is simple, just speicfy which services you want started, eg: sys and tpm2. 
+
+NB: the actual executable name might vary - for example in the binaries only release each binary also has information about the operating system and CPU architecture - you can rename which ever one work for you to just `janeserver'.
+
 
 ```bash
 ./tarzan --tpm2 --sys
 ```
+
+On Windows keep the `.exe` extension, ie: `tarzan.exe --tpm2 --sys`
 
 ```bash
 +========================================================================================
@@ -172,6 +184,7 @@ tarzan requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handl
 sudo ./tarzan --tpm2 --sys
 ```
 
+If you are running on Windows, then there are more restrictions to TPM 2.0 use. You can read PCRs but not get quotes due to the way Windows `locks` the TPM. If you can generate an AK successfully then you can generate quotes. Similarly UEFI eventlog and IMA logs are NOT available on Windows.
 
 ## Command line options
 

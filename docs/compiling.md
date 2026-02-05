@@ -17,11 +17,13 @@ The instructions presented here have been tested in Ubuntu 22.04 om AMD64.
 
 <!-- TOC --><a name="compiling-janeserver"></a>
 ## Compiling JANESERVER
-
-Compilation requires an up-to-date mod file and the Edgeless environment variables - this is explained in the two parts below. Fortunately, unless Intel or Edgeless update their stuff you only have to install these once. The biggest issue is that these libraries are amd64 instruction set specific.
+The default compilation Makefile for Jane is generic for all architectures and does not require additional librares. Skip straight to "Building".
 
 <!-- TOC --><a name="install-sgx-sdk-and-edgeless-libraries"></a>
 ### Install SGX SDK and Edgeless libraries
+Skip this and move to "Building" if you are not interested in using MarbleRun. Using these additions requires changes to a few files to uncomment code and further downloads (see below). You will ONLY be able to run on Ubuntu/Debian for amd64 if you do this.
+
+Compilation requires an up-to-date mod file and the Edgeless environment variables - this is explained in the two parts below. Fortunately, unless Intel or Edgeless update their stuff you only have to install these once. The biggest issue is that these libraries are amd64 instruction set specific.
 
 Intel and Edgeless supply releases for Ubuntu and other operating systems. Here we should for Ubuntu Jammy (22.04). These commands might need to be run as `sudo`. Modify as appropriate for your operating system.
 
@@ -46,10 +48,19 @@ make build
 
 You will now get a file called `janeserver` which is your executable. The Makefile also sets BUILD and VERSION flags. Further the Makefile also genates a PIE binary for security reasons.
 
+If you wish to build for other architectures, modify the OS and ARCH environment variables in the Makefile.
+
 <!-- TOC --><a name="optional-build-flag"></a>
 ### Optional BUILD and VERSION flags
+Skip this section.
 
 If you wish to set build and version flag, then specify  as part of the `ldflags -X` option as in the example command to compile below. Set the value `123` to whatever you want (within reason - a short string is fine). If you don't do this, and it is completely optional, then default value for the build flag will be `not set`.
+
+```bash
+. GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
+```
+
+or
 
 ```bash
 . /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
