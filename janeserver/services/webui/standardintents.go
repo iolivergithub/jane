@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -45,12 +46,30 @@ func loadstandardintents(c echo.Context) error {
 
 func getfile(url string) ([]byte, error) {
 
-	resp, err := http.Get(url)
+	// The get to the https URL is broken due to x509 certs being old...maybe a LInux issue, maybe a Windows issue
+	// maybe a Github issue...anyway...maybe this solves it
+	// Yes, I know this is a security hole.
+	//
+	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
+	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
 
+	// this was the original line:
+	// resp, err := http.Get(url)
+	// now replaced with...
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get(url)
+
+	// and back to the original code here
 	if err != nil {
-		fmt.Println("getting std intents failed ", err.Error())
+		fmt.Printf("getting std intents failed: %w \n ", err.Error())
 		return []byte{}, err
 	}
+
+	fmt.Println("Received a response")
 
 	respbody, err2 := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
