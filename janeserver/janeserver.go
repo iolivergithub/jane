@@ -9,7 +9,8 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	_ "sync"
+
+	//	_ "sync"
 	"syscall"
 
 	"a10/configuration"
@@ -25,7 +26,7 @@ import (
 )
 
 // Version number
-const VERSION string = "v1.01 JANE"
+const VERSION string = "v1.1 JANE"
 
 // the BUILD value can be set during compilation.
 var BUILD string = "not set"
@@ -44,7 +45,7 @@ var configFile = flag.String("config", "./config.yaml", "Location and name of th
 func welcomeMessage() {
 	fmt.Printf("\n")
 	fmt.Printf("+========================================================\n")
-	fmt.Printf("|  JANESERVER version\n")
+	fmt.Printf("|  JANESERVER\n")
 	fmt.Printf("|   + %v O/S on %v\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Printf("|   + version %v, build %v\n", VERSION, BUILD)
 	fmt.Printf("|   + runing with name %v\n", configuration.ConfigData.System.Name)
@@ -56,18 +57,23 @@ func welcomeMessage() {
 func main() {
 	// we need to see what is on the command line and process the configuration file
 	// If this fails, we panic
+
 	flag.Parse()
 	configuration.SetupConfiguration(*configFile)
 
 	// now we know where things are, we can initialise the datalayer, ie: database, messaging etc
 	// if this fails, we panic
+
 	datalayer.InitialiseDatalayer()
 
 	// Ok, we're up...let's log this.
+
 	msg := fmt.Sprintf("Starting: %v, build %v, OS %v, ARCH %v", VERSION, BUILD, runtime.GOOS, runtime.GOARCH)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, configuration.ConfigData.System.Name, msg)
 	msg = fmt.Sprintf("Command line contained %v items: %v", len(os.Args), os.Args)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, "command line", msg)
+
+	// Print our welcome message
 
 	welcomeMessage()
 
@@ -84,6 +90,7 @@ func main() {
 	logging.MakeLogEntry("SYS", "startup", RUNSESSION, configuration.ConfigData.System.Name, msg)
 
 	// start the internal services
+
 	internalservices()
 
 	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologise for the inconvience (bring 42 towels)")

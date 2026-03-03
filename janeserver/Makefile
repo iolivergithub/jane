@@ -1,4 +1,4 @@
-OS=darwin
+OS=linux
 ARCH=arm64
 BINARY_NAME=janeserver
 PIE_ON=-buildmode=pie
@@ -11,16 +11,17 @@ build: libs fmt
 	ls -l --color=auto ${BINARY_NAME}
 
 
-buildwithmarble: libs fmt
-	. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build -ldflags="-X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
-	strip ${BINARY_NAME}
-	ls -l --color=auto ${BINARY_NAME}
+#buildwithmarble: libs fmt
+#	. /opt/edgelessrt/share/openenclave/openenclaverc && go vet -composites=false ./... 
+#	. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build -ldflags="-X 'main.BUILD=${BUILD_DATE} main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
+#	strip ${BINARY_NAME}
+#	ls -l --color=auto ${BINARY_NAME}
 
 fmt:
 	go fmt ./...
 
 vet:
-	. /opt/edgelessrt/share/openenclave/openenclaverc && go vet -composites=false ./... 
+	go vet -composites=false ./... 
 
 libs:
 	go get -u

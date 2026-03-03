@@ -46,11 +46,10 @@ func loadstandardintents(c echo.Context) error {
 
 func getfile(url string) ([]byte, error) {
 
-	// The get to the https URL is broken due to x509 certs being old...maybe a LInux issue, maybe a Windows issue
+	// The get to the https URL is broken due to x509 certs being old...maybe a Linux issue, maybe a Windows issue
 	// maybe a Github issue...anyway...maybe this solves it
 	// Yes, I know this is a security hole.
 	//
-	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
 	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
 
 	// this was the original line:
@@ -65,7 +64,7 @@ func getfile(url string) ([]byte, error) {
 
 	// and back to the original code here
 	if err != nil {
-		fmt.Printf("getting std intents failed: %w \n ", err.Error())
+		fmt.Printf("getting std intents failed: %v \n ", err.Error())
 		return []byte{}, err
 	}
 
