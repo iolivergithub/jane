@@ -9,7 +9,6 @@ DEBBUILDDIR=`pwd`
 TMPBASE=/tmp/janedebbuild
 JANEBASE=$TMPBASE/jane
 TARZANBASE=$TMPBASE/tarzan
-PROVBASE=$TMPBASE/provisioner
 
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
@@ -48,6 +47,11 @@ cd ../tarzan
 make build
 ls -l tarzan
 
+#compile Provisioner
+echo "${BLUE}Compling JP${NC}"
+cd ../provisioner
+make build
+ls -l jp
 
 #return to this directory
 echo "${BLUE}Returning to build script directory ${RED}${DEBBUILDDIR}${NC}"
@@ -56,9 +60,10 @@ cd $DEBBUILDDIR
 
 #Copy binaries
 echo "${BLUE}Copying binaries"
+pwd
 cp ../../janeserver/janeserver $JANEBASE/opt/jane
 cp ../../tarzan/tarzan $TARZANBASE/opt/jane
-
+cp ../../provisioner/jp $TARZANBASE/opt/jane
 
 #Copy configuration files
 echo "${BLUE}Copying congfiguration files and temporary keys"
@@ -134,7 +139,6 @@ echo "${BLUE}Listing files${NC}"
 
 cd $TMPBASE
 ls -l *.gz
-ls -l *.pyz
 
 #Completion
 echo "${BLUE}Complete${NC}"
