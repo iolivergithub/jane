@@ -32,6 +32,7 @@ mkdir -p $TARZANBASE
 mkdir -p $TARZANBASE/DEBIAN
 mkdir -p $TARZANBASE/opt/jane
 mkdir -p $TARZANBASE/etc/systemd/system
+mkdir -p $TARZANBASE/etc/opt/jane
 
 
 
@@ -47,7 +48,7 @@ cd ../tarzan
 make build
 ls -l tarzan
 
-#compile Provisioner
+#compile Provisioner - included in the tarzan.deb package
 echo "${BLUE}Compling JP${NC}"
 cd ../provisioner
 make build
@@ -74,6 +75,7 @@ cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
 
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
+cp templateprovisinerconfig.yaml $TARZANBASE/etc/opt/jane
 
 
 
@@ -81,11 +83,9 @@ cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
 echo "${BLUE}Copying Debian control, conffile and postinst files${NC}"
 cp control_jane $JANEBASE/DEBIAN/control
 cp control_tarzan $TARZANBASE/DEBIAN/control
-cp control_rima $RIMABASE/DEBIAN/control
 
 cp postinst_jane $JANEBASE/DEBIAN/postinst
 cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
-cp postinst_rima $RIMABASE/DEBIAN/postinst
 
 
 

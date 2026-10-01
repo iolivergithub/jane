@@ -1,0 +1,32 @@
+#A Sample Provisioning File
+
+attestationserver: http://central.local:8520
+element:
+  name: Pi
+  description: Raspberry Pi
+  tags:
+    - linux
+    - arm
+    - pi    
+endpoints:
+  tarzan:
+      endpoint: http://pi.local:8530
+      protocol: A10HTTPRESTv2
+provisionworklist:
+  - collecthostinfo
+  - collecttpm2
+  - collectuefi
+  - collectima
+  - makebetterdescription
+  - processelement
+#  - processevs
+  - processevs_withrules
+
+evs:
+  - std::intent::sys::info :
+      protocol: tarzan
+      type: sysmachineid
+      rules: 
+        - sys_taRunningSafely  
+        - sys_machineID_Agent 
+        - sys_machineID_CrossRef 

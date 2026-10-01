@@ -16,6 +16,7 @@ echo "${RED}   *** CHECK!!!!! **** ${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} Edit the /etc/systemd/system/tarzan.service ${NC}"
 echo "${RED} Ensure Tarzan is running the correct services${NC}"
+echo "${RED} Ensure the provisioner file is correct too!${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 
 echo "${PURPLE}Post installation scripts complete${NC}"
