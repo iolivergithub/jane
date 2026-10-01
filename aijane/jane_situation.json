@@ -1,0 +1,71 @@
+{
+  "report": "Situation report at 22:41:49, covering the last 5 minutes (40 log entries).\nThe server last started at 22:41:49, 0 seconds ago.\nIt restarted 2 times in this period.\n0 attestation sessions opened and 0 closed.\nNo verification results were recorded.\nThe information model changed 29 times: protocol (unnamed) added at 22:41:49; protocol (unnamed) added at 22:41:49; protocol (unnamed) added at 22:41:49; protocol (unnamed) added at 22:41:49; protocol (unnamed) added at 22:41:49; protocol (unnamed) added at 22:41:49; and more.\nNothing unusual was flagged.",
+  "assessment": "Operational",
+  "properties": [
+    {
+      "kind": "rate_max",
+      "scope": "global",
+      "a": "IM/add/protocol",
+      "rationale": "The protocol was added 29 times in the last 5 minutes, which is unusually high and could indicate a security risk or a misconfiguration.",
+      "per_minute": 29,
+      "status": "insufficient",
+      "satisfied": 1,
+      "violated": 0
+    },
+    {
+      "kind": "count_relation",
+      "scope": "global",
+      "a": "IM/add/protocol",
+      "rationale": "There were no sessions opened or closed, and no results recorded, which suggests that the frequent changes in the protocol might not be affecting the attestation process directly, but it is still worth monitoring.",
+      "b": "IM/add/rule",
+      "relation": "ge",
+      "p": 0,
+      "status": "insufficient",
+      "satisfied": 1,
+      "violated": 0
+    },
+    {
+      "kind": "response",
+      "scope": "global",
+      "a": "SYS/startup/ASVR_GO_DEVELOPMENT",
+      "rationale": "The server has restarted 2 times in the last 5 minutes, which could be a sign of instability or maintenance, but without any session activity, it might be benign.",
+      "b": "SYS/shutdown/ASVR_GO_DEVELOPMENT",
+      "within_s": 60,
+      "status": "insufficient",
+      "satisfied": 0,
+      "violated": 1
+    },
+    {
+      "kind": "result_fraction",
+      "scope": "global",
+      "a": "result",
+      "rationale": "There are no results to evaluate, but this property will be important to monitor once results start being recorded.",
+      "code": 9999,
+      "op": "le",
+      "p": 0,
+      "status": "insufficient",
+      "satisfied": 0,
+      "violated": 0
+    },
+    {
+      "kind": "absence",
+      "scope": "global",
+      "a": "S/open",
+      "rationale": "No attestation sessions were opened, which could be normal if the server is not currently in use, but it is worth monitoring to ensure that sessions are initiated as expected.",
+      "b": "S/close",
+      "status": "holds",
+      "satisfied": 1,
+      "violated": 0
+    },
+    {
+      "kind": "absence",
+      "scope": "global",
+      "a": "C/claim",
+      "rationale": "No claims were recorded, which is consistent with no sessions being opened, but it is important to ensure that claims are being collected when sessions do occur.",
+      "b": "R",
+      "status": "holds",
+      "satisfied": 1,
+      "violated": 0
+    }
+  ]
+}
