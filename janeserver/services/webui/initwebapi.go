@@ -56,6 +56,8 @@ func StartWebUI(ctx context.Context) {
 	templates["help.html"] = template.Must(template.New("help.html").Funcs(functions).ParseFS(WPFS, T+"help.html", T+"base.html"))
 	templates["about.html"] = template.Must(template.New("about.html").Funcs(functions).ParseFS(WPFS, T+"about.html", T+"base.html"))
 
+	templates["live.html"] = template.Must(template.New("live.html").Funcs(functions).ParseFS(WPFS, T+"live.html", T+"base.html"))
+
 	templates["elements.html"] = template.Must(template.New("elements.html").Funcs(functions).ParseFS(WPFS, T+"elements.html", T+"elementsummarylist.html", T+"base.html"))
 	templates["intents.html"] = template.Must(template.New("intents.html").Funcs(functions).ParseFS(WPFS, T+"intents.html", T+"intentsummarylist.html", T+"base.html"))
 	templates["evs.html"] = template.Must(template.New("evs.html").Funcs(functions).ParseFS(WPFS, T+"evs.html",
@@ -225,6 +227,9 @@ func setUpDisplayEndpoints(router *echo.Echo) {
 	//log
 	router.GET(PREFIX+"/log", showLog)
 	router.GET(PREFIX+"/log/since", showLogSince)
+
+	//live
+	router.GET(PREFIX+"/live", showLive)
 
 }
 

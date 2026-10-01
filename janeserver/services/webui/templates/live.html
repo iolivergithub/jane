@@ -1,0 +1,218 @@
+{{define "content"}}
+
+
+
+<div>
+<h2>Jane Live Monitor</h2>
+
+<p>Messaging = {{ .Messaging }}</p>
+
+<p>Broker: <code data-r="broker"></code><br>
+Topic: <code data-r="topicLabel"></code><br>
+Status: <strong data-r="status">Starting...</strong></p>
+
+<p>
+  <button type="button" data-r="pauseBtn" disabled>Pause</button>
+  <button type="button" data-r="clearBtn">Clear</button>
+  <span data-r="count">0 / 20 shown, 0 received</span>
+</p>
+
+<table border="1" cellpadding="4">
+  <thead>
+    <tr><th>Time</th><th>Topic</th><th>QoS</th><th>Retained</th><th>Payload</th></tr>
+  </thead>
+  <tbody data-r="list">
+    <tr><td colspan="5">No messages yet.</td></tr>
+  </tbody>
+</table>
+
+<script>
+(function () {
+  // ---------- configuration ----------
+   //In this form: wss://test.mosquitto.org:8081
+  var BROKER   = "ws://{{ .Messaging.Broker }}:{{ .Messaging.PortWS }}";  // WebSocket URL supplied by the calling environment
+  var TOPIC    = "#";
+  var USERNAME = "";        // not required; set to a string to authenticate
+  var PASSWORD = "";        // only sent if USERNAME is set
+
+  // Minimal MQTT 3.1.1 client over WebSocket - no external libraries.
+  var root = document.currentScript.parentElement;
+  function $(n) { return root.querySelector('[data-r="' + n + '"]'); }
+
+  var MAX = 20, KEEPALIVE = 30;
+  var ws = null, paused = false, total = 0, entries = [];
+  var buf = new Uint8Array(0), pingTimer = null, nextId = 1;
+  var enc = new TextEncoder(), dec = new TextDecoder();
+
+  // ---------- encoding helpers ----------
+  function concat(arrs) {
+    var n = 0, p = 0, i;
+    for (i = 0; i < arrs.length; i++) n += arrs[i].length;
+    var out = new Uint8Array(n);
+    for (i = 0; i < arrs.length; i++) { out.set(arrs[i], p); p += arrs[i].length; }
+    return out;
+  }
+  function mqttString(s) {
+    var b = enc.encode(s), out = new Uint8Array(2 + b.length);
+    out[0] = b.length >> 8; out[1] = b.length & 255; out.set(b, 2);
+    return out;
+  }
+  function packet(header, body) {
+    var len = body.length, lenBytes = [];
+    do {
+      var d = len % 128; len = Math.floor(len / 128);
+      if (len > 0) d |= 128;
+      lenBytes.push(d);
+    } while (len > 0);
+    return concat([new Uint8Array([header]), new Uint8Array(lenBytes), body]);
+  }
+  function send(bytes) { if (ws && ws.readyState === 1) ws.send(bytes); }
+
+  // ---------- UI ----------
+  function setStatus(text) { $("status").textContent = text; }
+  function updateCount() {
+    $("count").textContent = entries.length + " / " + MAX + " shown, " + total + " received" + (paused ? " (paused)" : "");
+  }
+  function formatPayload(bytes) {
+    var text = dec.decode(bytes);
+    try {
+      var obj = JSON.parse(text);
+      if (typeof obj === "object" && obj !== null) return JSON.stringify(obj, null, 2);
+    } catch (e) {}
+    return text;
+  }
+  function cell(tr, text, pre) {
+    var td = document.createElement("td");
+    if (pre) { var p = document.createElement("pre"); p.textContent = text; td.appendChild(p); }
+    else td.textContent = text;
+    tr.appendChild(td);
+  }
+  function render() {
+    var list = $("list");
+    list.innerHTML = "";
+    if (!entries.length) {
+      var tr0 = document.createElement("tr");
+      var td0 = document.createElement("td");
+      td0.colSpan = 5; td0.textContent = "No messages yet.";
+      tr0.appendChild(td0); list.appendChild(tr0);
+    }
+    entries.forEach(function (e) {
+      var tr = document.createElement("tr");
+      cell(tr, e.time);
+      cell(tr, e.topic);
+      cell(tr, String(e.qos));
+      cell(tr, e.retain ? "yes" : "");
+      cell(tr, e.payload, true);
+      list.appendChild(tr);
+    });
+    updateCount();
+  }
+  function onMessage(topic, payload, qos, retain) {
+    total++;
+    if (paused) { updateCount(); return; }
+    var t = new Date();
+    entries.unshift({
+      time: t.toLocaleTimeString([], { hour12: false }) + "." + String(t.getMilliseconds()).padStart(3, "0"),
+      topic: topic, qos: qos, retain: retain, payload: formatPayload(payload)
+    });
+    if (entries.length > MAX) entries.length = MAX;
+    render();
+  }
+
+  // ---------- MQTT protocol ----------
+  function sendConnect() {
+    var flags = 0x02; // clean session
+    var parts = [
+      mqttString("MQTT"),
+      new Uint8Array([4, 0, KEEPALIVE >> 8, KEEPALIVE & 255]),
+      mqttString("web-monitor-" + Math.random().toString(16).slice(2, 10))
+    ];
+    if (USERNAME != null) {
+      flags |= 0x80; parts.push(mqttString(USERNAME));
+      if (PASSWORD != null) { flags |= 0x40; parts.push(mqttString(PASSWORD)); }
+    }
+    parts[1][1] = flags;
+    send(packet(0x10, concat(parts)));
+  }
+  function sendSubscribe(topic) {
+    var id = nextId++ & 0xffff || 1;
+    send(packet(0x82, concat([new Uint8Array([id >> 8, id & 255]), mqttString(topic), new Uint8Array([0])])));
+  }
+  function handle(header, body) {
+    var type = header >> 4;
+    if (type === 2) {            // CONNACK
+      if (body[1] !== 0) { setStatus("Connection refused by broker (code " + body[1] + ")"); return; }
+      setStatus("Connected, subscribing...");
+      sendSubscribe(TOPIC);
+      clearInterval(pingTimer);
+      pingTimer = setInterval(function () { send(new Uint8Array([0xC0, 0])); }, KEEPALIVE * 750);
+      $("pauseBtn").disabled = false;
+    } else if (type === 9) {     // SUBACK
+      if (body[2] === 0x80) setStatus("Subscription rejected by broker");
+      else setStatus("Connected, subscribed");
+    } else if (type === 3) {     // PUBLISH
+      var qos = (header >> 1) & 3, retain = !!(header & 1);
+      var tl = (body[0] << 8) | body[1];
+      var topic = dec.decode(body.subarray(2, 2 + tl));
+      var p = 2 + tl;
+      if (qos > 0) {
+        var idBytes = body.slice(p, p + 2); p += 2;
+        send(packet(qos === 1 ? 0x40 : 0x50, idBytes)); // PUBACK or PUBREC
+      }
+      onMessage(topic, body.slice(p), qos, retain);
+    } else if (type === 6) {     // PUBREL -> PUBCOMP
+      send(packet(0x70, body.slice(0, 2)));
+    }
+  }
+  function onData(chunk) {
+    buf = concat([buf, chunk]);
+    while (buf.length >= 2) {
+      var mult = 1, len = 0, i = 1, b;
+      do {
+        if (i >= buf.length) return;
+        b = buf[i++]; len += (b & 127) * mult; mult *= 128;
+      } while (b & 128);
+      if (buf.length < i + len) return;
+      handle(buf[0], buf.slice(i, i + len));
+      buf = buf.slice(i + len);
+    }
+  }
+
+  // ---------- connection lifecycle ----------
+  function open() {
+    buf = new Uint8Array(0);
+    setStatus("Connecting...");
+    try { ws = new WebSocket(BROKER, ["mqtt"]); }
+    catch (e) { setStatus("Invalid broker URL: " + e.message); return; }
+    ws.binaryType = "arraybuffer";
+    ws.onopen = sendConnect;
+    ws.onmessage = function (e) { onData(new Uint8Array(e.data)); };
+    ws.onerror = function () { setStatus("WebSocket error"); };
+    ws.onclose = function () {
+      clearInterval(pingTimer); pingTimer = null;
+      $("pauseBtn").disabled = true;
+      setStatus("Connection lost, reconnecting in 3 s...");
+      setTimeout(open, 3000);
+    };
+  }
+
+  $("pauseBtn").addEventListener("click", function () {
+    paused = !paused;
+    $("pauseBtn").textContent = paused ? "Resume" : "Pause";
+    updateCount();
+  });
+  $("clearBtn").addEventListener("click", function () { entries = []; total = 0; render(); });
+
+  $("broker").textContent = BROKER;
+  $("topicLabel").textContent = TOPIC;
+
+  // Connect on page load
+  if (document.readyState === "complete") open();
+  else window.addEventListener("load", open);
+})();
+</script>
+</div>
+
+
+
+{{end}}

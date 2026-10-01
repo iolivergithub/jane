@@ -1,5 +1,5 @@
 OS=linux
-ARCH=arm64
+ARCH=amd64
 BINARY_NAME=janeserver
 PIE_ON=-buildmode=pie
 BUILD_DATE=`date`

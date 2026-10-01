@@ -11,6 +11,7 @@ database:
 messaging:
   broker: 127.0.0.1
   port: 1883
+  portws: 8081
   clientid: asvrgo1
 
 #REST Interface Configuration

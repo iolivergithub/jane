@@ -32,7 +32,7 @@ Or, why <em>Jane</em>?  There have been various iterations, these are listed bel
     <td>A7</td><td>First properly working attestation server in a very traditional manner (cf: OpenAttestation etc). Written in a mix of python2 and python3. Backend utilised mongodb and assumed the TA talked directly to the tpm2_tools on the client. UI written using python flask. Integrated with OpenStack via a client which was a MITM/hack/kludge to access OpenStack's message bus. This version was demonstrated at ETSI SecurityWeek in 2018 and 2019. Contained a lot of technical debt which made integration hard in some cases.</td>
     </tr><tr>
     <td>A8.1</td><td>Was an attempt to write everything in Erlang.</td>    </tr><tr>
-        <td>A8.2</td><td>Was an attempt to do the same in Python with threads, proceses, MQTT etc.</td>
+        <td>A8.2</td><td>Was an attempt to do the same in Python with threads, proceses, MQTT etc...which basically tried to replicate Erlang</td>
     </tr><tr>
       <td>A9</td><td>Was a experiment to use the ELKS analytics stack and the ELKS UI. Was demonstrated in January 2020 for the first time and actively developed for about 6 months until we needed to support new features. Much of this work reappears as plugins and data integration (as attesation apps in A10) into ELKS and ELKS-based tools such as Nokia's NetGuard.</td>
     </tr><tr>
@@ -40,7 +40,7 @@ Or, why <em>Jane</em>?  There have been various iterations, these are listed bel
    <tr>
       <td>GA10</td><td><i>2023-2024</i> Even more compliant with IEFT RATS in its data structures and an improved protocol backend which takes care of layer 7 and layer 6 of the attestation protocols. All the cool stuff of A10 but now written in <b>GO</b>. Seriously strong typing is so important....Reworked UI, reworked REST API and reworked data structures. Oh so much better. AND, Go has a really nice cross compiler: arm, arm64, i386, amd64, ppc, and then Linux, Windows, Solaris, AIX and Plan 9 from Bell Labs. Also Go makes self-contained binaries so the trust agent is a single binary which makes distribution trivial and the whole server engine itself just needs the binary and the config file :-)</tr>      
   <tr>
-      <td>Jane</td><td><i>2024-!</i>Forked from the original Nokia version and rewritten significantly. But, I hear you ask, why <em>Jane</em>? Well...there were reasons but in the end we chose a name - it was supposed to be allied with an institution that would have made sense with the name, but they were not interested in series cybersecurity research - but the name stuck, <em>and</em> it gave us a chance to properly rename the trust agent....<em>Tarzan</em>...who says us cybersecurity beings don't have a sense of humour?</tr>              
+      <td>Jane</td><td><i>2024-present day</i>Forked from the original Nokia version and rewritten significantly. But, I hear you ask, why <em>Jane</em>? Well...there were reasons but in the end we chose a name - it was supposed to be allied with an institution that would have made sense with the name, but they were not interested in serious cybersecurity research - but the name stuck, <em>and</em> it gave us a chance to properly rename the trust agent....<em>Tarzan</em>...who says us cybersecurity beings don't have a sense of humour?</tr>              
    </tbody>
 </table>
 </p>

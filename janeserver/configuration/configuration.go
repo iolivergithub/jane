@@ -44,6 +44,7 @@ type ConfigurationStruct struct {
 	Messaging struct {
 		Broker   string
 		Port     uint16
+		PortWS   uint16
 		ClientID string
 	}
 	Rest struct {
