@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,11 +12,13 @@ TARZANBASE=$TMPBASE/tarzan
 
 VERSIONNUMBER=$(tail -n 1 versions.txt)
 VERSIONNUMBERCONTROL=${VERSIONNUMBER%% *}
+ARCHTECTURE=amd64
 
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
 echo "${GREEN} -- we are building version number:${RED} ${VERSIONNUMBER} ${NC}"
 echo "${GREEN} -- for pkg control version:${RED} ${VERSIONNUMBERCONTROL} ${NC}"
+echo "${GREEN} -- and for architecture:${RED} ${ARCHTECTURE} ${NC}"
 
 
 
@@ -50,13 +52,13 @@ rm control_tarzan
 #compile Jane
 echo "${BLUE}Compiling Janeserver${NC}"
 cd ../../janeserver
-make -f ../etc/debbuild/Makefile.jane.amd64 build VERSION=$VERSIONNUMBER
+make -f ../etc/debbuild/Makefile.jane.$ARCHTECTURE build VERSION=$VERSIONNUMBER
 ls -l janeserver
 
 #compile Tarzan
 echo "${BLUE}Compling Tarzan${NC}"
 cd ../tarzan
-make -f ../etc/debbuild/Makefile.tarzan.amd64 build VERSION=$VERSIONNUMBER
+make -f ../etc/debbuild/Makefile.tarzan.$ARCHTECTURE build VERSION=$VERSIONNUMBER
 ls -l tarzan
 
 #compile Provisioner - included in the tarzan.deb package
@@ -101,27 +103,36 @@ cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
 cp conffiles_jane $JANEBASE/DEBIAN/conffiles
 cp conffiles_tarzan $TARZANBASE/DEBIAN/conffiles
 
+#Set up package names with versioning and architecture
+JANEDEBNAME=jane_${VERSIONNUMBERCONTROL}_${ARCHTECTURE}
+TARZANDEBNAME=tarzan_${VERSIONNUMBERCONTROL}_${ARCHTECTURE}
+
 #Build deb packages
-echo "${BLUE}Building Debian package for Jane${NC}"
+echo "${BLUE}Building Debian package for $JANEDEBNAME${NC}"
 pwd
-ls -l
+#ls -l
 cd $TMPBASE
 dpkg-deb --root-owner-group --build jane
 
-echo "${BLUE}Building Debian package for Tarzan${NC}"
+echo "${BLUE}Building Debian package for $TARZANDEBNAME${NC}"
 cd $TMPBASE
 dpkg-deb --root-owner-group --build tarzan
 
+echo "${BLUE}Build complete${NC}"
 
+echo "${BLUE}Just making sure there are no old files about...there should be errors here from rm${NC}"
+rm jane_${JANEDEBNAME}.deb
+rm tarzan_${TARZANDEBNAME}.deb
 
+echo "${BLUE}Renaming tarzan and jane to something saner${NC}"
+mv jane.deb jane_${JANEDEBNAME}.deb
+mv tarzan.deb tarzan_${TARZANDEBNAME}.deb
 
+echo "${BLUE}Here you go${NC}"
+ls -l jane_${JANEDEBNAME}.deb
+ls -l tarzan_${TARZANDEBNAME}.deb
 
-echo "${BLUE}Build complete, here are the deb files${NC}"
-
-ls -l jane.deb
-ls -l tarzan.deb
-
-echo "${BLUE}Attempting to build rpms${NC}"
+echo "${BLUE}Attempting to build rpms with alien if installed${NC}"
 cd $TMPBASE
 
 alien -r -c -v jane.deb
@@ -130,11 +141,11 @@ alien -r -c -v tarzan.deb
 ls -l *.rpm
 
 #Linting deb packages
-echo "${BLUE}Linting jane.deb${NC}"
+echo "${BLUE}Linting jane.deb with lintian if installed${NC}"
 cd $TMPBASE
 lintian jane.deb
 
-echo "${BLUE}Linting tarzan.deb${NC}"
+echo "${BLUE}Linting tarzan.deb with lintian if installed${NC}"
 cd $TMPBASE
 lintian tarzan.deb
 
