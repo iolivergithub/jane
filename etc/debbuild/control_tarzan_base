@@ -1,7 +1,6 @@
-Package: janeattestationengine
+Package: tarzantrustagent
 Maintainer: Ian Oliver <ian.oliver@oulu.fi>
 Architecture: amd64
 Priority: optional
 Section: admin
-Description: Jane Attestation Engine
-Version: 1.1.1
+Description: Tarzan Trust Agent and Provisioner for Jane

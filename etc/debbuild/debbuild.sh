@@ -10,8 +10,14 @@ TMPBASE=/tmp/janedebbuild
 JANEBASE=$TMPBASE/jane
 TARZANBASE=$TMPBASE/tarzan
 
+VERSIONNUMBER=$(tail -n 1 versions.txt)
+VERSIONNUMBERCONTROL=${VERSIONNUMBER%% *}
+
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
+echo "${GREEN} -- we are building version number:${RED} ${VERSIONNUMBER} ${NC}"
+echo "${GREEN} -- for pkg control version:${RED} ${VERSIONNUMBERCONTROL} ${NC}"
+
 
 
 #first remove any temporary build directories
@@ -34,24 +40,29 @@ mkdir -p $TARZANBASE/opt/jane
 mkdir -p $TARZANBASE/etc/systemd/system
 mkdir -p $TARZANBASE/etc/opt/jane
 
-
+#constructing control files
+echo "${BLUE}Constructing control files for deb packaging${NC}"
+rm control_jane
+rm control_tarzan
+{ cat control_jane_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_jane
+{ cat control_tarzan_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_tarzan
 
 #compile Jane
 echo "${BLUE}Compiling Janeserver${NC}"
 cd ../../janeserver
-make build
+make -f ../etc/debbuild/Makefile.jane.amd64 build VERSION=$VERSIONNUMBER
 ls -l janeserver
 
 #compile Tarzan
 echo "${BLUE}Compling Tarzan${NC}"
 cd ../tarzan
-make build
+make -f ../etc/debbuild/Makefile.tarzan.amd64 build VERSION=$VERSIONNUMBER
 ls -l tarzan
 
 #compile Provisioner - included in the tarzan.deb package
 echo "${BLUE}Compling JP${NC}"
 cd ../provisioner
-make build
+make  -f ../etc/debbuild/Makefile.provisioner.amd64 build VERSION=$VERSIONNUMBER
 ls -l jp
 
 #return to this directory
@@ -87,7 +98,8 @@ cp control_tarzan $TARZANBASE/DEBIAN/control
 cp postinst_jane $JANEBASE/DEBIAN/postinst
 cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
 
-
+cp conffiles_jane $JANEBASE/DEBIAN/conffiles
+cp conffiles_tarzan $TARZANBASE/DEBIAN/conffiles
 
 #Build deb packages
 echo "${BLUE}Building Debian package for Jane${NC}"

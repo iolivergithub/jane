@@ -1,9 +1,7 @@
 Package: tarzantrustagent
-Version: 1.0
 Maintainer: Ian Oliver <ian.oliver@oulu.fi>
 Architecture: amd64
 Priority: optional
 Section: admin
-Description: Tarzan Trust Agent and Provisioner for Jane:
- Test DEB packaging
-
+Description: Tarzan Trust Agent and Provisioner for Jane
+Version: 1.1.1
