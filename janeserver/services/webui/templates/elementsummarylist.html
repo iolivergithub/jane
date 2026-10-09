@@ -1,16 +1,63 @@
 {{define "elementsummarylist.html"}}
-<td><a href="/element/{{ .ItemID }}">{{ .Name }}</a></td>
-<td>{{ .Description }}</td>
-<td>  {{ range .Tags }}
-        <span class="badge bg-secondary"> {{ . }} </span>
-{{end}}</td>
-<td>
-        <table class="table table-md table-striped">
-                {{ range $i, $v := .Endpoints }}
-                <tr>
-                        <td>{{ $i }}</td><td> <span class="badge bg-secondary"> {{ $v.Protocol }} </span></td><td> {{ $v.Endpoint }}</td>
-                </tr>
-                {{end}}
-        </table>
-</td>
+<div class="card h-100 shadow-sm element-card">
+   <div class="card-header py-2">
+      <a href="/element/{{ .ItemID }}" class="fw-semibold text-decoration-none stretched-link d-block text-truncate" title="{{ .Name }}">
+         <i class="fa fa-server me-1"></i>{{ .Name }}
+      </a>
+   </div>
+   <div class="card-body p-2 small d-flex flex-column gap-2">
+      {{ if .Description }}
+      <div class="text-body-secondary element-desc" title="{{ .Description }}">{{ .Description }}</div>
+      {{ end }}
+
+      {{ if or .Host.Hostname .Host.OS .Host.Arch }}
+      <div class="text-truncate" title="{{ .Host.Hostname }} {{ .Host.OS }}/{{ .Host.Arch }}">
+         <i class="fa fa-desktop me-1 text-body-secondary"></i>
+         {{ if .Host.Hostname }}<span class="font-monospace">{{ .Host.Hostname }}</span>{{ end }}
+         {{ if or .Host.OS .Host.Arch }}<span class="text-body-secondary"> · {{ .Host.OS }}{{ if .Host.Arch }}/{{ .Host.Arch }}{{ end }}</span>{{ end }}
+      </div>
+      {{ end }}
+
+      <div class="d-flex flex-wrap gap-1">
+         {{ if .TPM2.Device }}<span class="badge text-bg-success" title="TPM2 device {{ .TPM2.Device }}">TPM2</span>{{ end }}
+         {{ if .UEFI.Eventlog }}<span class="badge text-bg-info" title="UEFI event log {{ .UEFI.Eventlog }}">UEFI</span>{{ end }}
+         {{ if .IMA.ASCIILog }}<span class="badge text-bg-warning" title="IMA log {{ .IMA.ASCIILog }}">IMA</span>{{ end }}
+         {{ if .TXT.Log }}<span class="badge text-bg-danger" title="TXT log {{ .TXT.Log }}">TXT</span>{{ end }}
+         {{ if .Sshkey.Key }}<span class="badge text-bg-secondary" title="SSH user {{ .Sshkey.Username }}">SSH</span>{{ end }}
+      </div>
+
+      {{ if .Endpoints }}
+      <ul class="list-unstyled mb-0">
+         {{ range $i, $v := .Endpoints }}
+         <li class="text-truncate" title="{{ $i }}: {{ $v.Protocol }} {{ $v.Endpoint }}">
+            <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
+            <span class="font-monospace">{{ $v.Endpoint }}</span>
+         </li>
+         {{ end }}
+      </ul>
+      {{ end }}
+
+      <div class="results-strip mt-auto pt-1 border-top">
+         {{ range .Sessions }}
+         <div class="d-flex align-items-center gap-2 results-row">
+            <a href="/session/{{ .SessionID }}" class="results-when font-monospace text-body-secondary text-decoration-none"
+               title="Session {{ .SessionID }} at {{ epochToUTC .VerifiedAt }} UTC">{{ slice (epochToUTC .VerifiedAt) 5 16 }}</a>
+            <div class="d-flex flex-wrap gap-1">
+               {{ range .Results }}
+               <a href="/result/{{ .ItemID }}" title="{{ .RuleName }}{{ if .Message }}: {{ .Message }}{{ end }}"
+                  class="result-cell {{ if eq .Result 0 }}bg-success{{ else if eq .Result 9001 }}bg-danger{{ else }}bg-warning{{ end }}"></a>
+               {{ end }}
+            </div>
+         </div>
+         {{ else }}
+         <div class="text-body-secondary fst-italic">No attestations yet</div>
+         {{ end }}
+      </div>
+   </div>
+   {{ if .Tags }}
+   <div class="card-footer py-1">
+      {{ range .Tags }}<span class="badge bg-secondary me-1">{{ . }}</span>{{ end }}
+   </div>
+   {{ end }}
+</div>
 {{end}}
