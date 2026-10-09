@@ -33,6 +33,9 @@ var menuItems = []menuItem{
 	{"4", "Sessions          attestation sessions, newest first", sessionsList},
 	{"5", "Claims            evidence collected from elements, newest first", claimsList},
 	{"6", "Results           outcomes of applying rules to claims, newest first", resultsList},
+	{"7", "Attest            choose an element, intent and rules, and attest", attestStart},
+	{"8", "Log               Jane's log, newest first", logList},
+	{"9", "Configuration     this attestation server's settings and record counts", configScreen},
 }
 
 // menuTx is the primary option menu; F3 or X leaves Jane.
@@ -85,6 +88,17 @@ type listItem struct {
 	Text   string        // the row text, after the row number
 	Color  go3270.Color  // optional; colours the row (always alongside its text)
 	Detail func() detail // builds the detail screen when selected
+	// Open, if set, is used instead of Detail: it returns the screen to go
+	// to when the row is selected (back is the list itself).
+	Open func(back go3270.Tx) go3270.Tx
+}
+
+// open returns the screen for a selected row.
+func (it listItem) open(back go3270.Tx) go3270.Tx {
+	if it.Open != nil {
+		return it.Open(back)
+	}
+	return textTx(it.Detail(), back)
 }
 
 // detail is the content of a detail screen.
@@ -163,7 +177,7 @@ func listTx(src listSource, back go3270.Tx) go3270.Tx {
 		// a row marked S (or any character) beside it
 		for i := range items {
 			if v := strings.TrimSpace(resp.Values[fmt.Sprintf("sel%d", i)]); v != "" {
-				return textTx(items[i].Detail(), self), nil, nil
+				return items[i].open(self), nil, nil
 			}
 		}
 		// or a row number on the command line
@@ -187,9 +201,9 @@ func listTx(src listSource, back go3270.Tx) go3270.Tx {
 				message = fmt.Sprintf("Row %d is not in the list", n)
 				return self, nil, nil
 			}
-			return textTx(got[n-1-top].Detail(), self), nil, nil
+			return got[n-1-top].open(self), nil, nil
 		}
-		return textTx(items[n-1-top].Detail(), self), nil, nil
+		return items[n-1-top].open(self), nil, nil
 	}
 	return self
 }

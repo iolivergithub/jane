@@ -160,6 +160,14 @@ func when(t structures.Timestamp) string {
 	return time.Unix(0, int64(t)).UTC().Format(timeStamp)
 }
 
+// shortWhen is "MM-DD HH:MM:SS" UTC, for narrow list columns.
+func shortWhen(t structures.Timestamp) string {
+	if t == 0 {
+		return fit("-", 14)
+	}
+	return time.Unix(0, int64(t)).UTC().Format("01-02 15:04:05")
+}
+
 func took(from, to structures.Timestamp) string {
 	if from == 0 || to == 0 || to < from {
 		return "-"
