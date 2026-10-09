@@ -53,14 +53,15 @@
 
    <div class="d-flex flex-wrap gap-2">
       <div class="card ev-tile"><div class="card-body py-2">
-         <div class="small text-body-secondary">Latest session</div>
+         <div class="small text-body-secondary">Latest session (UTC)</div>
          {{ with .Latest }}
-            {{ $o := .Outcome }}
-            {{ if eq $o "pass" }}<div class="ev-num text-success"><i class="fa fa-check-circle"></i> Passed</div>
-            {{ else if eq $o "fail" }}<div class="ev-num text-danger"><i class="fa fa-times-circle"></i> Failed</div>
-            {{ else if eq $o "other" }}<div class="ev-num text-warning"><i class="fa fa-exclamation-triangle"></i> Incomplete</div>
-            {{ else }}<div class="ev-num text-body-secondary"><i class="fa fa-question-circle"></i> No results</div>{{ end }}
-            <a class="small text-body-secondary" href="/session/{{ .ID }}">{{ if .Opened }}{{ epochToUTC .Opened }} UTC{{ else }}view session{{ end }}</a>
+            <a class="ev-num d-block text-decoration-none" href="/session/{{ .ID }}" title="Session {{ .ID }}">{{ if .Opened }}{{ .Label }}{{ else }}view{{ end }}</a>
+            <div class="small text-body-secondary">
+               <span class="ev-swatch oc-pass"></span> {{ .Pass }}
+               <span class="ev-swatch oc-fail ms-1"></span> {{ .Fail }}
+               <span class="ev-swatch oc-other ms-1"></span> {{ .Other }}
+               {{ if .ClaimErrors }}<span class="ev-swatch oc-claimerr ms-1"></span> {{ .ClaimErrors }}{{ end }}
+            </div>
          {{ else }}
             <div class="ev-num text-body-secondary">None</div>
             <a class="small" href="/attest">Attest now</a>
@@ -228,20 +229,13 @@
       <div class="table-responsive">
       <table class="table table-sm table-hover ev-list mb-0">
          <thead><tr>
-            <th>Opened (UTC)</th><th>Duration</th><th>Verdict</th><th>Results</th><th>Claims</th><th>Message</th>
+            <th>Opened (UTC)</th><th>Duration</th><th>Results <span class="fw-normal small text-body-secondary">pass / fail / other</span></th><th>Claims</th><th>Message</th>
          </tr></thead>
          <tbody>
             {{ range .Sessions }}
-            {{ $o := .Outcome }}
             <tr>
                <td class="text-nowrap"><a href="/session/{{ .ID }}">{{ if .Opened }}{{ epochToUTC .Opened }}{{ else }}{{ .ID }}{{ end }}</a></td>
                <td class="text-nowrap">{{ if .Duration }}{{ .Duration }}{{ else if and .Found (not .Closed) }}<span class="badge bg-warning">Open</span>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
-               <td>
-                  {{ if eq $o "pass" }}<span class="badge bg-success"><i class="fa fa-check"></i> Pass</span>
-                  {{ else if eq $o "fail" }}<span class="badge bg-danger"><i class="fa fa-times"></i> Fail</span>
-                  {{ else if eq $o "other" }}<span class="badge bg-warning"><i class="fa fa-exclamation"></i> Incomplete</span>
-                  {{ else }}<span class="badge bg-secondary">No results</span>{{ end }}
-               </td>
                <td class="text-nowrap">
                   <div class="d-flex align-items-center gap-2">
                      <div class="ev-bar" title="{{ .Pass }} pass, {{ .Fail }} fail, {{ .Other }} other">
@@ -256,7 +250,7 @@
                <td class="small text-body-secondary">{{ .Message }}</td>
             </tr>
             {{ else }}
-            <tr><td colspan="6"><i class="text-body-secondary">No sessions</i></td></tr>
+            <tr><td colspan="5"><i class="text-body-secondary">No sessions</i></td></tr>
             {{ end }}
          </tbody>
       </table>

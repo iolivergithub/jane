@@ -99,8 +99,8 @@ func TestBuildElementPage(t *testing.T) {
 	if p.Timeline[0].ID != "sess-10" || p.Timeline[len(p.Timeline)-1].ID != "sess-39" {
 		t.Fatalf("timeline order: %s .. %s", p.Timeline[0].ID, p.Timeline[len(p.Timeline)-1].ID)
 	}
-	if p.Latest.Outcome() != outcomeFail || p.Latest.Duration != "" || !p.Latest.Found {
-		t.Fatalf("latest: %+v", p.Latest.Outcome())
+	if p.Latest.Fail != 1 || p.Latest.Pass != 5 || p.Latest.Duration != "" || !p.Latest.Found {
+		t.Fatalf("latest: pass=%d fail=%d duration=%q", p.Latest.Pass, p.Latest.Fail, p.Latest.Duration)
 	}
 	if d := p.Sessions[1].Duration; d != "1.34s" {
 		t.Fatalf("duration %q", d)
@@ -168,25 +168,6 @@ func TestRenderElementPage(t *testing.T) {
 		}
 		if name == "full" && (!strings.Contains(b.String(), `"sessionIds":["sess-10"`) || strings.Contains(b.String(), "ZgotmplZ")) {
 			t.Fatalf("chart json or unsafe value in output")
-		}
-	}
-}
-
-func TestOutcome(t *testing.T) {
-	cases := []struct {
-		s    elementSession
-		want string
-	}{
-		{elementSession{Pass: 3}, outcomePass},
-		{elementSession{Pass: 3, Fail: 1}, outcomeFail},
-		{elementSession{Pass: 3, Other: 1}, outcomeOther},
-		{elementSession{Pass: 3, ClaimErrors: 1}, outcomeOther},
-		{elementSession{Fail: 1, ClaimErrors: 1}, outcomeFail},
-		{elementSession{}, ""},
-	}
-	for _, c := range cases {
-		if got := c.s.Outcome(); got != c.want {
-			t.Errorf("%+v: got %q want %q", c.s, got, c.want)
 		}
 	}
 }

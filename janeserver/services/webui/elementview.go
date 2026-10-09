@@ -68,22 +68,6 @@ type elementSession struct {
 	PassPct, FailPct, OtherPct float64 // for the inline stacked bar in the list
 }
 
-// Outcome is the overall verdict for the session: fail if any rule failed,
-// other if anything did not verify cleanly or a claim could not be collected,
-// pass if everything passed.
-func (s elementSession) Outcome() string {
-	switch {
-	case s.Fail > 0:
-		return outcomeFail
-	case s.Other > 0 || s.ClaimErrors > 0:
-		return outcomeOther
-	case s.Pass > 0:
-		return outcomePass
-	default:
-		return ""
-	}
-}
-
 // matrixCell is one rule (or claim intent) in one session of the timeline.
 type matrixCell struct {
 	Outcome string // empty when the rule/intent was not evaluated in that session
