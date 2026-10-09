@@ -52,55 +52,13 @@
 </div>
 {{ end }}
 
-{{ if .Elements }}
-<!-- per element -->
-<div class="row row-cols-1 row-cols-lg-2 row-cols-xxl-3 g-3 mb-3">
-   {{ range .Elements }}
-   <div class="col"><div class="card h-100">
-      <div class="card-header py-2 d-flex align-items-center gap-2">
-         <i class="fa fa-server text-body-secondary"></i>
-         <a class="fw-semibold text-decoration-none text-truncate me-auto" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
-         <span class="small text-body-secondary text-nowrap">
-            <span class="j-swatch oc-pass"></span> {{ .Counts.Pass }}
-            <span class="j-swatch oc-fail ms-1"></span> {{ .Counts.Fail }}
-            <span class="j-swatch oc-other ms-1"></span> {{ .Counts.Other }}
-         </span>
-      </div>
-      <div class="card-body p-2 small">
-         {{ if .Claims }}
-         <div class="d-flex flex-wrap gap-1 mb-2">
-            {{ range .Claims }}
-            <a href="/claim/{{ .ItemID }}" class="badge text-decoration-none {{ if eq .BodyType "*ERROR" }}text-bg-danger{{ else }}bg-info-subtle text-info-emphasis{{ end }}"
-               title="{{ .Header.EndpointName }} · {{ epochToUTC .Header.Timing.Requested }}">{{ if eq .BodyType "*ERROR" }}<i class="fa fa-exclamation-triangle me-1"></i>{{ end }}{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}{{ .BodyType }}{{ end }}</a>
-            {{ end }}
-         </div>
-         {{ end }}
-         {{ if .Results }}
-         <table class="table table-sm mb-0">
-            <tbody>
-               {{ range .Results }}
-               <tr>
-                  <td style="width: 1%"><a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ resultLabel .Result }}"></a></td>
-                  <td class="j-wrap"><a href="/result/{{ .ItemID }}" class="text-decoration-none">{{ .RuleName }}</a></td>
-                  <td class="text-nowrap text-end">{{ template "resultvalue.html" .Result }}</td>
-               </tr>
-               {{ end }}
-            </tbody>
-         </table>
-         {{ else }}<i class="text-body-secondary">No results</i>{{ end }}
-      </div>
-   </div></div>
-   {{ end }}
-</div>
-{{ end }}
-
 <!-- lists -->
 <ul class="nav nav-tabs" role="tablist">
    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-results" type="button" role="tab">Results <span class="badge bg-secondary">{{ len .Results }}</span></button></li>
    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-claims" type="button" role="tab">Claims <span class="badge bg-secondary">{{ len .Claims }}</span></button></li>
    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-footer" type="button" role="tab">Footer</button></li>
 </ul>
-<div class="tab-content border border-top-0 rounded-bottom p-2 mb-4">
+<div class="tab-content border border-top-0 rounded-bottom p-2 mb-3">
    <div class="tab-pane fade show active" id="tab-results" role="tabpanel">
       <div class="table-responsive">
       <table class="table table-sm table-hover j-list mb-0">
@@ -154,5 +112,43 @@
       </table>
    </div>
 </div>
+{{ if .Elements }}
+<!-- per element summary -->
+<h5 class="mb-2">Elements <span class="badge bg-secondary align-middle">{{ len .Elements }}</span></h5>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-2 mb-4">
+   {{ range .Elements }}
+   <div class="col"><div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center gap-2">
+         <i class="fa fa-server text-body-secondary"></i>
+         <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
+      </div>
+      <div class="card-body p-2 small d-flex flex-column gap-2">
+         {{ with .Counts }}
+         {{ if .Total }}
+         <div class="j-bar" title="{{ .Pass }} pass, {{ .Fail }} fail, {{ .Other }} other">
+            {{ if .Pass }}<span class="oc-pass" style="width: {{ printf "%.1f" .PassPct }}%"></span>{{ end }}
+            {{ if .Fail }}<span class="oc-fail" style="width: {{ printf "%.1f" .FailPct }}%"></span>{{ end }}
+            {{ if .Other }}<span class="oc-other" style="width: {{ printf "%.1f" .OtherPct }}%"></span>{{ end }}
+         </div>
+         <div class="d-flex flex-wrap gap-3">
+            <span><span class="j-swatch oc-pass"></span> {{ .Pass }} pass</span>
+            <span><span class="j-swatch oc-fail"></span> {{ .Fail }} fail</span>
+            <span><span class="j-swatch oc-other"></span> {{ .Other }} other</span>
+         </div>
+         {{ else }}<span class="text-body-secondary">No results</span>{{ end }}
+         {{ end }}
+         <div class="text-body-secondary">
+            <i class="fa fa-file-text-o me-1"></i>{{ len .Claims }} claims{{ if .ClaimErrors }} <span class="badge bg-danger">{{ .ClaimErrors }} error{{ if gt .ClaimErrors 1 }}s{{ end }}</span>{{ end }}
+         </div>
+         {{ if .Results }}
+         <div class="d-flex flex-wrap gap-1" aria-label="Results by rule">
+            {{ range .Results }}<a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ .RuleName }}: {{ resultLabel .Result }}"></a>{{ end }}
+         </div>
+         {{ end }}
+      </div>
+   </div></div>
+   {{ end }}
+</div>
+{{ end }}
 {{ end }}
 {{end}}
