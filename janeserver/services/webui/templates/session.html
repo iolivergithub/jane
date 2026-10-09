@@ -37,6 +37,35 @@
    </div>
 </div>
 
+{{ if .Elements }}
+<!-- elements attested in this session -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2 mb-3">
+   {{ range .Elements }}
+   <div class="col"><div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center gap-2">
+         <i class="fa fa-server text-body-secondary"></i>
+         <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
+      </div>
+      <div class="card-body p-2 small d-flex flex-column gap-2">
+         {{ if .E.Description }}<div class="text-body-secondary j-desc" title="{{ .E.Description }}">{{ .E.Description }}</div>{{ end }}
+         {{ if .E.Endpoints }}
+         <ul class="list-unstyled mb-0">
+            {{ range $n, $v := .E.Endpoints }}
+            <li class="text-truncate" title="{{ $n }}: {{ $v.Protocol }} {{ $v.Endpoint }}">
+               <span class="fw-semibold">{{ $n }}</span>
+               <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
+               <span class="font-monospace text-body-secondary">{{ $v.Endpoint }}</span>
+            </li>
+            {{ end }}
+         </ul>
+         {{ end }}
+         {{ if .E.Tags }}<div class="d-flex flex-wrap gap-1">{{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}</div>{{ end }}
+      </div>
+   </div></div>
+   {{ end }}
+</div>
+{{ end }}
+
 {{ if .Types }}
 <!-- result types -->
 <div class="card mb-3">
@@ -58,7 +87,7 @@
    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-claims" type="button" role="tab">Claims <span class="badge bg-secondary">{{ len .Claims }}</span></button></li>
    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-footer" type="button" role="tab">Footer</button></li>
 </ul>
-<div class="tab-content border border-top-0 rounded-bottom p-2 mb-3">
+<div class="tab-content border border-top-0 rounded-bottom p-2 mb-4">
    <div class="tab-pane fade show active" id="tab-results" role="tabpanel">
       <div class="table-responsive">
       <table class="table table-sm table-hover j-list mb-0">
@@ -112,43 +141,5 @@
       </table>
    </div>
 </div>
-{{ if .Elements }}
-<!-- per element summary -->
-<h5 class="mb-2">Elements <span class="badge bg-secondary align-middle">{{ len .Elements }}</span></h5>
-<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-2 mb-4">
-   {{ range .Elements }}
-   <div class="col"><div class="card h-100">
-      <div class="card-header py-2 d-flex align-items-center gap-2">
-         <i class="fa fa-server text-body-secondary"></i>
-         <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
-      </div>
-      <div class="card-body p-2 small d-flex flex-column gap-2">
-         {{ with .Counts }}
-         {{ if .Total }}
-         <div class="j-bar" title="{{ .Pass }} pass, {{ .Fail }} fail, {{ .Other }} other">
-            {{ if .Pass }}<span class="oc-pass" style="width: {{ printf "%.1f" .PassPct }}%"></span>{{ end }}
-            {{ if .Fail }}<span class="oc-fail" style="width: {{ printf "%.1f" .FailPct }}%"></span>{{ end }}
-            {{ if .Other }}<span class="oc-other" style="width: {{ printf "%.1f" .OtherPct }}%"></span>{{ end }}
-         </div>
-         <div class="d-flex flex-wrap gap-3">
-            <span><span class="j-swatch oc-pass"></span> {{ .Pass }} pass</span>
-            <span><span class="j-swatch oc-fail"></span> {{ .Fail }} fail</span>
-            <span><span class="j-swatch oc-other"></span> {{ .Other }} other</span>
-         </div>
-         {{ else }}<span class="text-body-secondary">No results</span>{{ end }}
-         {{ end }}
-         <div class="text-body-secondary">
-            <i class="fa fa-file-text-o me-1"></i>{{ len .Claims }} claims{{ if .ClaimErrors }} <span class="badge bg-danger">{{ .ClaimErrors }} error{{ if gt .ClaimErrors 1 }}s{{ end }}</span>{{ end }}
-         </div>
-         {{ if .Results }}
-         <div class="d-flex flex-wrap gap-1" aria-label="Results by rule">
-            {{ range .Results }}<a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ .RuleName }}: {{ resultLabel .Result }}"></a>{{ end }}
-         </div>
-         {{ end }}
-      </div>
-   </div></div>
-   {{ end }}
-</div>
-{{ end }}
 {{ end }}
 {{end}}

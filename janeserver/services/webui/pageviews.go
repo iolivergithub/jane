@@ -221,6 +221,7 @@ func buildSessionsPage(p pager, ss []structures.Session, cs []structures.Claim, 
 // sessionElement is one element attested in a session.
 type sessionElement struct {
 	ID, Name    string
+	E           structures.Element // current record, or the copy in a claim header if it no longer exists
 	Claims      []structures.Claim
 	Results     []structures.Result // by rule name
 	Counts      resultCounts
@@ -268,8 +269,16 @@ func buildSessionPage(s structures.Session, cs []structures.Claim, rs []structur
 	}
 	for _, id := range order {
 		se := byID[id]
-		if se.Name == "" && lk != nil {
-			se.Name = lk.element(id).Name
+		if lk != nil {
+			if cur := lk.element(id); cur.ItemID != "" {
+				se.E = cur
+			}
+		}
+		if se.E.ItemID == "" && len(se.Claims) > 0 {
+			se.E = se.Claims[0].Header.Element
+		}
+		if se.E.Name != "" {
+			se.Name = se.E.Name
 		}
 		if se.Name == "" {
 			se.Name = id

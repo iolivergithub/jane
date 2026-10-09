@@ -173,8 +173,16 @@ func TestBuildSessionPage(t *testing.T) {
 	if len(page.Elements) != 2 || page.Elements[0].Name != e.Name || page.Elements[1].Name != "zz-other-node" {
 		t.Fatalf("elements %+v", page.Elements)
 	}
-	if calls != 1 {
-		t.Fatalf("element lookups %d, want 1 (only for the element without claims)", calls)
+	if calls != 2 {
+		t.Fatalf("element lookups %d, want 2 (one per element)", calls)
+	}
+	if page.Elements[0].E.Description == "" || len(page.Elements[0].E.Endpoints) != 2 || len(page.Elements[0].E.Tags) != 2 {
+		t.Fatalf("element details missing: %+v", page.Elements[0].E)
+	}
+	// without a current record, the copy in the claim header is used
+	fallback := buildSessionPage(sess["sess-02"], scs, nil, nil)
+	if fallback.Elements[0].E.ItemID != e.ItemID || fallback.Elements[0].Name != e.Name {
+		t.Fatalf("fallback element %+v", fallback.Elements[0].E)
 	}
 	if page.ClaimErrors != 1 || page.Elements[0].ClaimErrors != 1 || len(page.Elements[0].Claims) != 4 {
 		t.Fatalf("claim errors %d / %d", page.ClaimErrors, page.Elements[0].ClaimErrors)
