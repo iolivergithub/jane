@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/labstack/echo/v4"
 
@@ -11,17 +12,64 @@ import (
 	"a10/structures"
 )
 
-type elementsStructure struct {
-	E  structures.Element
-	CS []structures.Claim
-	RS []structures.Result
+// Number of most recent attestation sessions shown on each element card,
+// and how many results are fetched per element to find them.
+const cardSessions = 5
+const cardResultsFetched = 250
+
+// sessionResults is one row in an element card: the results of one session.
+type sessionResults struct {
+	SessionID  string
+	VerifiedAt structures.Timestamp
+	Results    []structures.Result
+}
+
+// elementCard is an element plus the results of its latest sessions.
+type elementCard struct {
+	structures.Element
+	Sessions []sessionResults
+}
+
+// latestSessions groups an element's results (newest first) by session and
+// returns at most n sessions, newest first, with results ordered by rule name
+// so that the same rule sits in the same position on every row.
+func latestSessions(rs []structures.Result, n int) []sessionResults {
+	var out []sessionResults
+	index := map[string]int{}
+
+	for _, r := range rs {
+		i, seen := index[r.Session.ItemID]
+		if !seen {
+			if len(out) == n {
+				continue
+			}
+			i = len(out)
+			index[r.Session.ItemID] = i
+			out = append(out, sessionResults{SessionID: r.Session.ItemID, VerifiedAt: r.VerifiedAt})
+		}
+		out[i].Results = append(out[i].Results, r)
+	}
+
+	for i := range out {
+		sort.SliceStable(out[i].Results, func(a, b int) bool {
+			return out[i].Results[a].RuleName < out[i].Results[b].RuleName
+		})
+	}
+
+	return out
 }
 
 func showElements(c echo.Context) error {
 	es, _ := operations.GetElementsAll()
 	fmt.Printf("remdering element %v\n", len(es))
 
-	return c.Render(http.StatusOK, "elements.html", es)
+	cards := make([]elementCard, len(es))
+	for i, e := range es {
+		rs, _ := operations.GetResultsByElementID(e.ItemID, cardResultsFetched)
+		cards[i] = elementCard{e, latestSessions(rs, cardSessions)}
+	}
+
+	return c.Render(http.StatusOK, "elements.html", cards)
 }
 
 func showElement(c echo.Context) error {
@@ -29,14 +77,17 @@ func showElement(c echo.Context) error {
 
 	fmt.Printf(" cparam is %v and e.ItemId is %v\n", c.Param("itemid"), e.ItemID)
 
-	cs, _ := operations.GetClaimsByElementID(e.ItemID, 10)
-	rs, _ := operations.GetResultsByElementID(e.ItemID, 10)
+	cs, _ := operations.GetClaimsByElementID(e.ItemID, elementClaimsFetched)
+	rs, _ := operations.GetResultsByElementID(e.ItemID, elementResultsFetched)
 
 	fmt.Printf("showElement %v\n", c.Param("itemid"))
 
-	es := elementsStructure{e, cs, rs}
+	page := buildElementPage(e, cs, rs, func(id string) (structures.Session, bool) {
+		s, err := operations.GetSessionByItemID(id)
+		return s, err == nil
+	})
 
-	return c.Render(http.StatusOK, "element.html", es)
+	return c.Render(http.StatusOK, "element.html", page)
 }
 
 func newElement(c echo.Context) error {

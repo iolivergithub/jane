@@ -1,19 +1,85 @@
 {{define "content"}}
-<h3>Elements</h3>
-<table class="table table-striped table-sm">
-   <thead>
-      <tr>
-         <th scope="col">Name</th>    
-         <th scope="col">Description</th>             
-         <th scope="col">Tags</th>             
-         <th scope="col">Endpoints</th>             
-      </tr>
-   </thead>
-   <tbody>
-      {{ range . }} 
-        <tr> {{ template "elementsummarylist.html" . }} </tr>
-      {{end}}
-   </tbody>
-</table>
-{{end}}
+<style>
+   .element-card { transition: border-color .15s ease-in-out; }
+   .element-card:hover { border-color: var(--bs-primary); }
+   .element-desc {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+   }
+   /* results sit above the card's stretched link so they stay clickable */
+   .results-strip { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 3px; }
+   .results-when { font-size: .75rem; flex: 0 0 auto; }
+   .result-cell { display: block; width: 11px; height: 11px; border-radius: 2px; }
+   .result-cell:hover { outline: 2px solid var(--bs-body-color); }
+</style>
 
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+   <h3 class="mb-0 me-auto">Elements <span class="badge bg-secondary fs-6 align-middle">{{ len . }}</span></h3>
+   <input id="elementFilter" type="search" class="form-control form-control-sm" style="max-width: 18rem"
+          placeholder="Filter by name, host, tag, protocol…" aria-label="Filter elements">
+   <a href="/new/element" class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i>New element</a>
+</div>
+
+{{ if . }}
+<div id="elementGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-6 g-2">
+   {{ range . }}
+   <div class="col element-item"
+        data-search="{{ .Name }} {{ .Description }} {{ .Host.Hostname }} {{ .Host.OS }} {{ .Host.Arch }} {{ range .Tags }}{{ . }} {{ end }}{{ range .Endpoints }}{{ .Protocol }} {{ .Endpoint }} {{ end }}">
+      {{ template "elementsummarylist.html" . }}
+   </div>
+   {{ end }}
+</div>
+
+<nav class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3" aria-label="Element pages">
+   <small id="elementRange" class="text-body-secondary"></small>
+   <ul id="elementPager" class="pagination pagination-sm mb-0"></ul>
+</nav>
+{{ else }}
+<div class="alert alert-secondary">No elements defined yet. <a href="/new/element">Create one</a>.</div>
+{{ end }}
+
+<script>
+(function () {
+   const PAGE_SIZE = 36;   // 6 x 6 grid on wide screens
+   const items = Array.from(document.querySelectorAll('#elementGrid .element-item'));
+   const pager = document.getElementById('elementPager');
+   const range = document.getElementById('elementRange');
+   const filter = document.getElementById('elementFilter');
+   if (!items.length || !pager) return;
+
+   items.forEach(el => el.dataset.search = el.dataset.search.toLowerCase());
+   let page = 1;
+
+   function render() {
+      const q = filter.value.trim().toLowerCase();
+      const matched = items.filter(el => !q || el.dataset.search.includes(q));
+      const pages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
+      page = Math.min(page, pages);
+      const start = (page - 1) * PAGE_SIZE;
+      const shown = new Set(matched.slice(start, start + PAGE_SIZE));
+      items.forEach(el => el.classList.toggle('d-none', !shown.has(el)));
+
+      range.textContent = matched.length
+         ? 'Showing ' + (start + 1) + '–' + Math.min(start + PAGE_SIZE, matched.length) + ' of ' + matched.length
+         : 'No matching elements';
+
+      pager.innerHTML = '';
+      if (pages <= 1) return;
+      const add = (label, target, disabled, active) => {
+         const li = document.createElement('li');
+         li.className = 'page-item' + (disabled ? ' disabled' : '') + (active ? ' active' : '');
+         const a = document.createElement('a');
+         a.className = 'page-link'; a.href = '#'; a.innerHTML = label;
+         a.addEventListener('click', e => { e.preventDefault(); if (!disabled) { page = target; render(); window.scrollTo(0, 0); } });
+         li.appendChild(a); pager.appendChild(li);
+      };
+      add('&laquo;', page - 1, page === 1);
+      for (let p = 1; p <= pages; p++) add(String(p), p, false, p === page);
+      add('&raquo;', page + 1, page === pages);
+   }
+
+   filter.addEventListener('input', () => { page = 1; render(); });
+   render();
+})();
+</script>
+{{end}}
