@@ -2,7 +2,11 @@
 <style>
    .ev-tile { min-width: 9rem; }
    .ev-tile .ev-num { font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
-   .ev-card .table { margin-bottom: 0; }
+   .ev-details .table { margin-bottom: 0; }
+   /* labels stay on one line; long values (paths, IDs, keys) wrap anywhere */
+   .ev-details td, .ev-details th { overflow-wrap: anywhere; }
+   .ev-details tr > :first-child { overflow-wrap: normal; white-space: nowrap; width: 1%; padding-right: 1rem; }
+   .ev-details thead th { white-space: nowrap; }
    .ev-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: baseline; }
    .oc-pass     { background: var(--bs-success); }
    .oc-fail     { background: var(--bs-danger); }
@@ -89,53 +93,90 @@
 </div>
 
 <!-- element details -->
-<div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 mb-3">
-   <div class="col"><div class="card h-100 ev-card">
-      <div class="card-header py-2"><i class="fa fa-plug me-1"></i> Endpoints</div>
-      <div class="card-body p-2">
+<div class="card mb-3 ev-details">
+   <div class="card-header pb-0 border-bottom-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+         <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#det-endpoints" type="button" role="tab"><i class="fa fa-plug me-1"></i> Endpoints <span class="badge bg-secondary">{{ len .E.Endpoints }}</span></button>
+         </li>
+         <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-host" type="button" role="tab"><i class="fa fa-desktop me-1"></i> Host &amp; logs</button>
+         </li>
+         <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-tpm2" type="button" role="tab"><i class="fa fa-microchip me-1"></i> TPM2</button>
+         </li>
+         <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-history" type="button" role="tab"><i class="fa fa-history me-1"></i> Record history</button>
+         </li>
+      </ul>
+   </div>
+   <div class="card-body tab-content">
+      <div class="tab-pane fade show active" id="det-endpoints" role="tabpanel">
          {{ if .E.Endpoints }}
-         <ul class="list-unstyled mb-0">
-            {{ range $i, $v := .E.Endpoints }}
-            <li class="mb-2">
-               <div class="d-flex align-items-center gap-2">
-                  <span class="fw-semibold">{{ $i }}</span>
-                  <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
-               </div>
-               <a class="font-monospace small d-block text-truncate" href="{{ $v.Endpoint }}" title="{{ $v.Endpoint }}">{{ $v.Endpoint }}</a>
-            </li>
-            {{ end }}
-         </ul>
+         <table class="table table-sm mb-0">
+            <thead><tr><th>Name</th><th>Protocol</th><th>Endpoint</th></tr></thead>
+            <tbody>
+               {{ range $i, $v := .E.Endpoints }}
+               <tr>
+                  <td class="fw-semibold text-nowrap">{{ $i }}</td>
+                  <td class="text-nowrap pe-3" style="width: 1%"><span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span></td>
+                  <td class="font-monospace small"><a href="{{ $v.Endpoint }}">{{ $v.Endpoint }}</a></td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
          {{ else }}<i class="text-body-secondary">No endpoints</i>{{ end }}
       </div>
-   </div></div>
 
-   <div class="col"><div class="card h-100 ev-card">
-      <div class="card-header py-2"><i class="fa fa-desktop me-1"></i> Host &amp; logs</div>
-      <div class="card-body p-2">
-         {{ if or .E.Host.Arch .E.Host.Hostname }}
-            {{ template "hostinformation.html" .E.Host }}
-         {{ else }}<p class="mb-2"><i class="text-body-secondary">No host information specified</i></p>{{ end }}
-         <ul class="list-unstyled small mb-0 mt-2">
-            <li>{{ if .E.UEFI.Eventlog }}<i class="fa fa-check text-success"></i> UEFI <span class="font-monospace text-body-secondary text-break">{{ .E.UEFI.Eventlog }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No UEFI log</i>{{ end }}</li>
-            <li>{{ if .E.IMA.ASCIILog }}<i class="fa fa-check text-success"></i> IMA <span class="font-monospace text-body-secondary text-break">{{ .E.IMA.ASCIILog }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No IMA log</i>{{ end }}</li>
-            <li>{{ if .E.TXT.Log }}<i class="fa fa-check text-success"></i> TXT <span class="font-monospace text-body-secondary text-break">{{ .E.TXT.Log }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No TXT log</i>{{ end }}</li>
-         </ul>
+      <div class="tab-pane fade" id="det-host" role="tabpanel">
+         <div class="row g-4">
+            <div class="col-lg-5">
+               <h6 class="text-body-secondary">Host</h6>
+               {{ if or .E.Host.Arch .E.Host.Hostname }}
+                  {{ template "hostinformation.html" .E.Host }}
+               {{ else }}<i class="text-body-secondary">No host information specified</i>{{ end }}
+            </div>
+            <div class="col-lg-7">
+               <h6 class="text-body-secondary">Logs</h6>
+               <table class="table table-sm mb-0">
+                  <tbody>
+                     <tr><td>UEFI</td>
+                         <td>{{ if .E.UEFI.Eventlog }}<span class="d-flex gap-2"><i class="fa fa-check text-success mt-1"></i><span class="font-monospace small">{{ .E.UEFI.Eventlog }}</span></span>{{ else }}<i class="text-body-secondary">Not specified</i>{{ end }}</td></tr>
+                     <tr><td>IMA</td>
+                         <td>{{ if .E.IMA.ASCIILog }}<span class="d-flex gap-2"><i class="fa fa-check text-success mt-1"></i><span class="font-monospace small">{{ .E.IMA.ASCIILog }}</span></span>{{ else }}<i class="text-body-secondary">Not specified</i>{{ end }}</td></tr>
+                     <tr><td>TXT</td>
+                         <td>{{ if .E.TXT.Log }}<span class="d-flex gap-2"><i class="fa fa-check text-success mt-1"></i><span class="font-monospace small">{{ .E.TXT.Log }}</span></span>{{ else }}<i class="text-body-secondary">Not specified</i>{{ end }}</td></tr>
+                  </tbody>
+               </table>
+            </div>
+         </div>
       </div>
-   </div></div>
 
-   <div class="col"><div class="card h-100 ev-card">
-      <div class="card-header py-2"><i class="fa fa-microchip me-1"></i> TPM2</div>
-      <div class="card-body p-2">
-         {{ if .E.TPM2.Device }}{{ template "tpm2.html" .E.TPM2 }}{{ else }}<i class="text-body-secondary">No TPM device present</i>{{ end }}
+      <div class="tab-pane fade" id="det-tpm2" role="tabpanel">
+         {{ if .E.TPM2.Device }}
+         <div class="row g-4">
+            <div class="col-lg-4">
+               <h6 class="text-body-secondary">Device</h6>
+               {{ template "tpm2.html" .E.TPM2 }}
+            </div>
+            <div class="col-lg-4">
+               <h6 class="text-body-secondary">Endorsement key (EK)</h6>
+               {{ template "tpm2key.html" .E.TPM2.EK }}
+            </div>
+            <div class="col-lg-4">
+               <h6 class="text-body-secondary">Attestation key (AK)</h6>
+               {{ template "tpm2key.html" .E.TPM2.AK }}
+            </div>
+         </div>
+         {{ else }}<i class="text-body-secondary">No TPM device present</i>{{ end }}
       </div>
-   </div></div>
 
-   <div class="col"><div class="card h-100 ev-card">
-      <div class="card-header py-2"><i class="fa fa-history me-1"></i> Record history</div>
-      <div class="card-body p-2">
+      <div class="tab-pane fade" id="det-history" role="tabpanel">
+         <div style="max-width: 40rem">
          {{ if .E.RecordHistory.Created }}{{ template "recordhistory.html" .E.RecordHistory }}{{ else }}<i class="text-body-secondary">No record history</i>{{ end }}
+         </div>
       </div>
-   </div></div>
+   </div>
 </div>
 
 {{ if .Timeline }}
@@ -232,7 +273,7 @@
             <th>Opened (UTC)</th><th>Duration</th><th>Results <span class="fw-normal small text-body-secondary">pass / fail / other</span></th><th>Claims</th><th>Message</th>
          </tr></thead>
          <tbody>
-            {{ range .Sessions }}
+            {{ range .ListSessions }}
             <tr>
                <td class="text-nowrap"><a href="/session/{{ .ID }}">{{ if .Opened }}{{ epochToUTC .Opened }}{{ else }}{{ .ID }}{{ end }}</a></td>
                <td class="text-nowrap">{{ if .Duration }}{{ .Duration }}{{ else if and .Found (not .Closed) }}<span class="badge bg-warning">Open</span>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
@@ -255,6 +296,7 @@
          </tbody>
       </table>
       </div>
+      {{ if gt (len .Sessions) (len .ListSessions) }}<div class="small text-body-secondary px-1 pt-2">Showing the latest {{ len .ListSessions }} of {{ len .Sessions }} sessions. <a href="/sessions">All sessions</a></div>{{ end }}
    </div>
 
    <div class="tab-pane fade" id="tab-results" role="tabpanel">
@@ -264,7 +306,7 @@
             <th>Rule</th><th>Verified (UTC)</th><th>Result</th><th>Message</th><th>Links</th>
          </tr></thead>
          <tbody>
-            {{ range .RS }}
+            {{ range .ListResults }}
             <tr>
                <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
                <td class="text-nowrap">{{ epochToUTC .VerifiedAt }}</td>
@@ -278,6 +320,7 @@
          </tbody>
       </table>
       </div>
+      {{ if gt (len .RS) (len .ListResults) }}<div class="small text-body-secondary px-1 pt-2">Showing the latest {{ len .ListResults }} of {{ len .RS }} results. <a href="/results">All results</a></div>{{ end }}
    </div>
 
    <div class="tab-pane fade" id="tab-claims" role="tabpanel">
@@ -287,7 +330,7 @@
             <th>Intent</th><th>Type</th><th>Endpoint</th><th>Requested (UTC)</th><th>Session</th>
          </tr></thead>
          <tbody>
-            {{ range .CS }}
+            {{ range .ListClaims }}
             <tr {{ if eq .BodyType "*ERROR" }}class="table-danger"{{ end }}>
                <td><a href="/claim/{{ .ItemID }}">{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}{{ .BodyType }}{{ end }}</a></td>
                <td>{{ if eq .BodyType "*ERROR" }}<span class="badge bg-danger">Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .BodyType }}</span>{{ end }}</td>
@@ -301,6 +344,7 @@
          </tbody>
       </table>
       </div>
+      {{ if gt (len .CS) (len .ListClaims) }}<div class="small text-body-secondary px-1 pt-2">Showing the latest {{ len .ListClaims }} of {{ len .CS }} claims. <a href="/claims">All claims</a></div>{{ end }}
    </div>
 </div>
 

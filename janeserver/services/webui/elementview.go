@@ -16,6 +16,7 @@ const (
 	elementClaimsFetched    = 300
 	elementResultsFetched   = 600
 	elementTimelineSessions = 30
+	elementListLimit        = 100 // rows per list at the bottom of the page
 )
 
 // Outcome classes shared by the charts, the matrix and the lists.
@@ -107,6 +108,11 @@ type elementPage struct {
 	Chart     timelineChart
 
 	NPass, NFail, NOther, NClaimErrors int
+
+	// The lists at the bottom of the page, each capped at elementListLimit.
+	ListSessions []elementSession
+	ListResults  []structures.Result
+	ListClaims   []structures.Claim
 }
 
 func shortLabel(t structures.Timestamp) string {
@@ -264,7 +270,19 @@ func buildElementPage(e structures.Element, cs []structures.Claim, rs []structur
 		}
 	})
 
+	p.ListSessions = firstN(p.Sessions, elementListLimit)
+	p.ListResults = firstN(p.RS, elementListLimit)
+	p.ListClaims = firstN(p.CS, elementListLimit)
+
 	return p
+}
+
+// firstN returns at most the first n items of xs.
+func firstN[T any](xs []T, n int) []T {
+	if len(xs) > n {
+		return xs[:n]
+	}
+	return xs
 }
 
 // buildMatrix makes one row per label (sorted) and one cell per timeline
