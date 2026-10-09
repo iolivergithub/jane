@@ -168,7 +168,9 @@ func elementDetail(s store, id string) detail {
 		add("(none)")
 	default:
 		for _, r := range rs {
-			add(fmt.Sprintf("%s  %s %s", when(r.VerifiedAt), fit(r.RuleName, 30), resultLabel(r.Result)))
+			r := r
+			d.add([]string{fmt.Sprintf("%s  %s %s", when(r.VerifiedAt), fit(r.RuleName, 30), resultLabel(r.Result))},
+				link{Open: func() detail { return resultDetail(s, r.ItemID) }})
 		}
 	}
 	return d
@@ -374,7 +376,10 @@ func sessionDetail(s store, id string) detail {
 			return rs[a].RuleName < rs[b].RuleName
 		})
 		for _, r := range rs {
-			add(fmt.Sprintf("%s %s %s %s", fit(nameOr(el, r.ElementID), 18), fit(r.RuleName, 26), fit(resultLabel(r.Result), 12), r.Message))
+			r := r
+			d.add([]string{fmt.Sprintf("%s %s %s %s", fit(nameOr(el, r.ElementID), 18), fit(r.RuleName, 26), fit(resultLabel(r.Result), 12), r.Message)},
+				link{Open: func() detail { return resultDetail(s, r.ItemID) },
+					Spans: []span{{0, 18, func() detail { return elementDetail(s, r.ElementID) }}}})
 		}
 	}
 
@@ -386,8 +391,11 @@ func sessionDetail(s store, id string) detail {
 		add("(none)")
 	default:
 		for _, c := range cs {
-			add(fmt.Sprintf("%s %s %s %s", fit(c.Header.Element.Name, 18), fit(claimIntent(c), 22), fit(claimType(c), 16),
-				took(c.Header.Timing.Requested, c.Header.Timing.Received)))
+			c := c
+			d.add([]string{fmt.Sprintf("%s %s %s %s", fit(c.Header.Element.Name, 18), fit(claimIntent(c), 22), fit(claimType(c), 16),
+				took(c.Header.Timing.Requested, c.Header.Timing.Received))},
+				link{Open: func() detail { return claimDetail(s, c.ItemID) },
+					Spans: []span{{0, 18, func() detail { return elementDetail(s, c.Header.Element.ItemID) }}}})
 		}
 	}
 	return d

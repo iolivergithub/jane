@@ -106,6 +106,60 @@ type detail struct {
 	Title string
 	Lines []string
 	Err   error
+	// Links makes lines selectable: put the cursor on the line and press
+	// Enter to open what it refers to. Keyed by line index.
+	Links map[int]link
+}
+
+// link is what a selectable line opens. Spans narrow it: a span covering the
+// character under the cursor wins over the line's own target.
+type link struct {
+	Open  func() detail
+	Spans []span
+}
+
+// span is a range of character positions [From, To) within a line.
+type span struct {
+	From, To int
+	Open     func() detail
+}
+
+// at returns what to open for the character at position ch, if anything.
+func (l link) at(ch int) func() detail {
+	for _, sp := range l.Spans {
+		if ch >= sp.From && ch < sp.To {
+			return sp.Open
+		}
+	}
+	return l.Open
+}
+
+// add appends lines; if l is given it applies to each of them.
+func (d *detail) add(lines []string, l ...link) {
+	for _, line := range lines {
+		if len(l) > 0 {
+			if d.Links == nil {
+				d.Links = map[int]link{}
+			}
+			d.Links[len(d.Lines)] = l[0]
+		}
+		d.Lines = append(d.Lines, line)
+	}
+}
+
+// prepend puts lines before the existing ones, keeping links in step.
+func (d *detail) prepend(lines []string, links map[int]link) {
+	shifted := map[int]link{}
+	for i, l := range links {
+		shifted[i] = l
+	}
+	for i, l := range d.Links {
+		shifted[i+len(lines)] = l
+	}
+	d.Lines = append(append([]string{}, lines...), d.Lines...)
+	if len(shifted) > 0 {
+		d.Links = shifted
+	}
 }
 
 // listSource feeds a list screen a page at a time.
@@ -218,19 +272,32 @@ func textTx(d detail, back go3270.Tx) go3270.Tx {
 	if d.Err != nil {
 		message = d.Err.Error()
 	}
+	// where to put the cursor: the command line, or the line last opened
+	curRow, curCol := cmdRow, cmdCol+1
+	keys := "F3=Back  F7=Up  F8=Down  F12=Cancel"
+	if len(d.Links) > 0 {
+		keys = "F3=Back  F7=Up  F8=Down  Enter=Open the white line under the cursor"
+	}
 	self = func(conn net.Conn, dev go3270.DevInfo, _ any) (go3270.Tx, any, error) {
 		end := min(top+textRows, len(d.Lines))
 		pos := "Empty"
 		if len(d.Lines) > 0 {
 			pos = fmt.Sprintf("Line %d to %d of %d", top+1, end, len(d.Lines))
 		}
-		screen := frame(d.Title, pos, message, "F3=Back  F7=Up  F8=Down  F12=Cancel")
+		screen := frame(d.Title, pos, message, keys)
 		for i, l := range d.Lines[top:end] {
-			screen = append(screen, go3270.Field{Row: headRow + i, Col: 0, Content: cut(l, lineWidth)})
+			f := go3270.Field{Row: headRow + i, Col: 0, Content: cut(l, lineWidth)}
+			if _, ok := d.Links[top+i]; ok {
+				f.Color = go3270.White
+			}
+			screen = append(screen, f)
 		}
 		message = ""
 
-		resp, err := show(conn, dev, screen)
+		resp, err := go3270.ShowScreenOpts(screen, nil, conn, go3270.ScreenOpts{
+			CursorRow: curRow, CursorCol: curCol, Codepage: dev.Codepage(),
+		})
+		curRow, curCol = cmdRow, cmdCol+1
 		if err != nil {
 			return nil, nil, err
 		}
@@ -239,19 +306,42 @@ func textTx(d detail, back go3270.Tx) go3270.Tx {
 			return back, nil, nil
 		case go3270.AIDPF7:
 			top = max(0, top-textRows)
+			return self, nil, nil
 		case go3270.AIDPF8:
 			if top+textRows < len(d.Lines) {
 				top += textRows
 			} else {
 				message = "Already at the end"
 			}
+			return self, nil, nil
+		case go3270.AIDEnter:
+		default:
+			return self, nil, nil
 		}
+
 		cmd := strings.ToUpper(strings.TrimSpace(resp.Values["cmd"]))
 		switch cmd {
 		case "TOP", "T":
 			top = 0
+			return self, nil, nil
 		case "BOTTOM", "BOT", "B":
 			top = max(0, (len(d.Lines)-1)/textRows*textRows)
+			return self, nil, nil
+		case "":
+		default:
+			message = fmt.Sprintf("Unknown command %q: use TOP or BOT, or F3 to go back", clean(cmd))
+			return self, nil, nil
+		}
+
+		// Enter with the cursor on a selectable line opens it. A field's
+		// content starts one column after its attribute byte at column 0.
+		if row := resp.Row; row >= headRow && row < headRow+(end-top) {
+			if l, ok := d.Links[top+row-headRow]; ok {
+				if open := l.at(resp.Col - 1); open != nil {
+					curRow, curCol = resp.Row, resp.Col
+					return textTx(open(), self), nil, nil
+				}
+			}
 		}
 		return self, nil, nil
 	}

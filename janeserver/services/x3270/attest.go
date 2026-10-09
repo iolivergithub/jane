@@ -317,12 +317,21 @@ func attestRun(s store, req attestRequest, c attestChoice, home go3270.Tx) go327
 		if sid != "" {
 			d = sessionDetail(s, sid)
 		}
-		status := []string{"Attestation complete.", ""}
+		// what was attested comes first; the element and intent lines open them
+		var head detail
 		if aerr != nil {
-			status = append(wrap("Attestation did not complete: "+aerr.Error(), lineWidth), "")
+			head.add(wrap("Attestation did not complete: "+aerr.Error(), lineWidth))
+		} else {
+			head.add([]string{"Attestation complete."})
 		}
+		head.add([]string{""})
+		head.add(labelled("Element", c.Element.Name+"  ("+c.Endpoint+")"),
+			link{Open: func() detail { return elementDetail(s, c.Element.ItemID) }})
+		head.add(labelled("Intent", c.Intent.Name),
+			link{Open: func() detail { return intentDetail(s, c.Intent) }})
+		head.add([]string{""})
+		d.prepend(head.Lines, head.Links)
 		d.Title = "Attest - result"
-		d.Lines = append(status, d.Lines...)
 		d.Err = aerr
 		return textTx(d, home), nil, nil
 	}
