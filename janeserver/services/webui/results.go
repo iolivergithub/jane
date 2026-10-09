@@ -9,52 +9,22 @@ import (
 	"a10/structures"
 )
 
-type resultsstr struct {
-	ItemID     string
-	RuleName   string
-	VerifiedAt structures.Timestamp
-	Result     structures.ResultValue
-	EVEName    string
-	EVEID      string
-	EVPName    string
-	EVPID      string
-	EV_Name    string
-	EV_ItemID  string
-	ClaimID    string
-	SessionID  string
-	Message    string
-	Footer     structures.ResultFooter
-}
-
+// showResults lists results a page at a time, newest first. Expected values,
+// elements and intents are looked up once per page rather than once per row.
 func showResults(c echo.Context) error {
+	p := newPager(c.QueryParam("page"), operations.CountResults(), listPageSize, "/results")
+	rs, _ := operations.GetResultsPage(p.Skip, p.Size)
 
-	rsstr := []resultsstr{}
-
-	rs, _ := operations.GetResultsAll()
-	for _, j := range rs {
-		ev, _ := operations.GetExpectedValueByItemID(j.ExpectedValue.ItemID)
-		e, _ := operations.GetElementByItemID(ev.ElementID)
-		p, _ := operations.GetIntentByItemID(ev.IntentID)
-
-		rsstr = append(rsstr, resultsstr{j.ItemID, j.RuleName, j.VerifiedAt, j.Result, e.Name, e.ItemID, p.Name, p.ItemID, ev.Name, ev.ItemID, j.ClaimID, j.Session.ItemID, j.Message, j.Footer})
-	}
-
-	return c.Render(http.StatusOK, "results.html", rsstr)
-}
-
-type resultsstrext struct {
-	R resultsstr
+	return c.Render(http.StatusOK, "results.html", buildResultsPage(p, rs, dbLookups()))
 }
 
 func showResult(c echo.Context) error {
 	r, _ := operations.GetResultByItemID(c.Param("itemid"))
 
-	ev, _ := operations.GetExpectedValueByItemID(r.ExpectedValue.ItemID)
-	e, _ := operations.GetElementByItemID(ev.ElementID)
-	p, _ := operations.GetIntentByItemID(ev.IntentID)
+	siblings := []structures.Result{}
+	if r.ClaimID != "" {
+		siblings, _ = operations.GetResultsByClaimID(r.ClaimID)
+	}
 
-	rsstr := resultsstr{r.ItemID, r.RuleName, r.VerifiedAt, r.Result, e.Name, e.ItemID, p.Name, p.ItemID, ev.Name, ev.ItemID, r.ClaimID, r.Session.ItemID, r.Message, r.Footer}
-	rsstrext := resultsstrext{rsstr}
-
-	return c.Render(http.StatusOK, "result.html", rsstrext)
+	return c.Render(http.StatusOK, "result.html", buildResultPage(r, siblings, dbLookups()))
 }

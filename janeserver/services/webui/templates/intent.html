@@ -1,23 +1,85 @@
 {{define "content"}}
-<h3>Intent: {{ .Name }} </h3>
+{{ if not .I.ItemID }}
+<div class="alert alert-warning">Intent not found. <a href="/intents">All intents</a></div>
+{{ else }}
 
-<table class="table table-sm table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Name</th> <td scope="col">{{ .Name }}</th> </tr>     
-      <tr><td scope="col">Description</th> <td scope="col">{{ .Description }}</th> </tr>     
-      <tr><td scope="col">ItemID</th> <td scope="col">{{ .ItemID }}</th> </tr>     
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><i class="fa fa-bullseye me-2 text-body-secondary"></i>{{ .I.Name }} <span class="badge bg-primary fs-6 align-middle">{{ .I.Function }}</span></h3>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .I.ItemID }}</div>
+      {{ if .I.Description }}<div class="j-wrap">{{ .I.Description }}</div>{{ end }}
+   </div>
+   <div class="d-flex flex-wrap gap-2">
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Expected values</div>
+         <div class="j-num">{{ len .EVs }}</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Claims</div>
+         <div class="j-num">{{ if ge .ClaimTotal 0 }}{{ .ClaimTotal }}{{ else }}?{{ end }}</div>
+         {{ if .Claims }}<div class="small {{ if .ClaimErrors }}text-danger{{ else }}text-body-secondary{{ end }}">{{ .ClaimErrors }} errors in latest {{ len .Claims }}</div>{{ end }}
+      </div></div>
+   </div>
+</div>
 
-      <tr><td scope="col">Function</th> <td scope="col">{{ .Function }}</th> </tr>     
-      <tr><td scope="col">Parameters</th> <td scope="col">{{ template "genericList.html" .Parameters }}</th> </tr>     
-      
-   </tbody>
-</table>
+<!-- details -->
+<div class="card mb-4">
+   <div class="card-header pb-0 border-bottom-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#in-params" type="button" role="tab"><i class="fa fa-sliders me-1"></i> Parameters <span class="badge bg-secondary">{{ len .I.Parameters }}</span></button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#in-evs" type="button" role="tab"><i class="fa fa-crosshairs me-1"></i> Expected values <span class="badge bg-secondary">{{ len .EVs }}</span></button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#in-claims" type="button" role="tab"><i class="fa fa-file-text-o me-1"></i> Recent claims <span class="badge bg-secondary">{{ len .Claims }}</span></button></li>
+      </ul>
+   </div>
+   <div class="card-body tab-content">
+      <div class="tab-pane fade show active j-details" id="in-params" role="tabpanel">
+         {{ if .I.Parameters }}{{ template "genericList.html" .I.Parameters }}{{ else }}<i class="text-body-secondary">No parameters</i>{{ end }}
+      </div>
 
+      <div class="tab-pane fade" id="in-evs" role="tabpanel">
+         {{ if .EVs }}
+         <div class="table-responsive">
+         <table class="table table-sm table-hover j-list mb-0">
+            <thead><tr><th>Element</th><th>Endpoint</th><th>Expected value</th><th>Description</th></tr></thead>
+            <tbody>
+               {{ range .EVs }}
+               <tr>
+                  <td><a href="/element/{{ .Element.ID }}">{{ if .Element.Name }}{{ .Element.Name }}{{ else }}{{ .Element.ID }}{{ end }}</a></td>
+                  <td>{{ .EV.EndpointName }}</td>
+                  <td><a href="/expectedvalue/{{ .EV.ItemID }}">{{ .EV.Name }}</a></td>
+                  <td class="small text-body-secondary j-wrap">{{ .EV.Description }}</td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
+         </div>
+         {{ else }}<i class="text-body-secondary">No expected values use this intent. <a href="/new/expectedvalue">Create one</a>.</i>{{ end }}
+      </div>
 
+      <div class="tab-pane fade" id="in-claims" role="tabpanel">
+         {{ if .Claims }}
+         <div class="table-responsive">
+         <table class="table table-sm table-hover j-list mb-0">
+            <thead><tr><th>Requested (UTC)</th><th>Element</th><th>Type</th><th>Endpoint</th><th>Took</th><th>Session</th></tr></thead>
+            <tbody>
+               {{ range .Claims }}
+               <tr {{ if eq .BodyType "*ERROR" }}class="j-err"{{ end }}>
+                  <td class="text-nowrap"><a href="/claim/{{ .ItemID }}">{{ epochToUTC .Header.Timing.Requested }}</a></td>
+                  <td><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a></td>
+                  <td>{{ if eq .BodyType "*ERROR" }}<span class="badge bg-danger">Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .BodyType }}</span>{{ end }}</td>
+                  <td class="text-nowrap">{{ .Header.EndpointName }}</td>
+                  <td class="text-nowrap">{{ duration .Header.Timing.Requested .Header.Timing.Received }}</td>
+                  <td><a href="/session/{{ .Header.Session.ItemID }}" title="Session"><i class="fa fa-cogs"></i></a></td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
+         </div>
+         {{ if gt .ClaimTotal (len .Claims) }}<div class="small text-body-secondary px-1 pt-2">Showing the latest {{ len .Claims }} of {{ .ClaimTotal }} claims made with this intent. <a href="/claims">All claims</a></div>{{ end }}
+         {{ else }}<i class="text-body-secondary">No claims have been made with this intent yet.</i>{{ end }}
+      </div>
+   </div>
+</div>
+{{ end }}
 {{end}}

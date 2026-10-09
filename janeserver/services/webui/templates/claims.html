@@ -1,33 +1,45 @@
 {{define "content"}}
-<h3>Claims</h3>
-<table class="table table-striped table-sm">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+   <h3 class="mb-0 me-auto">Claims <span class="badge bg-secondary fs-6 align-middle">{{ .Pager.Total }}</span></h3>
+   {{ if .ClaimErrors }}<span class="small text-danger"><i class="fa fa-exclamation-triangle me-1"></i>{{ .ClaimErrors }} errors on this page</span>{{ end }}
+</div>
+
+{{ template "pager.html" .Pager }}
+
+<div class="table-responsive">
+<table class="table table-sm table-hover j-list">
    <thead>
       <tr>
-         <th scope="col">BodyType</th>    
-         <th scope="col">Requested</th>             
-         <th scope="col">Received</th>             
-         <th scope="col">Element</th>   
-         <th scope="col">Endpoint</th>                      
-         <th scope="col">Intent</th>             
-         <th scope="col">Session</th>             
+         <th>Requested (UTC)</th>
+         <th>Element</th>
+         <th>Intent</th>
+         <th>Type</th>
+         <th>Endpoint</th>
+         <th>Took</th>
+         <th>Session</th>
       </tr>
    </thead>
    <tbody>
-      {{ range . }} 
-        {{ if eq .BodyType "*ERROR"}}
-          <tr class="table-danger"> 
-          {{else}}
-          <tr> 
-          {{end}} 
-        <td><a href="/claim/{{ .ItemID }}">{{ .BodyType }}</a></td>
-      <td>{{ epochToUTC .Header.Timing.Requested }}</td>
-      <td>{{ epochToUTC .Header.Timing.Received }}</td>
-      <td><a href="/element/{{.Header.Element.ItemID}}">{{ .Header.Element.Name }}</a></td>
-      <td><span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td>
-      <td>{{ .Header.Intent.Name }}</td>
-      <td><a href="/session/{{.Header.Session.ItemID}}">{{ .Header.Session.ItemID }}</a></td> </tr>
-      {{end}}
+      {{ range .Rows }}
+      {{ $err := eq .C.BodyType "*ERROR" }}
+      <tr {{ if $err }}class="j-err"{{ end }}>
+         <td class="text-nowrap"><a href="/claim/{{ .C.ItemID }}">{{ epochToUTC .C.Header.Timing.Requested }}</a></td>
+         <td><a href="/element/{{ .C.Header.Element.ItemID }}">{{ .C.Header.Element.Name }}</a></td>
+         <td>{{ if .C.Header.Intent.ItemID }}<a href="/intent/{{ .C.Header.Intent.ItemID }}">{{ .C.Header.Intent.Name }}</a>{{ else }}{{ .C.Header.Intent.Name }}{{ end }}</td>
+         <td>{{ if $err }}<span class="badge bg-danger"><i class="fa fa-exclamation-triangle me-1"></i>Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .C.BodyType }}</span>{{ end }}</td>
+         <td class="small">
+            {{ .C.Header.EndpointName }} <span class="badge bg-primary-subtle text-primary-emphasis">{{ .C.Header.Endpoint.Protocol }}</span>
+            <div class="font-monospace text-body-secondary j-wrap">{{ .C.Header.Endpoint.Endpoint }}</div>
+         </td>
+         <td class="text-nowrap">{{ if .Latency }}{{ .Latency }}{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+         <td><a href="/session/{{ .C.Header.Session.ItemID }}" title="Session {{ .C.Header.Session.ItemID }}"><i class="fa fa-cogs"></i></a></td>
+      </tr>
+      {{ else }}
+      <tr><td colspan="7"><i class="text-body-secondary">No claims yet.</i></td></tr>
+      {{ end }}
    </tbody>
 </table>
-{{end}}
+</div>
 
+{{ template "pager.html" .Pager }}
+{{end}}

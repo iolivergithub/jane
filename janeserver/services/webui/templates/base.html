@@ -18,7 +18,47 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js" integrity="sha384-hjtEWSfxVipaKknyGUhJZbhSbbepyHXBQlM78R56XnihJKl1YPeepRjUWc3aMMHH" crossorigin="anonymous"></script>
-  
+
+    <style>
+      /* Shared pieces used across the list and detail pages */
+
+      /* result / claim status colours: each colours one individual result or claim */
+      .oc-pass     { background: var(--bs-success); }
+      .oc-fail     { background: var(--bs-danger); }
+      .oc-other    { background: var(--bs-warning); }
+      .oc-claim    { background: var(--bs-info); }
+      .oc-claimerr { background: var(--bs-danger); background-image: repeating-linear-gradient(45deg, transparent 0 2px, rgba(0,0,0,.35) 2px 4px); }
+      .oc-none     { background: transparent; box-shadow: inset 0 0 0 1px var(--bs-border-color); }
+
+      .j-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: baseline; }
+      .j-cell   { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; }
+      a.j-cell:hover { outline: 2px solid var(--bs-body-color); }
+
+      /* summary tiles */
+      .j-tile { min-width: 9rem; }
+      .j-tile .j-num { font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
+      .j-tile .j-num-sm { font-size: 1.15rem; font-weight: 600; line-height: 1.3; }
+
+      /* inline stacked bar: segments are percentages of the bar */
+      .j-bar { display: flex; gap: 2px; height: 8px; min-width: 6rem; }
+      .j-bar > span { border-radius: 2px; }
+      .j-bar-lg { height: 14px; }
+
+      /* tabbed detail cards: labels stay on one line, long values wrap */
+      .j-details td, .j-details th { overflow-wrap: anywhere; }
+      .j-details tr > :first-child { overflow-wrap: normal; white-space: nowrap; width: 1%; padding-right: 1rem; }
+      .j-details thead th { white-space: nowrap; }
+      .j-wrap { overflow-wrap: anywhere; }
+      .j-list td { vertical-align: middle; }
+      /* a row for a claim that could not be collected: tinted, with a red edge (readable in light and dark) */
+      tr.j-err > * { box-shadow: inset 0 0 0 9999px rgba(var(--bs-danger-rgb), .16); }
+      tr.j-err > :first-child { box-shadow: inset 3px 0 0 var(--bs-danger), inset 0 0 0 9999px rgba(var(--bs-danger-rgb), .16); }
+      .j-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .j-card { transition: border-color .15s ease-in-out; }
+      .j-card:hover { border-color: var(--bs-primary); }
+      pre.j-raw { max-height: 32rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+    </style>
+
   </head>
   <body>
     <nav class="navbar navbar-expand-sm navbar-static-top navbar-default bg-primary navbar-dark justify-content-center">

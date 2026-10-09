@@ -1,180 +1,152 @@
 {{define "content"}}
-<h3>Session</h3>
+{{ if not .S.ItemID }}
+<div class="alert alert-warning">Session not found. <a href="/sessions">All sessions</a></div>
+{{ else }}
 
-<table class="table table-sm table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">ItemID</td> <td scope="col">{{ .S.ItemID }} </td> </tr>     
-      <tr><td scope="col">Timing</td> <td scope="col">{{ epochToUTCdetailed .S.Timing.Opened }} &nbsp;&rarr;&nbsp; 
-         {{ if eq .S.Timing.Closed 0 }}
-            <span class="badge bg-warning">Session still open</span> </td>   
-         {{ else }} 
-            <b>{{ .TDIFF }}</b> &nbsp;&rarr;&nbsp; {{ epochToUTCdetailed .S.Timing.Closed }}</td>     
-         {{ end }}   
-      </tr> 
-      <tr><td scope="col">#Claims / #Results</td> <td scope="col">{{ len .S.ClaimList }} / {{ len .S.ResultList }}</td> </tr>     
-      <tr><td scope="col">Message</td> <td scope="col">{{ .S.Message }}</td> </tr>     
-
-   </tbody>
-</table>
-
-<hr/>
-
-
-<div class="container-md">
-   <div class="row">
-      <div class="col-md-4">
-
-<canvas id="raChart" ></canvas>
-
-      </div>
-
-      <div class="col-md-8">
-
-         <table class="table table-sm table-striped">
-            <tbody>
-               {{ range .RS }}
-               <tr>
-                  <td><a href="/result/{{.ItemID}}">{{ .RuleName }}</a></td>
-                  <td>
-         {{ template "resultvalue.html" .Result }}
-
-
-                  </td>
-                  <td>{{ epochToUTC .VerifiedAt }}</td>
-               </tr>
-               {{ end }}
-            </tbody>
-         </table>
-
-      </div>
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><i class="fa fa-cogs me-2 text-body-secondary"></i>Session</h3>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .S.ItemID }}</div>
+      {{ if .S.Message }}<div class="j-wrap">{{ .S.Message }}</div>{{ end }}
+   </div>
+   <div class="d-flex flex-wrap gap-2">
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Opened (UTC)</div>
+         <div class="j-num-sm">{{ epochToUTC .S.Timing.Opened }}</div>
+         <div class="small text-body-secondary">{{ if .Open }}<span class="badge bg-warning">Still open</span>{{ else }}closed {{ epochToUTC .S.Timing.Closed }}{{ end }}</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Duration</div>
+         <div class="j-num">{{ if .Duration }}{{ .Duration }}{{ else }}–{{ end }}</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Claims</div>
+         <div class="j-num">{{ len .Claims }}</div>
+         <div class="small {{ if .ClaimErrors }}text-danger{{ else }}text-body-secondary{{ end }}">{{ .ClaimErrors }} errors</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Results</div>
+         <div class="j-num">{{ len .Results }}</div>
+         <div class="small text-body-secondary">
+            <span class="j-swatch oc-pass"></span> {{ .Counts.Pass }}
+            <span class="j-swatch oc-fail ms-1"></span> {{ .Counts.Fail }}
+            <span class="j-swatch oc-other ms-1"></span> {{ .Counts.Other }}
+         </div>
+      </div></div>
    </div>
 </div>
 
-<hr/>
-
-<div class="container-md">
-   <div class="row">
-      <div class="col-md-4">
-
-<canvas id="caChart" ></canvas>
-
-      </div>
-
-      <div class="col-md-8">
-
-         <table class="table table-sm table-striped">
-            <tbody>
-               {{ range .CS }}
-               <tr>
-                  <td><a href="/claim/{{.ItemID}}">{{ .BodyType }}</a></td>
-                       <td><span class="badge bg-dark">{{ .EndpointName }}</span> </td>
-                       <td>{{ epochToUTC .Timing.Requested }}</td>
-                       <td>{{ epochToUTC .Timing.Received }}</td>
-                </tr>
+{{ if or .Elements .Types }}
+<!-- elements attested in this session, beside the result types -->
+<div class="row g-3 mb-3">
+   {{ if .Elements }}
+   <div class="col-12 col-lg">
+      <div class="row row-cols-1 {{ if gt (len .Elements) 1 }}row-cols-xxl-2{{ end }} g-2 h-100">
+         {{ range .Elements }}
+         <div class="col"><div class="card h-100">
+            <div class="card-header py-2 d-flex align-items-center gap-2">
+               <i class="fa fa-server text-body-secondary"></i>
+               <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
+            </div>
+            <div class="card-body p-2 small d-flex flex-column gap-2">
+               {{ if .E.Description }}<div class="text-body-secondary j-desc" title="{{ .E.Description }}">{{ .E.Description }}</div>{{ end }}
+               {{ if .E.Endpoints }}
+               <ul class="list-unstyled mb-0">
+                  {{ range $n, $v := .E.Endpoints }}
+                  <li class="text-truncate" title="{{ $n }}: {{ $v.Protocol }} {{ $v.Endpoint }}">
+                     <span class="fw-semibold">{{ $n }}</span>
+                     <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
+                     <span class="font-monospace text-body-secondary">{{ $v.Endpoint }}</span>
+                  </li>
+                  {{ end }}
+               </ul>
                {{ end }}
-            </tbody>
-         </table>
-
+               {{ if .E.Tags }}<div class="d-flex flex-wrap gap-1">{{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}</div>{{ end }}
+            </div>
+         </div></div>
+         {{ end }}
       </div>
    </div>
-</div>
+   {{ end }}
 
-
-<hr/>
-
-
-
-
-<h5>Footer</h5>
-
-
-<div class="container-fluid">
-   <div class="row">
-      <div class="col-xxl-12">
-
-<table class="table table-xxl table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Hash</th> <td scope="col" style="word-break: break-all;">{{ encodeAsHexString .S.Footer.Hash }}</td> </tr>     
-      <tr><td scope="col">Signature</th> <td scope="col" style="word-break: break-all;">{{ encodeAsHexString .S.Footer.Signature }}</td> </tr>      
-   </tbody>
-</table>
-
+   {{ if .Types }}
+   <div class="col-12 col-lg">
+      <div class="card h-100">
+         <div class="card-header py-2"><i class="fa fa-bar-chart me-1"></i> Result types</div>
+         <div class="card-body">
+            <div class="j-bar j-bar-lg mb-2">
+               {{ range .Types }}<span class="oc-{{ .Class }}" style="width: {{ printf "%.2f" .Pct }}%" title="{{ .Label }}: {{ .Count }}"></span>{{ end }}
+            </div>
+            <div class="d-flex flex-wrap gap-3 small">
+               {{ range .Types }}<span><span class="j-swatch oc-{{ .Class }}"></span> {{ .Label }} <b>{{ .Count }}</b></span>{{ end }}
+            </div>
          </div>
       </div>
+   </div>
+   {{ end }}
 </div>
+{{ end }}
 
+<!-- lists -->
+<ul class="nav nav-tabs" role="tablist">
+   <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-results" type="button" role="tab">Results <span class="badge bg-secondary">{{ len .Results }}</span></button></li>
+   <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-claims" type="button" role="tab">Claims <span class="badge bg-secondary">{{ len .Claims }}</span></button></li>
+   <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-footer" type="button" role="tab">Footer</button></li>
+</ul>
+<div class="tab-content border border-top-0 rounded-bottom p-2 mb-4">
+   <div class="tab-pane fade show active" id="tab-results" role="tabpanel">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover j-list mb-0">
+         <thead><tr><th>Rule</th><th>Element</th><th>Result</th><th>Verified (UTC)</th><th>Message</th><th>Claim</th></tr></thead>
+         <tbody>
+            {{ range .Results }}
+            <tr>
+               <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
+               <td><a href="/element/{{ .ElementID }}">{{ index $.ElementNames .ElementID }}</a></td>
+               <td class="text-nowrap">{{ template "resultvalue.html" .Result }}</td>
+               <td class="text-nowrap">{{ epochToUTC .VerifiedAt }}</td>
+               <td class="small text-body-secondary j-wrap">{{ .Message }}</td>
+               <td><a href="/claim/{{ .ClaimID }}" title="Claim"><i class="fa fa-file-text-o"></i></a></td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="6"><i class="text-body-secondary">No results</i></td></tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
 
-<script>
-var xValues = ["Valid","Error"];
-var yValues = [ {{ .CA.Valid }} , {{ .CA.Errs }}];
-var barColors = [
-  "#32cd32",   
-  "#ff0000"
-];
+   <div class="tab-pane fade" id="tab-claims" role="tabpanel">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover j-list mb-0">
+         <thead><tr><th>Intent</th><th>Element</th><th>Type</th><th>Endpoint</th><th>Requested (UTC)</th><th>Took</th></tr></thead>
+         <tbody>
+            {{ range .Claims }}
+            <tr {{ if eq .BodyType "*ERROR" }}class="j-err"{{ end }}>
+               <td><a href="/claim/{{ .ItemID }}">{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}{{ .BodyType }}{{ end }}</a></td>
+               <td><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a></td>
+               <td>{{ if eq .BodyType "*ERROR" }}<span class="badge bg-danger">Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .BodyType }}</span>{{ end }}</td>
+               <td class="text-nowrap">{{ .Header.EndpointName }} <span class="badge bg-primary-subtle text-primary-emphasis">{{ .Header.Endpoint.Protocol }}</span></td>
+               <td class="text-nowrap">{{ epochToUTC .Header.Timing.Requested }}</td>
+               <td class="text-nowrap">{{ duration .Header.Timing.Requested .Header.Timing.Received }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="6"><i class="text-body-secondary">No claims</i></td></tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
 
-new Chart("caChart", {
-  type: "doughnut",
-  data: {
-    labels: xValues,
-    datasets: [{
-      backgroundColor: barColors,
-      data: yValues
-    }]
-  },
-  options: {
-    title: {
-      display: true,
-      text: "Valid Claims/Errors"
-    }
-  }
-});
-</script>
-
-
-<script>
-var xValues = ["Pass","Fail","VF","VCA","NR","MEV","RCF","U"];
-var yValues = [ {{ .RA.Pass }} ,  {{ .RA.Fail }} ,  {{ .RA.Verifyfail }} ,{{ .RA.Verifycallattempt }},  {{ .RA.Noresult }} , {{ .RA.Missineexpectedvalue }} , {{ .RA.Rulecallfailure }} , {{ .RA.Unsetresultvalue }} ];
-var barColors = [
-  "#32cd32",
-  "#ff0000",
-  "#a9a9a9",
-  "#778899",
-  "#696969",
-  "#708090",
-  "#c4c3d0",
-  "#000000"
-];
-
-
-new Chart("raChart", {
-  type: "doughnut",
-  data: {
-    labels: xValues,
-    datasets: [{
-      backgroundColor: barColors,
-      data: yValues
-    }]
-  },
-  options: {
-    title: {
-      display: true,
-      text: "Result Types"
-    }
-  }
-});
-</script>
-
+   <div class="tab-pane fade j-details" id="tab-footer" role="tabpanel">
+      <table class="table table-sm mb-0">
+         <tbody>
+            <tr><td>Hash</td><td class="font-monospace small">{{ encodeAsHexString .S.Footer.Hash }}</td></tr>
+            <tr><td>Signature</td><td class="font-monospace small">{{ encodeAsHexString .S.Footer.Signature }}</td></tr>
+         </tbody>
+      </table>
+   </div>
+</div>
+{{ end }}
 {{end}}
-

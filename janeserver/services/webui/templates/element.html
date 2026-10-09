@@ -331,7 +331,7 @@
          </tr></thead>
          <tbody>
             {{ range .ListClaims }}
-            <tr {{ if eq .BodyType "*ERROR" }}class="table-danger"{{ end }}>
+            <tr {{ if eq .BodyType "*ERROR" }}class="j-err"{{ end }}>
                <td><a href="/claim/{{ .ItemID }}">{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}{{ .BodyType }}{{ end }}</a></td>
                <td>{{ if eq .BodyType "*ERROR" }}<span class="badge bg-danger">Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .BodyType }}</span>{{ end }}</td>
                <td>{{ .Header.EndpointName }}</td>

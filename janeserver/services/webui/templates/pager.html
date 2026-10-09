@@ -1,0 +1,16 @@
+{{define "pager.html"}}
+<nav class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-2" aria-label="Pages">
+   <small class="text-body-secondary">
+      {{ if .Total }}Showing {{ .From }}–{{ .To }} of {{ .Total }}{{ else }}Nothing to show{{ end }}
+   </small>
+   {{ if .Links }}
+   <ul class="pagination pagination-sm mb-0">
+      {{ range .Links }}
+      <li class="page-item{{ if .Active }} active{{ end }}{{ if .Disabled }} disabled{{ end }}">
+         {{ if .Disabled }}<span class="page-link">{{ .Label }}</span>{{ else }}<a class="page-link" href="{{ .Href }}">{{ .Label }}</a>{{ end }}
+      </li>
+      {{ end }}
+   </ul>
+   {{ end }}
+</nav>
+{{end}}
