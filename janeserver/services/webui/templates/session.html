@@ -37,47 +37,54 @@
    </div>
 </div>
 
-{{ if .Elements }}
-<!-- elements attested in this session -->
-<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2 mb-3">
-   {{ range .Elements }}
-   <div class="col"><div class="card h-100">
-      <div class="card-header py-2 d-flex align-items-center gap-2">
-         <i class="fa fa-server text-body-secondary"></i>
-         <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
-      </div>
-      <div class="card-body p-2 small d-flex flex-column gap-2">
-         {{ if .E.Description }}<div class="text-body-secondary j-desc" title="{{ .E.Description }}">{{ .E.Description }}</div>{{ end }}
-         {{ if .E.Endpoints }}
-         <ul class="list-unstyled mb-0">
-            {{ range $n, $v := .E.Endpoints }}
-            <li class="text-truncate" title="{{ $n }}: {{ $v.Protocol }} {{ $v.Endpoint }}">
-               <span class="fw-semibold">{{ $n }}</span>
-               <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
-               <span class="font-monospace text-body-secondary">{{ $v.Endpoint }}</span>
-            </li>
-            {{ end }}
-         </ul>
+{{ if or .Elements .Types }}
+<!-- elements attested in this session, beside the result types -->
+<div class="row g-3 mb-3">
+   {{ if .Elements }}
+   <div class="col-12 col-lg">
+      <div class="row row-cols-1 {{ if gt (len .Elements) 1 }}row-cols-xxl-2{{ end }} g-2 h-100">
+         {{ range .Elements }}
+         <div class="col"><div class="card h-100">
+            <div class="card-header py-2 d-flex align-items-center gap-2">
+               <i class="fa fa-server text-body-secondary"></i>
+               <a class="fw-semibold text-decoration-none text-truncate" href="/element/{{ .ID }}" title="{{ .Name }}">{{ .Name }}</a>
+            </div>
+            <div class="card-body p-2 small d-flex flex-column gap-2">
+               {{ if .E.Description }}<div class="text-body-secondary j-desc" title="{{ .E.Description }}">{{ .E.Description }}</div>{{ end }}
+               {{ if .E.Endpoints }}
+               <ul class="list-unstyled mb-0">
+                  {{ range $n, $v := .E.Endpoints }}
+                  <li class="text-truncate" title="{{ $n }}: {{ $v.Protocol }} {{ $v.Endpoint }}">
+                     <span class="fw-semibold">{{ $n }}</span>
+                     <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
+                     <span class="font-monospace text-body-secondary">{{ $v.Endpoint }}</span>
+                  </li>
+                  {{ end }}
+               </ul>
+               {{ end }}
+               {{ if .E.Tags }}<div class="d-flex flex-wrap gap-1">{{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}</div>{{ end }}
+            </div>
+         </div></div>
          {{ end }}
-         {{ if .E.Tags }}<div class="d-flex flex-wrap gap-1">{{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}</div>{{ end }}
-      </div>
-   </div></div>
-   {{ end }}
-</div>
-{{ end }}
-
-{{ if .Types }}
-<!-- result types -->
-<div class="card mb-3">
-   <div class="card-header py-2"><i class="fa fa-bar-chart me-1"></i> Result types</div>
-   <div class="card-body">
-      <div class="j-bar j-bar-lg mb-2">
-         {{ range .Types }}<span class="oc-{{ .Class }}" style="width: {{ printf "%.2f" .Pct }}%" title="{{ .Label }}: {{ .Count }}"></span>{{ end }}
-      </div>
-      <div class="d-flex flex-wrap gap-3 small">
-         {{ range .Types }}<span><span class="j-swatch oc-{{ .Class }}"></span> {{ .Label }} <b>{{ .Count }}</b></span>{{ end }}
       </div>
    </div>
+   {{ end }}
+
+   {{ if .Types }}
+   <div class="col-12 col-lg">
+      <div class="card h-100">
+         <div class="card-header py-2"><i class="fa fa-bar-chart me-1"></i> Result types</div>
+         <div class="card-body">
+            <div class="j-bar j-bar-lg mb-2">
+               {{ range .Types }}<span class="oc-{{ .Class }}" style="width: {{ printf "%.2f" .Pct }}%" title="{{ .Label }}: {{ .Count }}"></span>{{ end }}
+            </div>
+            <div class="d-flex flex-wrap gap-3 small">
+               {{ range .Types }}<span><span class="j-swatch oc-{{ .Class }}"></span> {{ .Label }} <b>{{ .Count }}</b></span>{{ end }}
+            </div>
+         </div>
+      </div>
+   </div>
+   {{ end }}
 </div>
 {{ end }}
 

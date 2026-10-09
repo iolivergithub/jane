@@ -371,6 +371,9 @@ func TestRenderStructurePages(t *testing.T) {
 		{"sessions", "sessions.html", buildSessionsPage(pg("2", int64(len(ss)), "/sessions"), ss[100:], cs, rs), []string{"Showing 101–149 of 149", `href="/sessions?page=1"`}},
 		{"sessions-empty", "sessions.html", buildSessionsPage(pg("", 0, "/sessions"), nil, nil, nil), []string{"No sessions yet"}},
 		{"session", "session.html", buildSessionPage(sess["sess-149"], s2cs, s2rs, lk()), []string{"Result types", "Still open", e.Name}},
+		{"session-two-elements", "session.html", buildSessionPage(sess["sess-149"], s2cs, append(append([]structures.Result{}, s2rs...),
+			structures.Result{ItemID: "r-db", RuleName: "db_policy", ElementID: "e-db", Result: structures.MissingExpectedValue, Session: structures.Session{ItemID: "sess-149"}}), twoElements(e, in, evs)),
+			[]string{"db-server-02", "Database server", "Missing expected value"}},
 		{"session-missing", "session.html", buildSessionPage(structures.Session{}, nil, nil, lk()), []string{"Session not found"}},
 		{"claims", "claims.html", buildClaimsPage(pg("1", int64(len(cs)), "/claims"), cs[:100]), []string{"Showing 1–100 of 600", "errors on this page"}},
 		{"claim-quote", "claim.html", buildClaimPage(quote, claimResults), []string{"PCR Digest", "Results from this claim", "ff544347"}},
@@ -411,4 +414,19 @@ func TestRenderStructurePages(t *testing.T) {
 			os.WriteFile(dir+"/"+p.name+".html", []byte(out), 0o644)
 		}
 	}
+}
+
+// twoElements resolves the fixture element plus a second, database server element.
+func twoElements(e structures.Element, in structures.Intent, evs map[string]structures.ExpectedValue) *lookups {
+	calls := 0
+	lk := testLookups(e, in, evs, &calls)
+	lk.Element = func(id string) (structures.Element, bool) {
+		if id == "e-db" {
+			return structures.Element{ItemID: "e-db", Name: "db-server-02", Description: "Database server, rack 2",
+				Endpoints: map[string]structures.Endpoint{"tarzan": {Endpoint: "http://10.0.0.42:8530", Protocol: "A10HTTPRESTv2"}},
+				Tags:      []string{"db", "prod"}}, true
+		}
+		return e, id == e.ItemID
+	}
+	return lk
 }
