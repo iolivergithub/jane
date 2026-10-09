@@ -14,8 +14,11 @@ import (
 )
 
 func init() {
-	// put the go3270 library in debug mode
-	go3270.Debug = os.Stderr
+	// The go3270 debug output shows every datastream, including the data on
+	// screen, so it is only switched on when asked for.
+	if os.Getenv("JANE_X3270_DEBUG") != "" {
+		go3270.Debug = os.Stderr
+	}
 }
 
 func StartX3270(ctx context.Context) {
@@ -75,29 +78,22 @@ func StartX3270(ctx context.Context) {
 	}
 }
 
-// handle is the handler for individual user connections.
+// handle runs one user's 3270 session: telnet negotiation, then the screens,
+// starting from the primary option menu.
 func handle(conn net.Conn) {
 	defer conn.Close()
+	serve(conn, dbStore{})
+}
 
-	// Always begin new connection by negotiating the telnet options
-	go3270.NegotiateTelnet(conn)
-
-	fieldValues := make(map[string]string)
-
-	response, err := go3270.HandleScreen(
-		titlescreen,                   // the screen to display
-		titlescreenrules,              // the rules to enforce
-		fieldValues,                   // any field values we wish to supply
-		[]go3270.AID{go3270.AIDEnter}, // the AID keys we support
-		[]go3270.AID{go3270.AIDPF3},   // keys that are "exit" keys
-		"errormsg",                    // the field to write error message into
-		4, 20,                         // the row and column to place the cursor
-		conn)
+// serve negotiates tn3270 on conn and runs the screens against s.
+func serve(conn net.Conn, s store) {
+	dev, err := go3270.NegotiateTelnet(conn)
 	if err != nil {
-		fmt.Printf("X3270 handle screen error %v\n", err.Error())
-		fmt.Println(err)
+		fmt.Printf("X3270 telnet negotiation failed from %v: %v\n", conn.RemoteAddr(), err)
 		return
 	}
 
-	fmt.Printf("Connection closed %v \n", response)
+	if err := go3270.RunTransactions(conn, dev, menuTx(s), nil); err != nil {
+		fmt.Printf("X3270 session from %v ended: %v\n", conn.RemoteAddr(), err)
+	}
 }
