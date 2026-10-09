@@ -13,7 +13,9 @@ import (
 
 var base = time.Date(2026, 10, 9, 8, 0, 0, 0, time.UTC).UnixNano()
 
-func ts(min int) structures.Timestamp { return structures.Timestamp(base + int64(min)*int64(time.Minute)) }
+func ts(min int) structures.Timestamp {
+	return structures.Timestamp(base + int64(min)*int64(time.Minute))
+}
 
 // fixture: nSessions sessions, 20 minutes apart; returns claims & results newest first
 func fixture(nSessions int) (structures.Element, []structures.Claim, []structures.Result, map[string]structures.Session) {
@@ -142,8 +144,10 @@ func TestBuildElementPage(t *testing.T) {
 func TestRenderElementPage(t *testing.T) {
 	T := "templates/"
 	fm := template.FuncMap{
-		"epochToUTC":         func(e structures.Timestamp) string { return time.Unix(0, int64(e)).UTC().Format("2006-01-02 15:04:05") },
-		"epochToUTCdetailed": func(e structures.Timestamp) string { return time.Unix(0, int64(e)).UTC().Format("2006-01-02 15:04:05.0000000") },
+		"epochToUTC": func(e structures.Timestamp) string { return time.Unix(0, int64(e)).UTC().Format("2006-01-02 15:04:05") },
+		"epochToUTCdetailed": func(e structures.Timestamp) string {
+			return time.Unix(0, int64(e)).UTC().Format("2006-01-02 15:04:05.0000000")
+		},
 	}
 	tmpl := template.Must(template.New("element.html").Funcs(fm).ParseFiles(T+"element.html", T+"base.html",
 		T+"uefi.html", T+"txt.html", T+"ima.html", T+"tpm2.html", T+"tpm2key.html",
