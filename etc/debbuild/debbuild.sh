@@ -121,12 +121,12 @@ dpkg-deb --root-owner-group --build tarzan
 echo "${BLUE}Build complete${NC}"
 
 echo "${BLUE}Just making sure there are no old files about...there should be errors here from rm${NC}"
-rm jane_${JANEDEBNAME}.deb
-rm tarzan_${TARZANDEBNAME}.deb
+rm ${JANEDEBNAME}.deb
+rm ${TARZANDEBNAME}.deb
 
 echo "${BLUE}Renaming tarzan and jane to something saner${NC}"
-mv jane.deb jane_${JANEDEBNAME}.deb
-mv tarzan.deb tarzan_${TARZANDEBNAME}.deb
+mv jane.deb ${JANEDEBNAME}.deb
+mv tarzan.deb ${TARZANDEBNAME}.deb
 
 echo "${BLUE}Here you go${NC}"
 ls -l ${JANEDEBNAME}.deb
