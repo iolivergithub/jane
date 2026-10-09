@@ -23,11 +23,14 @@ func fixture(nSessions int) (structures.Element, []structures.Claim, []structure
 		Tags: []string{"lab", "x86"}, Endpoints: map[string]structures.Endpoint{
 			"tarzan": {Endpoint: "http://10.0.0.21:8530", Protocol: "A10HTTPRESTv2"},
 			"ratsd":  {Endpoint: "http://10.0.0.21:8853", Protocol: "RATSD"}},
-		Host: structures.HostMachine{OS: "linux", Arch: "amd64", Hostname: "edge-gw-01", MachineID: "4f1c9a0b"},
+		Host: structures.HostMachine{OS: "linux", Arch: "amd64", Hostname: "edge-gw-01", MachineID: "4f1c9a0b7e2d4c61a8b9e0f1d2c3b4a5-long-machine-identifier"},
 	}
 	e.TPM2.Device = "/dev/tpmrm0"
 	e.TPM2.EKCertHandle = "0x01c00002"
 	e.TPM2.EK.Handle, e.TPM2.AK.Handle = "0x810100EE", "0x810100AA"
+	e.TPM2.EK.Public = strings.Repeat("0123456789abcdef", 20)
+	e.TPM2.AK.Public = strings.Repeat("fedcba9876543210", 12)
+	e.TXT.Log = "/sys/kernel/security/txt/a/very/long/path/to/the/intel/txt/event/log/binary_measurements"
 	e.UEFI.Eventlog = "/sys/kernel/security/tpm0/binary_bios_measurements"
 	e.IMA.ASCIILog = "/sys/kernel/security/ima/ascii_runtime_measurements"
 	e.RecordHistory.Created = ts(-5000)
@@ -131,8 +134,21 @@ func TestBuildElementPage(t *testing.T) {
 		t.Fatal("totals")
 	}
 
+	// lists are capped; totals are not
+	if len(p.ListSessions) != 40 || len(p.ListResults) != elementListLimit || len(p.ListClaims) != elementListLimit {
+		t.Fatalf("list caps: sessions=%d results=%d claims=%d", len(p.ListSessions), len(p.ListResults), len(p.ListClaims))
+	}
+	if len(p.RS) != len(rs) || len(p.CS) != len(cs) || p.ListResults[0].ItemID != rs[0].ItemID {
+		t.Fatal("capped lists must keep totals and start with the newest")
+	}
+	e2, cs2, rs2, sess2 := fixture(150)
+	big := buildElementPage(e2, cs2, rs2, lookupIn(sess2))
+	if len(big.Sessions) != 150 || len(big.ListSessions) != elementListLimit || big.ListSessions[0].ID != "sess-149" {
+		t.Fatalf("session cap: %d listed of %d", len(big.ListSessions), len(big.Sessions))
+	}
+
 	empty := buildElementPage(e, nil, nil, lookupIn(sess))
-	if len(empty.Sessions) != 0 || empty.Latest != nil || empty.Timeline != nil {
+	if len(empty.Sessions) != 0 || empty.Latest != nil || empty.Timeline != nil || len(empty.ListResults) != 0 {
 		t.Fatal("empty element")
 	}
 	nolookup := buildElementPage(e, cs[:8], rs[:12], nil)
@@ -168,6 +184,13 @@ func TestRenderElementPage(t *testing.T) {
 		}
 		if name == "full" && (!strings.Contains(b.String(), `"sessionIds":["sess-10"`) || strings.Contains(b.String(), "ZgotmplZ")) {
 			t.Fatalf("chart json or unsafe value in output")
+		}
+		if name == "full" {
+			out := b.String()
+			if !strings.Contains(out, "Showing the latest 100 of 236 results") || !strings.Contains(out, "Showing the latest 100 of 160 claims") ||
+				strings.Contains(out, "of 40 sessions") {
+				t.Fatal("list truncation notes wrong")
+			}
 		}
 	}
 }
