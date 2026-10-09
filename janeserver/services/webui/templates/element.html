@@ -1,139 +1,370 @@
 {{define "content"}}
-<h3>{{.E.Name}}</h3>
-<div class="row">
-   <div class="col-sm-6 border border-primary rounded">
-      <table class="table table-md table-striped">
-         <tbody>
-            <tr><td scope="col">ItemID</td> <td scope="col">{{ .E.ItemID }}</td> </tr>
-            <tr><td scope="col">Description</td> <td scope="col">{{ .E.Description }}</td> </tr>        
-            <tr><td scope="col">Tags</td> <td scope="col">{{ range .E.Tags }}
-            <span class="badge bg-secondary"> {{ . }} </span>
-         {{end}}</td> </tr>
-      </tbody>
-   </table>
-   <hr/>
-   <table class="table table-md table-striped">
-      <tbody>
-         {{ range $i, $v := .E.Endpoints }}
-         <tr>
-            <td>{{ $i }}</td><td> <span class="badge bg-secondary"> {{ $v.Protocol }} </span></td><td> <a href="{{ $v.Endpoint }}">{{ $v.Endpoint }}</a></td>
-         </tr>
-         {{end}}
-      </tbody>
-   </table>
-   
-</div>
-<div class="col-sm-6 border border-primary rounded">
-   #Sessions
-   #Resuts
-   #Claims
-</div>
-</div>
-<hr/>
+<style>
+   .ev-tile { min-width: 9rem; }
+   .ev-tile .ev-num { font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
+   .ev-card .table { margin-bottom: 0; }
+   .ev-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: baseline; }
+   .oc-pass     { background: var(--bs-success); }
+   .oc-fail     { background: var(--bs-danger); }
+   .oc-other    { background: var(--bs-warning); }
+   .oc-claim    { background: var(--bs-info); }
+   .oc-claimerr { background: var(--bs-danger); background-image: repeating-linear-gradient(45deg, transparent 0 2px, rgba(0,0,0,.35) 2px 4px); }
 
+   /* history matrix */
+   .mx-wrap { overflow-x: auto; }
+   .mx { border-collapse: separate; border-spacing: 2px; font-size: .8rem; }
+   .mx th.mx-label { position: sticky; left: 0; z-index: 1; background: var(--bs-body-bg);
+                     font-weight: normal; text-align: right; padding-right: .5rem; white-space: nowrap;
+                     max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+   .mx th.mx-group { position: sticky; left: 0; background: var(--bs-body-bg); text-align: left;
+                     padding-top: .5rem; color: var(--bs-secondary-color); font-weight: 600; }
+   .mx th.mx-col { font-weight: normal; vertical-align: bottom; padding: 0; }
+   .mx th.mx-col a { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .7rem;
+                     color: var(--bs-secondary-color); text-decoration: none; font-family: var(--bs-font-monospace); }
+   .mx th.mx-col a:hover { color: var(--bs-body-color); }
+   .mx td { width: 14px; height: 14px; padding: 0; }
+   .mx td a, .mx td span { display: block; width: 14px; height: 14px; border-radius: 2px; }
+   .mx td a:hover { outline: 2px solid var(--bs-body-color); }
+   .mx td .mx-none, .ev-swatch.oc-none { background: transparent; box-shadow: inset 0 0 0 1px var(--bs-border-color); }
 
-<div class="row">
-<div class="col-sm-4 border border-primary rounded">
-   {{ if not .E.TPM2.Device }}
-   <i>No TPM device present</i>
-   {{ else }}
-   {{ template "tpm2.html" .E.TPM2 }}
-   {{ end }}
+   /* inline stacked bar in the sessions list */
+   .ev-bar { display: flex; gap: 2px; width: 8rem; height: 8px; }
+   .ev-bar > span { border-radius: 2px; }
+   .ev-list td { vertical-align: middle; }
+</style>
+
+{{ $p := . }}
+
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><i class="fa fa-server me-2 text-body-secondary"></i>{{ .E.Name }}</h3>
+      <div class="small text-body-secondary font-monospace mb-1">{{ .E.ItemID }}</div>
+      {{ if .E.Description }}<div class="mb-2">{{ .E.Description }}</div>{{ end }}
+      <div class="d-flex flex-wrap gap-1">
+         {{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}
+         {{ if .E.TPM2.Device }}<span class="badge text-bg-success">TPM2</span>{{ end }}
+         {{ if .E.UEFI.Eventlog }}<span class="badge text-bg-info">UEFI</span>{{ end }}
+         {{ if .E.IMA.ASCIILog }}<span class="badge text-bg-warning">IMA</span>{{ end }}
+         {{ if .E.TXT.Log }}<span class="badge text-bg-danger">TXT</span>{{ end }}
+         {{ if .E.Sshkey.Key }}<span class="badge text-bg-secondary">SSH</span>{{ end }}
+      </div>
+   </div>
+
+   <div class="d-flex flex-wrap gap-2">
+      <div class="card ev-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Latest session</div>
+         {{ with .Latest }}
+            {{ $o := .Outcome }}
+            {{ if eq $o "pass" }}<div class="ev-num text-success"><i class="fa fa-check-circle"></i> Passed</div>
+            {{ else if eq $o "fail" }}<div class="ev-num text-danger"><i class="fa fa-times-circle"></i> Failed</div>
+            {{ else if eq $o "other" }}<div class="ev-num text-warning"><i class="fa fa-exclamation-triangle"></i> Incomplete</div>
+            {{ else }}<div class="ev-num text-body-secondary"><i class="fa fa-question-circle"></i> No results</div>{{ end }}
+            <a class="small text-body-secondary" href="/session/{{ .ID }}">{{ if .Opened }}{{ epochToUTC .Opened }} UTC{{ else }}view session{{ end }}</a>
+         {{ else }}
+            <div class="ev-num text-body-secondary">None</div>
+            <a class="small" href="/attest">Attest now</a>
+         {{ end }}
+      </div></div>
+      <div class="card ev-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Sessions</div>
+         <div class="ev-num">{{ len .Sessions }}</div>
+      </div></div>
+      <div class="card ev-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Claims</div>
+         <div class="ev-num">{{ len .CS }}</div>
+         <div class="small {{ if .NClaimErrors }}text-danger{{ else }}text-body-secondary{{ end }}">{{ .NClaimErrors }} errors</div>
+      </div></div>
+      <div class="card ev-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Results</div>
+         <div class="ev-num">{{ len .RS }}</div>
+         <div class="small text-body-secondary">
+            <span class="ev-swatch oc-pass"></span> {{ .NPass }}
+            <span class="ev-swatch oc-fail ms-1"></span> {{ .NFail }}
+            <span class="ev-swatch oc-other ms-1"></span> {{ .NOther }}
+         </div>
+      </div></div>
+   </div>
 </div>
 
-<div class="col-sm-4 border border-primary rounded">
-   {{ if not .E.RecordHistory }}
-   <i>No record history</i>
-   {{ else }}
-   {{ template "recordhistory.html" .E.RecordHistory }}
-   {{ end }}   
+<!-- element details -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 mb-3">
+   <div class="col"><div class="card h-100 ev-card">
+      <div class="card-header py-2"><i class="fa fa-plug me-1"></i> Endpoints</div>
+      <div class="card-body p-2">
+         {{ if .E.Endpoints }}
+         <ul class="list-unstyled mb-0">
+            {{ range $i, $v := .E.Endpoints }}
+            <li class="mb-2">
+               <div class="d-flex align-items-center gap-2">
+                  <span class="fw-semibold">{{ $i }}</span>
+                  <span class="badge bg-primary-subtle text-primary-emphasis">{{ $v.Protocol }}</span>
+               </div>
+               <a class="font-monospace small d-block text-truncate" href="{{ $v.Endpoint }}" title="{{ $v.Endpoint }}">{{ $v.Endpoint }}</a>
+            </li>
+            {{ end }}
+         </ul>
+         {{ else }}<i class="text-body-secondary">No endpoints</i>{{ end }}
+      </div>
+   </div></div>
+
+   <div class="col"><div class="card h-100 ev-card">
+      <div class="card-header py-2"><i class="fa fa-desktop me-1"></i> Host &amp; logs</div>
+      <div class="card-body p-2">
+         {{ if or .E.Host.Arch .E.Host.Hostname }}
+            {{ template "hostinformation.html" .E.Host }}
+         {{ else }}<p class="mb-2"><i class="text-body-secondary">No host information specified</i></p>{{ end }}
+         <ul class="list-unstyled small mb-0 mt-2">
+            <li>{{ if .E.UEFI.Eventlog }}<i class="fa fa-check text-success"></i> UEFI <span class="font-monospace text-body-secondary text-break">{{ .E.UEFI.Eventlog }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No UEFI log</i>{{ end }}</li>
+            <li>{{ if .E.IMA.ASCIILog }}<i class="fa fa-check text-success"></i> IMA <span class="font-monospace text-body-secondary text-break">{{ .E.IMA.ASCIILog }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No IMA log</i>{{ end }}</li>
+            <li>{{ if .E.TXT.Log }}<i class="fa fa-check text-success"></i> TXT <span class="font-monospace text-body-secondary text-break">{{ .E.TXT.Log }}</span>{{ else }}<i class="fa fa-minus text-body-secondary"></i> <i class="text-body-secondary">No TXT log</i>{{ end }}</li>
+         </ul>
+      </div>
+   </div></div>
+
+   <div class="col"><div class="card h-100 ev-card">
+      <div class="card-header py-2"><i class="fa fa-microchip me-1"></i> TPM2</div>
+      <div class="card-body p-2">
+         {{ if .E.TPM2.Device }}{{ template "tpm2.html" .E.TPM2 }}{{ else }}<i class="text-body-secondary">No TPM device present</i>{{ end }}
+      </div>
+   </div></div>
+
+   <div class="col"><div class="card h-100 ev-card">
+      <div class="card-header py-2"><i class="fa fa-history me-1"></i> Record history</div>
+      <div class="card-body p-2">
+         {{ if .E.RecordHistory.Created }}{{ template "recordhistory.html" .E.RecordHistory }}{{ else }}<i class="text-body-secondary">No record history</i>{{ end }}
+      </div>
+   </div></div>
 </div>
 
-<div class="col-sm-4 border border-primary rounded">
-   {{ if not .E.Host.Arch }}
-   <ul>
-      <li><i>No host information specified</i>
-      </li>
-   </ul>
-   {{ else }}
-   {{ template "hostinformation.html" .E.Host }}
-   {{ end }}
-   <hr/>
-   <ul>
-      {{ if not .E.UEFI.Eventlog }}
-      <li><i>No UEFI log specified</i></li>
-      {{ else }}
-      <li><span data-bs-toggle="tooltip" title="{{ .E.UEFI.Eventlog }}">UEFI Present</span></li>
-      {{ end }}
-      {{ if not .E.IMA.ASCIILog }}
-      <li><i>No IMA log specified</i></li>
-      {{ else }}
-      <li><span data-bs-toggle="tooltip" title="{{ .E.IMA.ASCIILog }}">Linux IMA Present</span></li>
-      {{ end }}
-      {{ if not .E.TXT.Log }}
-      <li><i>No TXT log specified</i></li>
-      {{ else }}
-      <li><span data-bs-toggle="tooltip" title="{{ .E.TXT.Log }}">Intel TXT Present</span></li>
-      {{ end }}
-   </ul>
+{{ if .Timeline }}
+<!-- timeline -->
+<div class="card mb-3">
+   <div class="card-header py-2 d-flex flex-wrap align-items-center gap-3">
+      <span><i class="fa fa-line-chart me-1"></i> Timeline <span class="text-body-secondary small">— last {{ len .Timeline }} sessions, oldest → newest (UTC). Click a bar to open the session.</span></span>
+   </div>
+   <div class="card-body">
+      <div class="d-flex flex-wrap gap-3 small mb-1">
+         <span class="fw-semibold">Results per session</span>
+         <span><span class="ev-swatch oc-pass"></span> Pass</span>
+         <span><span class="ev-swatch oc-fail"></span> Fail</span>
+         <span><span class="ev-swatch oc-other"></span> Other (no result / error)</span>
+      </div>
+      <div style="position: relative; height: 200px"><canvas id="resultsChart" aria-label="Results per session" role="img"></canvas></div>
+
+      <div class="d-flex flex-wrap gap-3 small mt-3 mb-1">
+         <span class="fw-semibold">Claims per session</span>
+         <span><span class="ev-swatch oc-claim"></span> Collected</span>
+         <span><span class="ev-swatch oc-claimerr"></span> Error</span>
+      </div>
+      <div style="position: relative; height: 130px"><canvas id="claimsChart" aria-label="Claims per session" role="img"></canvas></div>
+   </div>
 </div>
-</div>
-<!-- old stuff from here -->
-<hr/>
-<div class="row">
-<div class="col-sm-6 border border-secondary rounded">
-   <h5>Results</h5>
-   <table class="table table-striped table-xxl table-condensed">
-      <thead>
-         <tr>
-            <th scope="col">RuleName</th>
-            <th scope="col">VerifiedAt</th>
-            <th scope="col">Result</th>
-            
-         </tr>
-      </thead>
-      <tbody>
-         {{ range .RS }}
-         <tr>
-            <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
-            <td>{{ epochToUTC .VerifiedAt }}</td>
-            <td>
-               {{ template "resultvalue.html" .Result }}
-            </td>
-         </tr>
-         {{end}}
-      </tbody>
-   </table>
-   <hr/>
-</div>
-<div class="col-sm-6 border border-secondary rounded">
-   <h5>Claims</h5>
-   <table class="table table-striped table-xxl table-condensed">
-      <thead>
-         <tr>
-            <th scope="col">Type</th>
-            <th scope="col">Endpoint</th>
-            <th scope="col">Requested</th>
-            <th scope="col">Intent</th>
-            <th scope="col"></th>
-         </tr>
-      </thead>
-      <tbody>
-         {{ range .CS }}
-         {{ if eq .BodyType "*ERROR"}}
-         <tr class="table-danger">
-            {{else}}
+
+<!-- history matrix -->
+<div class="card mb-3">
+   <div class="card-header py-2 d-flex flex-wrap align-items-center gap-3">
+      <span><i class="fa fa-th me-1"></i> History <span class="text-body-secondary small">— each rule and claim across the same sessions</span></span>
+      <span class="small ms-auto d-flex flex-wrap gap-3">
+         <span><span class="ev-swatch oc-pass"></span> Pass</span>
+         <span><span class="ev-swatch oc-fail"></span> Fail</span>
+         <span><span class="ev-swatch oc-other"></span> Other</span>
+         <span><span class="ev-swatch oc-claim"></span> Claim</span>
+         <span><span class="ev-swatch oc-claimerr"></span> Claim error</span>
+         <span><span class="ev-swatch oc-none"></span> Not run</span>
+      </span>
+   </div>
+   <div class="card-body mx-wrap">
+      <table class="mx">
+         <thead>
             <tr>
-               {{end}}
-               <td><a href="/claim/{{ .ItemID }}">{{ .BodyType }}</a></td>
-               <td>{{ .Header.EndpointName }}</td>
-               <td>{{ epochToUTC .Header.Timing.Requested }}</td>
-               <td>{{ .Header.Intent.Name }}</td>
-               <td><a href=/session/{{ .Header.Session.ItemID }}><i class="fa fa-cogs"></i></a></td>
-               {{end}}
+               <th class="mx-label"></th>
+               {{ range .Timeline }}<th class="mx-col"><a href="/session/{{ .ID }}" title="Session {{ .ID }}">{{ .Label }}</a></th>{{ end }}
             </tr>
+         </thead>
+         {{ if .RuleRows }}
+         <tbody>
+            <tr><th class="mx-group" colspan="999">Rules</th></tr>
+            {{ range .RuleRows }}
+            <tr>
+               <th class="mx-label" title="{{ .Label }}">{{ .Label }}</th>
+               {{ range .Cells }}<td>{{ if .Outcome }}<a href="{{ .Link }}" class="oc-{{ .Outcome }}" title="{{ .Title }}"></a>{{ else }}<span class="mx-none"></span>{{ end }}</td>{{ end }}
+            </tr>
+            {{ end }}
          </tbody>
+         {{ end }}
+         {{ if .ClaimRows }}
+         <tbody>
+            <tr><th class="mx-group" colspan="999">Claims (intent)</th></tr>
+            {{ range .ClaimRows }}
+            <tr>
+               <th class="mx-label" title="{{ .Label }}">{{ .Label }}</th>
+               {{ range .Cells }}<td>{{ if .Outcome }}<a href="{{ .Link }}" class="oc-{{ .Outcome }}" title="{{ .Title }}"></a>{{ else }}<span class="mx-none"></span>{{ end }}</td>{{ end }}
+            </tr>
+            {{ end }}
+         </tbody>
+         {{ end }}
       </table>
    </div>
 </div>
+{{ else }}
+<div class="alert alert-secondary">This element has not been attested yet. <a href="/attest">Run an attestation</a>.</div>
+{{ end }}
+
+<!-- lists -->
+<ul class="nav nav-tabs" role="tablist">
+   <li class="nav-item" role="presentation">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-sessions" type="button" role="tab">Sessions <span class="badge bg-secondary">{{ len .Sessions }}</span></button>
+   </li>
+   <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-results" type="button" role="tab">Results <span class="badge bg-secondary">{{ len .RS }}</span></button>
+   </li>
+   <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-claims" type="button" role="tab">Claims <span class="badge bg-secondary">{{ len .CS }}</span></button>
+   </li>
+</ul>
+<div class="tab-content border border-top-0 rounded-bottom p-2 mb-4">
+   <div class="tab-pane fade show active" id="tab-sessions" role="tabpanel">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover ev-list mb-0">
+         <thead><tr>
+            <th>Opened (UTC)</th><th>Duration</th><th>Verdict</th><th>Results</th><th>Claims</th><th>Message</th>
+         </tr></thead>
+         <tbody>
+            {{ range .Sessions }}
+            {{ $o := .Outcome }}
+            <tr>
+               <td class="text-nowrap"><a href="/session/{{ .ID }}">{{ if .Opened }}{{ epochToUTC .Opened }}{{ else }}{{ .ID }}{{ end }}</a></td>
+               <td class="text-nowrap">{{ if .Duration }}{{ .Duration }}{{ else if and .Found (not .Closed) }}<span class="badge bg-warning">Open</span>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+               <td>
+                  {{ if eq $o "pass" }}<span class="badge bg-success"><i class="fa fa-check"></i> Pass</span>
+                  {{ else if eq $o "fail" }}<span class="badge bg-danger"><i class="fa fa-times"></i> Fail</span>
+                  {{ else if eq $o "other" }}<span class="badge bg-warning"><i class="fa fa-exclamation"></i> Incomplete</span>
+                  {{ else }}<span class="badge bg-secondary">No results</span>{{ end }}
+               </td>
+               <td class="text-nowrap">
+                  <div class="d-flex align-items-center gap-2">
+                     <div class="ev-bar" title="{{ .Pass }} pass, {{ .Fail }} fail, {{ .Other }} other">
+                        {{ if .Pass }}<span class="oc-pass" style="width: {{ printf "%.1f" .PassPct }}%"></span>{{ end }}
+                        {{ if .Fail }}<span class="oc-fail" style="width: {{ printf "%.1f" .FailPct }}%"></span>{{ end }}
+                        {{ if .Other }}<span class="oc-other" style="width: {{ printf "%.1f" .OtherPct }}%"></span>{{ end }}
+                     </div>
+                     <span class="small text-body-secondary">{{ .Pass }} / {{ .Fail }} / {{ .Other }}</span>
+                  </div>
+               </td>
+               <td>{{ len .Claims }}{{ if .ClaimErrors }} <span class="badge bg-danger">{{ .ClaimErrors }} err</span>{{ end }}</td>
+               <td class="small text-body-secondary">{{ .Message }}</td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="6"><i class="text-body-secondary">No sessions</i></td></tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
+
+   <div class="tab-pane fade" id="tab-results" role="tabpanel">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover ev-list mb-0">
+         <thead><tr>
+            <th>Rule</th><th>Verified (UTC)</th><th>Result</th><th>Message</th><th>Links</th>
+         </tr></thead>
+         <tbody>
+            {{ range .RS }}
+            <tr>
+               <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
+               <td class="text-nowrap">{{ epochToUTC .VerifiedAt }}</td>
+               <td>{{ template "resultvalue.html" .Result }}</td>
+               <td class="small text-body-secondary">{{ .Message }}</td>
+               <td class="text-nowrap"><a href="/claim/{{ .ClaimID }}" title="Claim">C</a> | <a href="/session/{{ .Session.ItemID }}" title="Session">S</a></td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="5"><i class="text-body-secondary">No results</i></td></tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
+
+   <div class="tab-pane fade" id="tab-claims" role="tabpanel">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover ev-list mb-0">
+         <thead><tr>
+            <th>Intent</th><th>Type</th><th>Endpoint</th><th>Requested (UTC)</th><th>Session</th>
+         </tr></thead>
+         <tbody>
+            {{ range .CS }}
+            <tr {{ if eq .BodyType "*ERROR" }}class="table-danger"{{ end }}>
+               <td><a href="/claim/{{ .ItemID }}">{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}{{ .BodyType }}{{ end }}</a></td>
+               <td>{{ if eq .BodyType "*ERROR" }}<span class="badge bg-danger">Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis">{{ .BodyType }}</span>{{ end }}</td>
+               <td>{{ .Header.EndpointName }}</td>
+               <td class="text-nowrap">{{ epochToUTC .Header.Timing.Requested }}</td>
+               <td><a href="/session/{{ .Header.Session.ItemID }}"><i class="fa fa-cogs"></i></a></td>
+            </tr>
+            {{ else }}
+            <tr><td colspan="5"><i class="text-body-secondary">No claims</i></td></tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
+</div>
+
+{{ if .Timeline }}
+<script>
+(function () {
+   if (typeof Chart === 'undefined') return;
+   var data = {{ .Chart }};
+   var css = getComputedStyle(document.documentElement);
+   function v(name) { return css.getPropertyValue(name).trim(); }
+   var surface = v('--bs-body-bg'), ink = v('--bs-secondary-color'), grid = v('--bs-border-color');
+
+   Chart.defaults.global.defaultFontColor = ink;
+   Chart.defaults.global.defaultFontFamily = v('--bs-body-font-family');
+
+   function ds(label, values, color) {
+      // 1px surface-coloured border keeps a visible gap between stacked segments
+      return { label: label, data: values, backgroundColor: color, borderColor: surface, borderWidth: 1,
+               barPercentage: 0.85, categoryPercentage: 0.9 };
+   }
+   function options() {
+      return {
+         maintainAspectRatio: false,
+         legend: { display: false },  // labelled legends are rendered in HTML above each chart
+         tooltips: { mode: 'index', intersect: false,
+                     callbacks: { title: function (items) { return 'Session ' + items[0].label + ' UTC'; } } },
+         hover: { mode: 'index', intersect: false },
+         scales: {
+            xAxes: [{ stacked: true, gridLines: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12 } }],
+            yAxes: [{ stacked: true, gridLines: { color: grid, zeroLineColor: grid, drawBorder: false },
+                      ticks: { beginAtZero: true, precision: 0, maxTicksLimit: 5 } }]
+         },
+         onClick: function (evt, items) {
+            if (items && items.length) { window.location = '/session/' + data.sessionIds[items[0]._index]; }
+         },
+         onHover: function (evt, items) { evt.target.style.cursor = items && items.length ? 'pointer' : 'default'; }
+      };
+   }
+
+   new Chart(document.getElementById('resultsChart'), {
+      type: 'bar',
+      data: { labels: data.labels, datasets: [
+         ds('Pass', data.pass, v('--bs-success')),
+         ds('Fail', data.fail, v('--bs-danger')),
+         ds('Other', data.other, v('--bs-warning'))
+      ]},
+      options: options()
+   });
+
+   new Chart(document.getElementById('claimsChart'), {
+      type: 'bar',
+      data: { labels: data.labels, datasets: [
+         ds('Collected', data.claims, v('--bs-info')),
+         ds('Error', data.claimErr, v('--bs-danger'))
+      ]},
+      options: options()
+   });
+})();
+</script>
+{{ end }}
 {{end}}

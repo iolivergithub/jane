@@ -12,12 +12,6 @@ import (
 	"a10/structures"
 )
 
-type elementsStructure struct {
-	E  structures.Element
-	CS []structures.Claim
-	RS []structures.Result
-}
-
 // Number of most recent attestation sessions shown on each element card,
 // and how many results are fetched per element to find them.
 const cardSessions = 5
@@ -83,14 +77,17 @@ func showElement(c echo.Context) error {
 
 	fmt.Printf(" cparam is %v and e.ItemId is %v\n", c.Param("itemid"), e.ItemID)
 
-	cs, _ := operations.GetClaimsByElementID(e.ItemID, 10)
-	rs, _ := operations.GetResultsByElementID(e.ItemID, 10)
+	cs, _ := operations.GetClaimsByElementID(e.ItemID, elementClaimsFetched)
+	rs, _ := operations.GetResultsByElementID(e.ItemID, elementResultsFetched)
 
 	fmt.Printf("showElement %v\n", c.Param("itemid"))
 
-	es := elementsStructure{e, cs, rs}
+	page := buildElementPage(e, cs, rs, func(id string) (structures.Session, bool) {
+		s, err := operations.GetSessionByItemID(id)
+		return s, err == nil
+	})
 
-	return c.Render(http.StatusOK, "element.html", es)
+	return c.Render(http.StatusOK, "element.html", page)
 }
 
 func newElement(c echo.Context) error {
