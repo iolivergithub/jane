@@ -129,8 +129,8 @@ mv jane.deb jane_${JANEDEBNAME}.deb
 mv tarzan.deb tarzan_${TARZANDEBNAME}.deb
 
 echo "${BLUE}Here you go${NC}"
-ls -l jane_${JANEDEBNAME}.deb
-ls -l tarzan_${TARZANDEBNAME}.deb
+ls -l ${JANEDEBNAME}.deb
+ls -l ${TARZANDEBNAME}.deb
 
 echo "${BLUE}Attempting to build rpms with alien if installed${NC}"
 cd $TMPBASE

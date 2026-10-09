@@ -24,7 +24,7 @@ vet:
 	go vet -composites=false ./... 
 
 libs:
-	go get -u
+#	go get -u
 	go mod tidy -v
 	go mod verify
 
