@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -18,17 +19,23 @@ type evstruct struct {
 	I  structures.Intent
 }
 
+// evResultsShown is how many recent results the expected value page lists.
+const evResultsShown = 100
+
 func showExpectedValues(c echo.Context) error {
-	fmt.Println("here")
 	es, _ := operations.GetExpectedValuesAll()
+	lk := dbLookups()
 
 	evs := []evstruct{}
-
 	for _, j := range es {
-		e, _ := operations.GetElementByItemID(j.ElementID)
-		i, _ := operations.GetIntentByItemID(j.IntentID)
-		evs = append(evs, evstruct{j, e, i})
+		evs = append(evs, evstruct{j, lk.element(j.ElementID), lk.intent(j.IntentID)})
 	}
+	sort.SliceStable(evs, func(a, b int) bool {
+		if evs[a].E.Name != evs[b].E.Name {
+			return evs[a].E.Name < evs[b].E.Name
+		}
+		return evs[a].EV.Name < evs[b].EV.Name
+	})
 
 	return c.Render(http.StatusOK, "evs.html", evs)
 }
@@ -37,10 +44,16 @@ func showExpectedValue(c echo.Context) error {
 	ev, _ := operations.GetExpectedValueByItemID(c.Param("itemid"))
 
 	e, _ := operations.GetElementByItemID(ev.ElementID)
-	p, _ := operations.GetIntentByItemID(ev.IntentID)
+	i, _ := operations.GetIntentByItemID(ev.IntentID)
 
-	evstr := evstruct{ev, e, p}
-	return c.Render(http.StatusOK, "ev.html", evstr)
+	rs := []structures.Result{}
+	total := int64(0)
+	if ev.ItemID != "" {
+		rs, _ = operations.GetResultsByExpectedValueID(ev.ItemID, evResultsShown)
+		total = operations.CountResultsByExpectedValueID(ev.ItemID)
+	}
+
+	return c.Render(http.StatusOK, "ev.html", buildEVPage(ev, e, i, rs, total))
 }
 
 type editevestruct struct {

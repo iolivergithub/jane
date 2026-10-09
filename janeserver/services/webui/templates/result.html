@@ -1,51 +1,100 @@
 {{define "content"}}
-<h3>Result </h3>
+{{ if not .R.ItemID }}
+<div class="alert alert-warning">Result not found. <a href="/results">All results</a></div>
+{{ else }}
 
-<h5>Element Information</h5>
-<table class="table table-sm table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Rule Name</th> <td scope="col">{{ .R.RuleName }}</td> </tr>     
-      <tr><td scope="col">VerifiedAt</th> <td scope="col">{{ epochToUTCdetailed .R.VerifiedAt }}</td> </tr>     
-      <tr><td scope="col">Result</th> <td scope="col"> {{ template "resultvalue.html" .R.Result }} </td></tr>     
-      <tr><td scope="col">Expected Value</th> <td scope="col"><a href="/expectedvalue/{{ .R.EV_ItemID }}">{{ .R.EV_Name }}</a></td> </tr>     
-      <tr><td scope="col">Element</th> <td scope="col">{{ .R.EVEName }}</td> </tr>     
-      <tr><td scope="col">Intent</th> <td scope="col">{{ .R.EVPName }}</td> </tr>     
-      <tr><td scope="col">Claim</th> <td scope="col"><a href="/claim/{{ .R.ClaimID }}">{{ .R.ClaimID }}</a></td> </tr>     
-      <tr><td scope="col">Session</th> <td scope="col"><a href="/session/{{ .R.SessionID }}">{{ .R.SessionID }}</a></td> </tr>     
-      <tr><td scope="col">Message</th> <td scope="col">{{ .R.Message }}</td> </tr>     
-   </tbody>
-</table>
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><span class="j-cell oc-{{ resultClass .R.Result }} me-2" style="width: 18px; height: 18px"></span>{{ .R.RuleName }}
+         <span class="fs-6 align-middle">{{ template "resultvalue.html" .R.Result }}</span></h3>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .R.ItemID }}</div>
+      <div class="small text-body-secondary">Verified {{ epochToUTCdetailed .R.VerifiedAt }} UTC</div>
+   </div>
+</div>
 
+{{ if .R.Message }}
+<div class="alert alert-secondary j-wrap"><i class="fa fa-comment-o me-2"></i>{{ .R.Message }}</div>
+{{ end }}
 
-</hr>
-<h5>Footer</h5>
+<!-- context -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-2 mb-3">
+   <div class="col"><div class="card h-100"><div class="card-body py-2">
+      <div class="small text-body-secondary"><i class="fa fa-server me-1"></i>Element</div>
+      {{ if .Element.ID }}<a class="fw-semibold j-wrap" href="/element/{{ .Element.ID }}">{{ if .Element.Name }}{{ .Element.Name }}{{ else }}{{ .Element.ID }}{{ end }}</a>{{ else }}<span class="text-body-secondary">–</span>{{ end }}
+   </div></div></div>
+   <div class="col"><div class="card h-100"><div class="card-body py-2">
+      <div class="small text-body-secondary"><i class="fa fa-bullseye me-1"></i>Intent</div>
+      {{ if .Intent.ID }}<a class="fw-semibold j-wrap" href="/intent/{{ .Intent.ID }}">{{ .Intent.Name }}</a>{{ else }}<span class="text-body-secondary">–</span>{{ end }}
+   </div></div></div>
+   <div class="col"><div class="card h-100"><div class="card-body py-2">
+      <div class="small text-body-secondary"><i class="fa fa-crosshairs me-1"></i>Expected value</div>
+      {{ if .EV.ItemID }}<a class="fw-semibold j-wrap" href="/expectedvalue/{{ .EV.ItemID }}">{{ if .EV.Name }}{{ .EV.Name }}{{ else }}{{ .EV.ItemID }}{{ end }}</a>{{ else }}<span class="text-body-secondary">None</span>{{ end }}
+   </div></div></div>
+   <div class="col"><div class="card h-100"><div class="card-body py-2">
+      <div class="small text-body-secondary"><i class="fa fa-file-text-o me-1"></i>Claim</div>
+      {{ if .R.ClaimID }}<a class="fw-semibold" href="/claim/{{ .R.ClaimID }}">View claim</a>{{ else }}<span class="text-body-secondary">–</span>{{ end }}
+   </div></div></div>
+   <div class="col"><div class="card h-100"><div class="card-body py-2">
+      <div class="small text-body-secondary"><i class="fa fa-cogs me-1"></i>Session</div>
+      {{ if .R.Session.ItemID }}<a class="fw-semibold" href="/session/{{ .R.Session.ItemID }}">View session</a>{{ else }}<span class="text-body-secondary">–</span>{{ end }}
+   </div></div></div>
+</div>
 
-<div class="container-fluid">
-   <div class="row">
-      <div class="col-xxl-12">
-
-<table class="table table-xxl table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Hash</th> <td scope="col" style="word-break: break-all;">{{ encodeAsHexString .R.Footer.Hash }}</td> </tr>     
-      <tr><td scope="col">Signature</th> <td scope="col" style="word-break: break-all;">{{ encodeAsHexString .R.Footer.Signature }}</td> </tr>      
-   </tbody>
-</table>
-
-         </div>
+<!-- details -->
+<div class="card mb-4">
+   <div class="card-header pb-0 border-bottom-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rs-params" type="button" role="tab"><i class="fa fa-sliders me-1"></i> Parameters</button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rs-ev" type="button" role="tab"><i class="fa fa-crosshairs me-1"></i> Expected value</button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rs-siblings" type="button" role="tab"><i class="fa fa-list me-1"></i> Same claim <span class="badge bg-secondary">{{ len .Siblings }}</span></button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rs-footer" type="button" role="tab"><i class="fa fa-lock me-1"></i> Footer</button></li>
+      </ul>
+   </div>
+   <div class="card-body tab-content j-details">
+      <div class="tab-pane fade show active" id="rs-params" role="tabpanel">
+         {{ if .R.Parameters }}{{ template "genericList.html" .R.Parameters }}{{ else }}<i class="text-body-secondary">No parameters</i>{{ end }}
       </div>
-</div> 
 
+      <div class="tab-pane fade" id="rs-ev" role="tabpanel">
+         {{ if .EV.ItemID }}
+         <table class="table table-sm mb-0">
+            <tbody>
+               <tr><td>Name</td><td><a href="/expectedvalue/{{ .EV.ItemID }}">{{ .EV.Name }}</a></td></tr>
+               {{ if .EV.Description }}<tr><td>Description</td><td>{{ .EV.Description }}</td></tr>{{ end }}
+               <tr><td>Endpoint</td><td>{{ .EV.EndpointName }}</td></tr>
+               <tr><td>Values</td><td>{{ if .EV.EVS }}{{ template "genericList.html" .EV.EVS }}{{ else }}<i class="text-body-secondary">None</i>{{ end }}</td></tr>
+            </tbody>
+         </table>
+         {{ else }}<i class="text-body-secondary">This rule did not use an expected value.</i>{{ end }}
+      </div>
+
+      <div class="tab-pane fade" id="rs-siblings" role="tabpanel">
+         {{ if .Siblings }}
+         <table class="table table-sm j-list mb-0">
+            <tbody>
+               {{ range .Siblings }}
+               <tr>
+                  <td><a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ resultLabel .Result }}"></a></td>
+                  <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
+                  <td class="text-nowrap">{{ template "resultvalue.html" .Result }}</td>
+                  <td class="small text-body-secondary">{{ .Message }}</td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
+         {{ else }}<i class="text-body-secondary">No other results were produced from this claim.</i>{{ end }}
+      </div>
+
+      <div class="tab-pane fade" id="rs-footer" role="tabpanel">
+         <table class="table table-sm mb-0">
+            <tbody>
+               <tr><td>Hash</td><td class="font-monospace small">{{ encodeAsHexString .R.Footer.Hash }}</td></tr>
+               <tr><td>Signature</td><td class="font-monospace small">{{ encodeAsHexString .R.Footer.Signature }}</td></tr>
+            </tbody>
+         </table>
+      </div>
+   </div>
+</div>
+{{ end }}
 {{end}}
-

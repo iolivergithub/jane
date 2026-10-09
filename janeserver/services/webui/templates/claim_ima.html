@@ -10,9 +10,10 @@
    </thead>
    <tbody>
       <tr><td scope="col">Encoding details</th> <td scope="col">{{ .encoded }} {{ .encodedlength }} bytes encoded, {{ .unencodedlength }} bytes original</th> </tr>     
-      <tr><td scope="col">IMA ASCII Log</th> <td scope="col">{{ base64decode .asciilog }}</th> </tr>      
-   </tbody>
+         </tbody>
 </table>
+<h6 class="mt-3">IMA ASCII log</h6>
+<pre class="j-raw border rounded p-2 small">{{ base64decode .asciilog }}</pre>
 
 {{end}}
 

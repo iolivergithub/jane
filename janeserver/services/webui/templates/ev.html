@@ -1,35 +1,103 @@
 {{define "content"}}
-<h3>Expected Value {{ .EV.Name }} </h3>
+{{ if not .EV.ItemID }}
+<div class="alert alert-warning">Expected value not found. <a href="/expectedvalues">All expected values</a></div>
+{{ else }}
 
-<table class="table table-sm table-striped">
-   <thead>
-      <tr>
-         <th scope="col">Field</th>    
-         <th scope="col">Value</th>                   
-      </tr>
-   </thead>
-   <tbody>
-      <tr><td scope="col">Name</th> <td scope="col">{{ .EV.Name }}</th> </tr>     
-      <tr><td scope="col">Description</th> <td scope="col">{{ .EV.Description }}</th> </tr>     
-      <tr><td scope="col">ItemID</th> <td scope="col">{{ .EV.ItemID }}</th> </tr>     
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><i class="fa fa-crosshairs me-2 text-body-secondary"></i>{{ if .EV.Name }}{{ .EV.Name }}{{ else }}Expected value{{ end }}</h3>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .EV.ItemID }}</div>
+      {{ if .EV.Description }}<div class="mb-2 j-wrap">{{ .EV.Description }}</div>{{ end }}
+      <div class="d-flex flex-wrap gap-3 small">
+         <span><i class="fa fa-server me-1 text-body-secondary"></i>{{ if .E.ItemID }}<a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a>{{ else }}<span class="text-body-secondary">{{ .EV.ElementID }}</span>{{ end }}{{ if .EV.EndpointName }} <span class="text-body-secondary">· {{ .EV.EndpointName }}</span>{{ end }}</span>
+         <span><i class="fa fa-bullseye me-1 text-body-secondary"></i>{{ if .I.ItemID }}<a href="/intent/{{ .I.ItemID }}">{{ .I.Name }}</a> <span class="badge bg-primary">{{ .I.Function }}</span>{{ else }}<span class="text-body-secondary">{{ .EV.IntentID }}</span>{{ end }}</span>
+      </div>
+   </div>
+   <div class="d-flex flex-wrap gap-2">
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Results using it</div>
+         <div class="j-num">{{ if ge .ResultTotal 0 }}{{ .ResultTotal }}{{ else }}?{{ end }}</div>
+         {{ if .Results }}
+         <div class="small text-body-secondary">
+            latest {{ len .Results }}:
+            <span class="j-swatch oc-pass"></span> {{ .Counts.Pass }}
+            <span class="j-swatch oc-fail ms-1"></span> {{ .Counts.Fail }}
+            <span class="j-swatch oc-other ms-1"></span> {{ .Counts.Other }}
+         </div>
+         {{ end }}
+      </div></div>
+   </div>
+</div>
 
-      <tr><td scope="col">Element</th> <td scope="col"><a href="/element/{{ .E.ItemID }}">{{ .E.Name }} </a></span></th> </tr>     
+{{ if .Strip }}
+<!-- history strip -->
+<div class="card mb-3">
+   <div class="card-header py-2 d-flex flex-wrap align-items-center gap-3">
+      <span><i class="fa fa-th me-1"></i> History <span class="text-body-secondary small">— latest {{ len .Strip }} results using this expected value, oldest → newest</span></span>
+      <span class="small ms-auto d-flex flex-wrap gap-3">
+         <span><span class="j-swatch oc-pass"></span> Pass</span>
+         <span><span class="j-swatch oc-fail"></span> Fail</span>
+         <span><span class="j-swatch oc-other"></span> Other</span>
+      </span>
+   </div>
+   <div class="card-body">
+      <div class="d-flex flex-wrap gap-1">
+         {{ range .Strip }}<a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ .RuleName }} · {{ epochToUTC .VerifiedAt }} UTC · {{ resultLabel .Result }}{{ if .Message }} · {{ .Message }}{{ end }}"></a>{{ end }}
+      </div>
+      <div class="d-flex justify-content-between small text-body-secondary mt-1">
+         {{ with index .Strip 0 }}<span>{{ epochToUTC .VerifiedAt }}</span>{{ end }}
+         {{ with index .Results 0 }}<span>{{ epochToUTC .VerifiedAt }}</span>{{ end }}
+      </div>
+   </div>
+</div>
+{{ end }}
 
-      <tr><td scope="col">Endpoint Name</th> <td scope="col">{{ .EV.EndpointName }} </a></span></th> </tr>           
-      <tr><td scope="col">Intent</th> <td scope="col"><a href="/intent/{{ .I.ItemID }}">{{ .I.Name }}  </a> <span class="badge bg-secondary">{{ .I.Function }}</span></th> </tr>     
-      
-      <tr><td scope="col">EVS Parameters</th> <td scope="col">{{ template "genericList.html" .EV.EVS }}</th> </tr>     
+<!-- details -->
+<div class="card mb-4">
+   <div class="card-header pb-0 border-bottom-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ev-values" type="button" role="tab"><i class="fa fa-sliders me-1"></i> Values <span class="badge bg-secondary">{{ len .EV.EVS }}</span></button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ev-results" type="button" role="tab"><i class="fa fa-check-square-o me-1"></i> Recent results <span class="badge bg-secondary">{{ len .Results }}</span></button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ev-history" type="button" role="tab"><i class="fa fa-history me-1"></i> Record history</button></li>
+      </ul>
+   </div>
+   <div class="card-body tab-content">
+      <div class="tab-pane fade show active j-details" id="ev-values" role="tabpanel">
+         {{ if .EV.EVS }}{{ template "genericList.html" .EV.EVS }}{{ else }}<i class="text-body-secondary">No values</i>{{ end }}
+      </div>
 
+      <div class="tab-pane fade" id="ev-results" role="tabpanel">
+         {{ if .Results }}
+         <div class="table-responsive">
+         <table class="table table-sm table-hover j-list mb-0">
+            <thead><tr><th>Verified (UTC)</th><th>Rule</th><th>Result</th><th>Message</th><th>Links</th></tr></thead>
+            <tbody>
+               {{ range .Results }}
+               <tr>
+                  <td class="text-nowrap"><a href="/result/{{ .ItemID }}">{{ epochToUTC .VerifiedAt }}</a></td>
+                  <td>{{ .RuleName }}</td>
+                  <td class="text-nowrap"><span class="j-cell oc-{{ resultClass .Result }} me-1"></span>{{ template "resultvalue.html" .Result }}</td>
+                  <td class="small text-body-secondary j-wrap">{{ .Message }}</td>
+                  <td class="text-nowrap">
+                     <a href="/claim/{{ .ClaimID }}" title="Claim"><i class="fa fa-file-text-o"></i></a>
+                     <a href="/session/{{ .Session.ItemID }}" title="Session" class="ms-2"><i class="fa fa-cogs"></i></a>
+                  </td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
+         </div>
+         {{ if gt .ResultTotal (len .Results) }}<div class="small text-body-secondary px-1 pt-2">Showing the latest {{ len .Results }} of {{ .ResultTotal }} results. <a href="/results">All results</a></div>{{ end }}
+         {{ else }}<i class="text-body-secondary">No results have used this expected value yet.</i>{{ end }}
+      </div>
 
-   </tbody>
-</table>
-
-<hr />
-
-   {{ if not .EV.RecordHistory }}
-   <i>No record history</i>
-   {{ else }}
-   {{ template "recordhistory.html" .EV.RecordHistory }}
-   {{ end }}   
-
+      <div class="tab-pane fade j-details" id="ev-history" role="tabpanel">
+         <div style="max-width: 40rem">
+         {{ if .EV.RecordHistory.Created }}{{ template "recordhistory.html" .EV.RecordHistory }}{{ else }}<i class="text-body-secondary">No record history</i>{{ end }}
+         </div>
+      </div>
+   </div>
+</div>
+{{ end }}
 {{end}}

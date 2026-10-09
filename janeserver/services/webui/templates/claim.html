@@ -1,81 +1,116 @@
 {{define "content"}}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-8">
-            <h5>Header</h5>
-            <table class="table table-xxl table-striped">
-                <thead>
-                    <tr>
-                        <th scope="col">Field</th>
-                        <th scope="col">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td scope="col">ItemID, BodyType</th> <td scope="col">{{ .ItemID }}&nbsp;<span class="badge bg-primary">{{ .BodyType }}</span></td> </tr>
-                    <tr><td scope="col">Element</td> <td scope="col"><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a> &nbsp; <span class="badge bg-primary">{{ .Header.EndpointName }}</span> <span class="badge bg-dark">{{ .Header.Endpoint.Protocol }}</span> &nbsp; {{ .Header.Endpoint.Endpoint }}</td> </tr>
-                    
-                    <tr><td scope="col">Intent</td> <td scope="col"><a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a> <span class="badge bg-primary">{{ .Header.Intent.Function }}</span> </td> </tr>
-                    
-                    <tr><td scope="col">Session</td> <td scope="col"><a href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td> </tr>
-                    <tr><td scope="col">Additional Parameters</td> <td scope="col">{{ .Header.AdditionalParameters }}</td> </tr>
-                    <tr><td scope="col">Call Parameters</td> <td scope="col">{{ .Header.CallParameters }}</td> </tr>
-                    <tr><td scope="col">Requested, Received</td> <td scope="col">{{ epochToUTCdetailed .Header.Timing.Requested }} &nbsp; {{ epochToUTCdetailed .Header.Timing.Received }}</td> </tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="col-md-4">
-            <h5>Footer</h5>
-            <table class="table table-xxl table-striped">
-                <thead>
-                    <tr>
-                        <th scope="col">Field</th>
-                        <th scope="col">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td scope="col">Hash</td> <td scope="col"  style="word-break: break-all;">{{ encodeAsHexString .Footer.Hash }}</td> </tr>
-                    <tr><td scope="col">Signature</td> <td scope="col" style="word-break: break-all;" >{{ encodeAsHexString .Footer.Signature }}</td> </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+{{ if not .ItemID }}
+<div class="alert alert-warning">Claim not found. <a href="/claims">All claims</a></div>
+{{ else }}
 
-    <div class="row">
-        <div class="col-md-12">
-            <h5>Body: </h5>
-            {{ if eq .BodyType "*ERROR" }}
-            <p><span class="badge bg-danger"> {{ .BodyType }}</span></p>
-            {{ template "claim_ERROR.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "sys/info" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "genericList.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "ima/asciilog" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "claim_ima.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "tpm2/pcrs" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "claim_tpm2pcrs.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "tpm2/newpcrs" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "claim_tpm2pcrs.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "tpm2/quote" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "claim_quote.html" .Body }}
-            {{ end }}
-            {{ if eq .BodyType "uefi/efivars" }}
-            <p><span class="badge bg-primary"> {{ .BodyType }}</span></p>
-            {{ template "claim_efivars.html" .Body }}
-            {{ end }}
-        </div>
-    </div>
+<!-- header -->
+<div class="d-flex flex-wrap align-items-start gap-3 mb-3">
+   <div class="me-auto">
+      <h3 class="mb-1"><i class="fa fa-file-text-o me-2 text-body-secondary"></i>{{ if .Header.Intent.Name }}{{ .Header.Intent.Name }}{{ else }}Claim{{ end }}
+         {{ if .IsError }}<span class="badge bg-danger fs-6 align-middle"><i class="fa fa-exclamation-triangle me-1"></i>Error</span>{{ else }}<span class="badge bg-info-subtle text-info-emphasis fs-6 align-middle">{{ .BodyType }}</span>{{ end }}
+      </h3>
+      <div class="small text-body-secondary font-monospace mb-2 j-wrap">{{ .ItemID }}</div>
+      <div class="d-flex flex-wrap gap-3 small">
+         <span><i class="fa fa-server me-1 text-body-secondary"></i><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a></span>
+         <span><i class="fa fa-plug me-1 text-body-secondary"></i>{{ .Header.EndpointName }} <span class="badge bg-primary-subtle text-primary-emphasis">{{ .Header.Endpoint.Protocol }}</span> <span class="font-monospace text-body-secondary j-wrap">{{ .Header.Endpoint.Endpoint }}</span></span>
+         <span><i class="fa fa-cogs me-1 text-body-secondary"></i><a href="/session/{{ .Header.Session.ItemID }}">Session</a></span>
+      </div>
+   </div>
+   <div class="d-flex flex-wrap gap-2">
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Requested (UTC)</div>
+         <div class="j-num-sm">{{ epochToUTC .Header.Timing.Requested }}</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Took</div>
+         <div class="j-num">{{ if .Latency }}{{ .Latency }}{{ else }}–{{ end }}</div>
+      </div></div>
+      <div class="card j-tile"><div class="card-body py-2">
+         <div class="small text-body-secondary">Results from this claim</div>
+         <div class="j-num">{{ len .Results }}</div>
+         <div class="small text-body-secondary">
+            <span class="j-swatch oc-pass"></span> {{ .Counts.Pass }}
+            <span class="j-swatch oc-fail ms-1"></span> {{ .Counts.Fail }}
+            <span class="j-swatch oc-other ms-1"></span> {{ .Counts.Other }}
+         </div>
+      </div></div>
+   </div>
 </div>
-<hr/>
-<h5>Raw</h5>
-{{ .Body }}
+
+{{ if .Results }}
+<!-- results produced from this claim -->
+<div class="card mb-3">
+   <div class="card-header py-2"><i class="fa fa-check-square-o me-1"></i> Results from this claim</div>
+   <div class="card-body p-2">
+      <div class="table-responsive">
+      <table class="table table-sm j-list mb-0">
+         <tbody>
+            {{ range .Results }}
+            <tr>
+               <td style="width: 1%"><a href="/result/{{ .ItemID }}" class="j-cell oc-{{ resultClass .Result }}" title="{{ resultLabel .Result }}"></a></td>
+               <td><a href="/result/{{ .ItemID }}">{{ .RuleName }}</a></td>
+               <td class="text-nowrap">{{ template "resultvalue.html" .Result }}</td>
+               <td class="small text-body-secondary j-wrap">{{ .Message }}</td>
+               <td class="text-nowrap small text-body-secondary">{{ epochToUTC .VerifiedAt }}</td>
+            </tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
+</div>
+{{ end }}
+
+<!-- details -->
+<div class="card mb-4">
+   <div class="card-header pb-0 border-bottom-0">
+      <ul class="nav nav-tabs card-header-tabs" role="tablist">
+         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cl-body" type="button" role="tab"><i class="fa fa-file-text-o me-1"></i> Body</button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cl-header" type="button" role="tab"><i class="fa fa-list me-1"></i> Header</button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cl-footer" type="button" role="tab"><i class="fa fa-lock me-1"></i> Footer</button></li>
+         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cl-raw" type="button" role="tab"><i class="fa fa-code me-1"></i> Raw</button></li>
+      </ul>
+   </div>
+   <div class="card-body tab-content j-details">
+      <div class="tab-pane fade show active" id="cl-body" role="tabpanel">
+         {{ if eq .BodyType "*ERROR" }}{{ template "claim_ERROR.html" .Body }}
+         {{ else if eq .BodyType "sys/info" }}{{ template "genericList.html" .Body }}
+         {{ else if eq .BodyType "ima/asciilog" }}{{ template "claim_ima.html" .Body }}
+         {{ else if eq .BodyType "tpm2/pcrs" }}{{ template "claim_tpm2pcrs.html" .Body }}
+         {{ else if eq .BodyType "tpm2/newpcrs" }}{{ template "claim_tpm2pcrs.html" .Body }}
+         {{ else if eq .BodyType "tpm2/quote" }}{{ template "claim_quote.html" .Body }}
+         {{ else if eq .BodyType "uefi/efivars" }}{{ template "claim_efivars.html" .Body }}
+         {{ else }}{{ template "genericList.html" .Body }}{{ end }}
+      </div>
+
+      <div class="tab-pane fade" id="cl-header" role="tabpanel">
+         <table class="table table-sm mb-0">
+            <tbody>
+               <tr><td>Element</td><td><a href="/element/{{ .Header.Element.ItemID }}">{{ .Header.Element.Name }}</a> <span class="font-monospace small text-body-secondary">{{ .Header.Element.ItemID }}</span></td></tr>
+               <tr><td>Endpoint</td><td>{{ .Header.EndpointName }} <span class="badge bg-primary-subtle text-primary-emphasis">{{ .Header.Endpoint.Protocol }}</span> <span class="font-monospace small">{{ .Header.Endpoint.Endpoint }}</span></td></tr>
+               <tr><td>Intent</td><td>{{ if .Header.Intent.ItemID }}<a href="/intent/{{ .Header.Intent.ItemID }}">{{ .Header.Intent.Name }}</a>{{ else }}{{ .Header.Intent.Name }}{{ end }} <span class="badge bg-primary">{{ .Header.Intent.Function }}</span></td></tr>
+               <tr><td>Session</td><td><a class="font-monospace small" href="/session/{{ .Header.Session.ItemID }}">{{ .Header.Session.ItemID }}</a></td></tr>
+               <tr><td>Requested</td><td>{{ epochToUTCdetailed .Header.Timing.Requested }}</td></tr>
+               <tr><td>Received</td><td>{{ epochToUTCdetailed .Header.Timing.Received }}</td></tr>
+               <tr><td>Additional parameters</td><td>{{ if .Header.AdditionalParameters }}{{ template "genericList.html" .Header.AdditionalParameters }}{{ else }}<i class="text-body-secondary">None</i>{{ end }}</td></tr>
+               <tr><td>Call parameters</td><td>{{ if .Header.CallParameters }}{{ template "genericList.html" .Header.CallParameters }}{{ else }}<i class="text-body-secondary">None</i>{{ end }}</td></tr>
+            </tbody>
+         </table>
+      </div>
+
+      <div class="tab-pane fade" id="cl-footer" role="tabpanel">
+         <table class="table table-sm mb-0">
+            <tbody>
+               <tr><td>Hash</td><td class="font-monospace small">{{ encodeAsHexString .Footer.Hash }}</td></tr>
+               <tr><td>Signature</td><td class="font-monospace small">{{ encodeAsHexString .Footer.Signature }}</td></tr>
+            </tbody>
+         </table>
+      </div>
+
+      <div class="tab-pane fade" id="cl-raw" role="tabpanel">
+         <pre class="j-raw border rounded p-2 small mb-0">{{ .RawJSON }}</pre>
+      </div>
+   </div>
+</div>
+{{ end }}
 {{end}}

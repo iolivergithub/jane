@@ -72,3 +72,43 @@ func GetOpaqueObjectByValueInt64(v int64) template.HTML {
 	s := strconv.FormatInt(v, 10)
 	return GetOpaqueObjectByValue(s)
 }
+
+// ResultClass groups a result value as "pass", "fail" or "other"; pages use it
+// to colour each individual result (it never summarises several results).
+func ResultClass(v structures.ResultValue) string {
+	return resultOutcome(v)
+}
+
+// ResultLabel is the readable name of a result value.
+func ResultLabel(v structures.ResultValue) string {
+	switch v {
+	case structures.Success:
+		return "Pass"
+	case structures.Fail:
+		return "Fail"
+	case structures.VerifyCallFailure:
+		return "Verify call failure"
+	case structures.VerifyClaimErrorAttempt:
+		return "Verify claim error"
+	case structures.NoResult:
+		return "No result"
+	case structures.MissingExpectedValue:
+		return "Missing expected value"
+	case structures.RuleCallFailure:
+		return "Rule call failure"
+	case structures.UnsetResultValue:
+		return "Unset result value"
+	default:
+		return "Unknown"
+	}
+}
+
+// Duration is the time between two timestamps, or "" if either is unset.
+func Duration(from, to structures.Timestamp) string {
+	return formatDuration(from, to)
+}
+
+// ShortTime formats a timestamp as "MM-DD HH:MM" UTC.
+func ShortTime(t structures.Timestamp) string {
+	return shortLabel(t)
+}

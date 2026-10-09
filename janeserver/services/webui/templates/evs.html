@@ -1,27 +1,39 @@
-{{template "base" .}} 
 {{define "content"}}
-<h3>Expected Values</h3>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+   <h3 class="mb-0 me-auto">Expected Values <span class="badge bg-secondary fs-6 align-middle">{{ len . }}</span></h3>
+   <input id="cardFilter" type="search" class="form-control form-control-sm" style="max-width: 18rem"
+          placeholder="Filter by name, element, intent…" aria-label="Filter expected values">
+   <a href="/new/expectedvalue" class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i>New expected value</a>
+</div>
 
-<table class="table table-striped table-sm">
-   <thead>
-      <tr>
-         <th scope="col">Name</th>
-         <th scope="col">Description</th>
-         <th scope="col">Element</th>
-         <th scope="col">Endpoint Name</th>         
-         <th scope="col">Intent</th> 
-         <th scope="col">Function</th>         
-      </tr>
-   </thead>
-   <tbody>
-      {{ range . }} 
-        <tr> 
+{{ if . }}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-2">
+   {{ range . }}
+   <div class="col j-filterable" data-search="{{ .EV.Name }} {{ .EV.Description }} {{ .E.Name }} {{ .EV.EndpointName }} {{ .I.Name }} {{ .I.Function }}">
+      {{ template "evsummarylist.html" . }}
+   </div>
+   {{ end }}
+</div>
+<p id="cardNoMatch" class="text-body-secondary fst-italic mt-2 d-none">No expected values match the filter.</p>
+{{ else }}
+<div class="alert alert-secondary">No expected values defined yet. <a href="/new/expectedvalue">Create one</a>.</div>
+{{ end }}
 
-        <tr> {{ template "evsummarylist.html" . }} </tr>
-
-
-        </tr>
-      {{end}}
-   </tbody>
-</table>
+<script>
+(function () {
+   var input = document.getElementById('cardFilter');
+   var items = Array.prototype.slice.call(document.querySelectorAll('.j-filterable'));
+   var none = document.getElementById('cardNoMatch');
+   if (!input || !items.length) return;
+   input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase(), shown = 0;
+      items.forEach(function (el) {
+         var hit = !q || el.getAttribute('data-search').toLowerCase().indexOf(q) >= 0;
+         el.classList.toggle('d-none', !hit);
+         if (hit) shown++;
+      });
+      none.classList.toggle('d-none', shown > 0);
+   });
+})();
+</script>
 {{end}}

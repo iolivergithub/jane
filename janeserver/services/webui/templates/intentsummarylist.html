@@ -1,7 +1,18 @@
 {{define "intentsummarylist.html"}}
-<td><a href="/intent/{{ .ItemID }}">{{ .Name }}</a></td>
-<td><span class="badge bg-primary">{{ .Function }}</span></td>
-<td>{{ .Description }}</td>
+<div class="card h-100 shadow-sm j-card">
+   <div class="card-header py-2">
+      <a href="/intent/{{ .I.ItemID }}" class="fw-semibold text-decoration-none stretched-link d-block text-truncate" title="{{ .I.Name }}">
+         <i class="fa fa-bullseye me-1"></i>{{ .I.Name }}
+      </a>
+   </div>
+   <div class="card-body p-2 small d-flex flex-column gap-2">
+      <div><span class="badge bg-primary">{{ .I.Function }}</span></div>
+      {{ if .I.Description }}<div class="text-body-secondary j-desc" title="{{ .I.Description }}">{{ .I.Description }}</div>{{ end }}
+      <div class="mt-auto d-flex flex-wrap gap-3 text-body-secondary">
+         <span title="Expected values using this intent"><i class="fa fa-crosshairs me-1"></i>{{ .EVs }} expected values</span>
+         {{ if ge .Claims 0 }}<span title="Claims made with this intent"><i class="fa fa-file-text-o me-1"></i>{{ .Claims }} claims</span>{{ end }}
+         {{ if .I.Parameters }}<span title="Parameters"><i class="fa fa-sliders me-1"></i>{{ len .I.Parameters }} params</span>{{ end }}
+      </div>
+   </div>
+</div>
 {{end}}
-
-

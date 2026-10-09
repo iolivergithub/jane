@@ -1,31 +1,57 @@
 {{define "content"}}
-<h3>Sessions</h3>
-<table class="table table-striped table-sm">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+   <h3 class="mb-0 me-auto">Sessions <span class="badge bg-secondary fs-6 align-middle">{{ .Pager.Total }}</span></h3>
+   <span class="small text-body-secondary d-flex flex-wrap gap-3">
+      <span><span class="j-swatch oc-pass"></span> Pass</span>
+      <span><span class="j-swatch oc-fail"></span> Fail</span>
+      <span><span class="j-swatch oc-other"></span> Other</span>
+   </span>
+   <a href="/attest" class="btn btn-sm btn-primary"><i class="fa fa-play me-1"></i>Attest</a>
+</div>
+
+{{ template "pager.html" .Pager }}
+
+<div class="table-responsive">
+<table class="table table-sm table-hover j-list">
    <thead>
       <tr>
-         <th scope="col">Opened</th>             
-         <th scope="col">Closed</th>      
-         <th scope="col">Message</th>             
-         <th scope="col"># Claims/Results</th>             
+         <th>Opened (UTC)</th>
+         <th>Duration</th>
+         <th>Elements</th>
+         <th>Results <span class="fw-normal small text-body-secondary">pass / fail / other</span></th>
+         <th>Claims</th>
+         <th>Message</th>
       </tr>
    </thead>
    <tbody>
-      {{ range . }} 
-        <tr> 
-         <td><a href="/session/{{ .ItemID }}">{{ epochToUTCdetailed .Timing.Opened }}</a></td>
-         <td>
-            {{ if eq .Timing.Closed 0 }}
-             <span class="badge bg-warning">session open</span> 
-            {{ else }}
-             {{ epochToUTCdetailed .Timing.Closed }}
+      {{ range .Rows }}
+      <tr>
+         <td class="text-nowrap"><a href="/session/{{ .S.ItemID }}">{{ epochToUTC .S.Timing.Opened }}</a></td>
+         <td class="text-nowrap">{{ if .Open }}<span class="badge bg-warning">Open</span>{{ else if .Duration }}{{ .Duration }}{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+         <td>{{ range .Elements }}<a class="badge bg-secondary-subtle text-secondary-emphasis text-decoration-none me-1" href="/element/{{ .ID }}">{{ .Name }}</a>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+         <td class="text-nowrap">
+            {{ with .Results }}
+            {{ if .Total }}
+            <div class="d-flex align-items-center gap-2">
+               <div class="j-bar" style="width: 7rem" title="{{ .Pass }} pass, {{ .Fail }} fail, {{ .Other }} other">
+                  {{ if .Pass }}<span class="oc-pass" style="width: {{ printf "%.1f" .PassPct }}%"></span>{{ end }}
+                  {{ if .Fail }}<span class="oc-fail" style="width: {{ printf "%.1f" .FailPct }}%"></span>{{ end }}
+                  {{ if .Other }}<span class="oc-other" style="width: {{ printf "%.1f" .OtherPct }}%"></span>{{ end }}
+               </div>
+               <span class="small text-body-secondary">{{ .Pass }} / {{ .Fail }} / {{ .Other }}</span>
+            </div>
+            {{ else }}<span class="text-body-secondary">–</span>{{ end }}
             {{ end }}
          </td>
-         <td>{{ .Message }}</td>
-         <td>{{ len .ClaimList }} / {{ len .ResultList }}</td>
-
-        </tr>
-      {{end}}
+         <td class="text-nowrap">{{ .Claims }}{{ if .ClaimErrors }} <span class="badge bg-danger">{{ .ClaimErrors }} err</span>{{ end }}</td>
+         <td class="small text-body-secondary j-wrap">{{ .S.Message }}</td>
+      </tr>
+      {{ else }}
+      <tr><td colspan="6"><i class="text-body-secondary">No sessions yet. <a href="/attest">Run an attestation</a>.</i></td></tr>
+      {{ end }}
    </tbody>
 </table>
-{{end}}
+</div>
 
+{{ template "pager.html" .Pager }}
+{{end}}

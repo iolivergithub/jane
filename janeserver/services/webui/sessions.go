@@ -1,136 +1,53 @@
 package webui
 
 import (
-	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
-	"time"
+
+	"github.com/labstack/echo/v4"
 
 	"a10/operations"
 	"a10/structures"
 )
 
-type claimsummary struct {
-	ItemID       string
-	BodyType     string
-	EndpointName string
-	Timing       structures.Timing
-}
-
-type resultsummary struct {
-	ItemID     string
-	Result     structures.ResultValue
-	RuleName   string
-	VerifiedAt structures.Timestamp
-}
-
+// showSessions lists sessions a page at a time, newest first, with the
+// claims and results recorded for each.
 func showSessions(c echo.Context) error {
-	s, _ := operations.GetSessionsAll()
+	p := newPager(c.QueryParam("page"), operations.CountSessions(), listPageSize, "/sessions")
+	ss, _ := operations.GetSessionsPage(p.Skip, p.Size)
 
-	return c.Render(http.StatusOK, "sessions.html", s)
-}
+	ids := make([]string, 0, len(ss))
+	for _, s := range ss {
+		ids = append(ids, s.ItemID)
+	}
+	cs, _ := operations.GetClaimsBySessionIDs(ids)
+	rs, _ := operations.GetResultsBySessionIDs(ids)
 
-type claimanalytics struct {
-	Valid int
-	Errs  int
-}
-
-type resultanalytics struct {
-	Pass                 int
-	Fail                 int
-	Verifyfail           int
-	Verifycallattempt    int
-	Noresult             int
-	Missineexpectedvalue int
-	Rulecallfailure      int
-	Unsetresultvalue     int
-}
-
-type sessionsummary struct {
-	S     structures.Session
-	CS    []claimsummary
-	RS    []resultsummary
-	CA    claimanalytics
-	RA    resultanalytics
-	TDIFF string
+	return c.Render(http.StatusOK, "sessions.html", buildSessionsPage(p, ss, cs, rs))
 }
 
 func showSession(c echo.Context) error {
 	s, _ := operations.GetSessionByItemID(c.Param("itemid"))
 
-	cs := make([]claimsummary, 0)
-	for _, i := range s.ClaimList {
-		cl, _ := operations.GetClaimByItemID(i)
-		cs = append(cs, claimsummary{cl.ItemID, cl.BodyType, cl.Header.EndpointName, cl.Header.Timing})
-	}
+	cs, _ := operations.GetClaimsBySessionIDs([]string{s.ItemID})
+	rs, _ := operations.GetResultsBySessionIDs([]string{s.ItemID})
 
-	rs := make([]resultsummary, 0)
-	for _, i := range s.ResultList {
-		rl, _ := operations.GetResultByItemID(i)
-		rs = append(rs, resultsummary{rl.ItemID, rl.Result, rl.RuleName, rl.VerifiedAt})
-	}
-
-	sstr := sessionsummary{s, cs, rs, genclaimanalytics(cs), genresultanalytics(rs), gettimediff(s)}
-	return c.Render(http.StatusOK, "session.html", sstr)
+	return c.Render(http.StatusOK, "session.html", buildSessionPage(s, cs, rs, dbLookups()))
 }
 
-func gettimediff(s structures.Session) string {
-	t_o := time.Unix(0, int64(s.Timing.Closed))
-	t_c := time.Unix(0, int64(s.Timing.Opened))
-	t_diff := t_o.Sub(t_c)
-	fmt.Printf("S.closed is %v\n", t_o)
-	fmt.Printf("S.opened is %v\n", t_c)
-	fmt.Printf("S.diff is %v\n", t_diff)
-
-	return fmt.Sprintf("%v", t_diff)
-}
-
-func genclaimanalytics(cs []claimsummary) claimanalytics {
-	var valid int = 0
-	var errs int = 0
-
-	for _, c := range cs {
-		if c.BodyType == "*ERROR" {
-			errs++
-		} else {
-			valid++
-		}
+// dbLookups resolves related items from the database.
+func dbLookups() *lookups {
+	return &lookups{
+		Element: func(id string) (structures.Element, bool) {
+			e, err := operations.GetElementByItemID(id)
+			return e, err == nil
+		},
+		Intent: func(id string) (structures.Intent, bool) {
+			i, err := operations.GetIntentByItemID(id)
+			return i, err == nil
+		},
+		ExpectedValue: func(id string) (structures.ExpectedValue, bool) {
+			ev, err := operations.GetExpectedValueByItemID(id)
+			return ev, err == nil
+		},
 	}
-
-	return claimanalytics{valid, errs}
-}
-
-func genresultanalytics(rs []resultsummary) resultanalytics {
-	var pass int = 0
-	var fail int = 0
-	var verifyfail int = 0
-	var verifycallattempt int = 0
-	var noresult int = 0
-	var missineexpectedvalue int = 0
-	var rulecallfailure int = 0
-	var unsetresultvalue int = 0
-
-	for _, r := range rs {
-		switch r.Result {
-		case structures.Success:
-			pass++
-		case structures.Fail:
-			fail++
-		case structures.VerifyCallFailure:
-			verifyfail++
-		case structures.VerifyClaimErrorAttempt:
-			verifycallattempt++
-		case structures.NoResult:
-			noresult++
-		case structures.MissingExpectedValue:
-			missineexpectedvalue++
-		case structures.RuleCallFailure:
-			rulecallfailure++
-		case structures.UnsetResultValue:
-			unsetresultvalue++
-		}
-
-	}
-
-	return resultanalytics{pass, fail, verifyfail, verifycallattempt, noresult, missineexpectedvalue, rulecallfailure, unsetresultvalue}
 }

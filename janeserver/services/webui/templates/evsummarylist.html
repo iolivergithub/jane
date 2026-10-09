@@ -1,9 +1,22 @@
 {{define "evsummarylist.html"}}
-<td><a href="/expectedvalue/{{ .EV.ItemID }}">{{ .EV.Name }}</a> </td>
-<td>{{ .EV.Description }}</td>
-<td><a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a> </td>
-<td>{{ .EV.EndpointName }}</a> </td>
-<td><a href="/intent/{{ .I.ItemID }}">{{ .I.Name }}</a></td>
-<td> <span class="badge bg-primary">{{ .I.Function }}</span> </td>
-
+<div class="card h-100 shadow-sm j-card">
+   <div class="card-header py-2">
+      <a href="/expectedvalue/{{ .EV.ItemID }}" class="fw-semibold text-decoration-none stretched-link d-block text-truncate" title="{{ .EV.Name }}">
+         <i class="fa fa-crosshairs me-1"></i>{{ if .EV.Name }}{{ .EV.Name }}{{ else }}{{ .EV.ItemID }}{{ end }}
+      </a>
+   </div>
+   <div class="card-body p-2 small d-flex flex-column gap-2">
+      {{ if .EV.Description }}<div class="text-body-secondary j-desc" title="{{ .EV.Description }}">{{ .EV.Description }}</div>{{ end }}
+      <div class="text-truncate" style="position: relative; z-index: 2">
+         <i class="fa fa-server me-1 text-body-secondary"></i>
+         {{ if .E.ItemID }}<a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a>{{ else }}<span class="text-body-secondary">{{ .EV.ElementID }}</span>{{ end }}
+         {{ if .EV.EndpointName }}<span class="text-body-secondary"> · {{ .EV.EndpointName }}</span>{{ end }}
+      </div>
+      <div class="text-truncate" style="position: relative; z-index: 2">
+         <i class="fa fa-bullseye me-1 text-body-secondary"></i>
+         {{ if .I.ItemID }}<a href="/intent/{{ .I.ItemID }}">{{ .I.Name }}</a> <span class="badge bg-primary">{{ .I.Function }}</span>{{ else }}<span class="text-body-secondary">{{ .EV.IntentID }}</span>{{ end }}
+      </div>
+      <div class="mt-auto text-body-secondary"><i class="fa fa-sliders me-1"></i>{{ len .EV.EVS }} values</div>
+   </div>
+</div>
 {{end}}
