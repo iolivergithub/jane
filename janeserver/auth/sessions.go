@@ -16,6 +16,8 @@ type SessionStore interface {
 	// Lookup returns the user for a token and refreshes its expiry (sliding timeout).
 	Lookup(token string) (username string, ok bool)
 	Delete(token string)
+	// Active returns the number of sessions that have not expired.
+	Active() int
 }
 
 type session struct {
@@ -78,6 +80,19 @@ func (s *memorySessionStore) Delete(token string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.sessions, token)
+}
+
+func (s *memorySessionStore) Active() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	n := 0
+	for _, sess := range s.sessions {
+		if !now.After(sess.expires) {
+			n++
+		}
+	}
+	return n
 }
 
 // janitor periodically removes expired sessions so the map does not grow without bound.

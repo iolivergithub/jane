@@ -115,6 +115,9 @@
             <li class="nav-item" role="presentation">
                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-cmdline" type="button" role="tab"><i class="fa fa-terminal me-1"></i> Command line <span class="badge bg-secondary">{{ .CmdLineLength }}</span></button>
             </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-auth" type="button" role="tab"><i class="fa fa-lock me-1"></i> Authentication {{ if or .Auth.Web .Auth.Rest }}<span class="badge bg-success">on</span>{{ else }}<span class="badge bg-warning">off</span>{{ end }}</button>
+            </li>
          </ul>
       </div>
       <div class="card-body tab-content">
@@ -172,6 +175,23 @@
                   {{ range $i, $a := .CmdLine }}
                   <tr><td class="text-body-secondary">{{ $i }}</td><td class="font-monospace small">{{ $a }}</td></tr>
                   {{ end }}
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-auth" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  <tr><td>Web UI login</td><td>{{ if .Auth.Web }}<span class="badge bg-success">required</span>{{ else }}<span class="badge bg-warning">not required</span>{{ end }}</td></tr>
+                  <tr><td>REST API</td><td>{{ if .Auth.Rest }}<span class="badge bg-success">HTTP Basic required</span>{{ else }}<span class="badge bg-warning">open</span>{{ end }}</td></tr>
+                  {{ if .Auth.Web }}
+                  <tr><td>Logged in as</td><td><b>{{ currentUser }}</b></td></tr>
+                  <tr><td>Session timeout</td><td><b>{{ .Auth.SessionTimeout }}</b> without use</td></tr>
+                  <tr><td>Active sessions</td><td><b>{{ .Auth.ActiveSessions }}</b></td></tr>
+                  {{ end }}
+                  <tr><td>Users</td><td>{{ if lt .Auth.Users 0 }}<span class="badge bg-danger">users collection unreadable</span>{{ else }}<b>{{ .Auth.Users }}</b>{{ if and (eq .Auth.Users 0) (or .Auth.Web .Auth.Rest) }} <span class="badge bg-danger">nobody can log in</span>{{ end }}{{ end }}</td></tr>
+                  <tr><td>Password storage</td><td><b>{{ .Auth.PasswordHash }}</b> hashes</td></tr>
+                  <tr><td>Add user / reset password</td><td class="font-monospace small">{{ .Auth.UserTool }}</td></tr>
                </tbody>
             </table>
          </div>

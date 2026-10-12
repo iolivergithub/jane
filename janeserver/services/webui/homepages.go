@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"a10/auth"
 	"a10/configuration"
 	"a10/operations"
 )
@@ -27,6 +28,7 @@ type homepagestructure struct {
 	CmdLineLength int
 	CmdLine       []string
 	Info          SystemInfo
+	Auth          auth.Status
 }
 
 func homepage(c echo.Context) error {
@@ -67,6 +69,7 @@ func homepage(c echo.Context) error {
 	hps.CmdLine = os.Args
 
 	hps.Info = sysInfo
+	hps.Auth = auth.CurrentStatus()
 
 	fmt.Printf("hps is %v\n", hps)
 

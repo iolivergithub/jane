@@ -308,3 +308,19 @@ func TestTemplateFuncsBindPerRequest(t *testing.T) {
 		t.Fatalf("shown when disabled: %q", got)
 	}
 }
+
+func TestCurrentStatus(t *testing.T) {
+	web, _ := setup(t, true, false)
+	cfg.SessionTimeout = 90 * time.Minute
+	login(t, web, "ian", "secret", "/")
+	login(t, web, "ian", "secret", "/")
+	st := CurrentStatus()
+	if !st.Web || st.Rest || st.SessionTimeout != "1h30m" || st.Users != 1 || st.ActiveSessions != 2 || st.PasswordHash != "Argon2id" {
+		t.Fatalf("got %+v", st)
+	}
+	for d, want := range map[time.Duration]string{8 * time.Hour: "8h", 30 * time.Minute: "30m", 90 * time.Second: "1m30s"} {
+		if got := shortDuration(d); got != want {
+			t.Errorf("shortDuration(%v) = %q, want %q", d, got, want)
+		}
+	}
+}
