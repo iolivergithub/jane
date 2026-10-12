@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"a10/auth"
 	"a10/configuration"
 	"a10/logging"
 
@@ -52,6 +53,10 @@ func StartWebUI(ctx context.Context) {
 	// Middlewares
 	router.Use(middleware.Logger())
 	router.Use(middleware.Secure())
+
+	// Login required for everything; /login and /logout are provided by the auth package
+	auth.RegisterEndpoints(router)
+	router.Use(auth.WebUIMiddleware())
 
 	//Ignore this as it causes issues with nginx and rewriting of URLs
 	//Easier to let nginx deal with this anyway

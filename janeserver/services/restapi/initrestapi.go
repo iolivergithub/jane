@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"a10/auth"
 	"a10/configuration"
 	"a10/logging"
 
@@ -32,6 +33,9 @@ func StartRESTInterface(ctx context.Context) {
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
 	}))
 	//router.Use(middleware.Logger())
+
+	// HTTP Basic authentication, only active if auth.rest is true in the configuration
+	router.Use(auth.RESTMiddleware())
 
 	//setup endpoints
 	setupStatusEndpoints(router)

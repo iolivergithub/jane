@@ -2,6 +2,8 @@ package webui
 
 import (
 	"html/template"
+
+	"a10/auth"
 )
 
 // templateFunctions are the functions available to every template.
@@ -11,6 +13,7 @@ func templateFunctions() template.FuncMap {
 		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
 		"opaqueObject": GetOpaqueObjectByValue,
 		"resultClass":  ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
+		"authEnabled": auth.WebEnabled,
 	}
 }
 

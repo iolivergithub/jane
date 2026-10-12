@@ -13,6 +13,7 @@ import (
 	//	_ "sync"
 	"syscall"
 
+	"a10/auth"
 	"a10/configuration"
 	"a10/datalayer"
 	"a10/logging"
@@ -65,6 +66,10 @@ func main() {
 	// if this fails, we panic
 
 	datalayer.InitialiseDatalayer()
+
+	// authentication/authorisation for the Web UI and REST API, see auth/auth.go
+
+	auth.Initialise(*configFile)
 
 	// Ok, we're up...let's log this.
 
