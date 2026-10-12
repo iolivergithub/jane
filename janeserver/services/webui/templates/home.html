@@ -10,29 +10,27 @@
    <h6 class="text-body-secondary text-uppercase small mb-2">Configuration</h6>
    <div class="row g-2 mb-3">
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/elements" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-server me-1"></i> Elements</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-server me-1"></i> Elements</div>
             <div class="j-num">{{ .Nes }}</div>
-            {{ if eq .Nes 0 }}<div class="small"><a href="/new/element" class="position-relative" style="z-index: 2">Add an element</a></div>{{ end }}
          </div></div>
       </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/intents" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-bullseye me-1"></i> Intents</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-bullseye me-1"></i> Intents</div>
             <div class="j-num">{{ .Nps }}</div>
-            {{ if eq .Nps 0 }}<div class="small"><a href="/loadstandardintents" class="position-relative" style="z-index: 2">Load the standard intents</a></div>{{ end }}
+            {{ if eq .Nps 0 }}<div class="small text-danger"><i class="fa fa-exclamation-triangle me-1"></i>Standard intents not loaded</div>{{ end }}
          </div></div>
       </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/expectedvalues" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-check-square-o me-1"></i> Expected values</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-check-square-o me-1"></i> Expected values</div>
             <div class="j-num">{{ .Nevs }}</div>
-            {{ if and (eq .Nevs 0) (gt .Nes 0) }}<div class="small"><a href="/new/expectedvalue" class="position-relative" style="z-index: 2">Add an expected value</a></div>{{ else if eq .Nevs 0 }}<div class="small text-body-secondary">None yet</div>{{ end }}
          </div></div>
       </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/opaqueobjects" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-cube me-1"></i> Opaque objects</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-cube me-1"></i> Opaque objects</div>
             <div class="j-num">{{ .Nhs }}</div>
                   </div></div>
 </div>
@@ -42,27 +40,26 @@
    <h6 class="text-body-secondary text-uppercase small mb-2">Attestation activity</h6>
    <div class="row g-2 mb-3">
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/sessions" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-list-alt me-1"></i> Sessions</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-list-alt me-1"></i> Sessions</div>
             <div class="j-num">{{ .Nses }}</div>
-            {{ if and (eq .Nses 0) (gt .Nes 0) }}<div class="small"><a href="/attest" class="position-relative" style="z-index: 2">Attest an element</a></div>{{ else if eq .Nses 0 }}<div class="small text-body-secondary">None yet</div>{{ end }}
          </div></div>
       </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/claims" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-file-text-o me-1"></i> Claims</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-file-text-o me-1"></i> Claims</div>
             <div class="j-num">{{ .Ncs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/results" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-flag-checkered me-1"></i> Results</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-flag-checkered me-1"></i> Results</div>
             <div class="j-num">{{ .Nrs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/log" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-book me-1"></i> Log entries</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-book me-1"></i> Log entries</div>
             <div class="j-num">{{ .Nlog }}</div>
                   </div></div>
 </div>
@@ -72,14 +69,14 @@
    <h6 class="text-body-secondary text-uppercase small mb-2">Engine</h6>
    <div class="row g-2 mb-4">
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/protocols" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-plug me-1"></i> Protocols</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-plug me-1"></i> Protocols</div>
             <div class="j-num">{{ .Nprs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
-         <div class="card j-card j-tile h-100"><div class="card-body py-2">
-            <a href="/rules" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-gavel me-1"></i> Rules</a>
+         <div class="card j-tile h-100"><div class="card-body py-2">
+            <div class="small text-body-secondary"><i class="fa fa-gavel me-1"></i> Rules</div>
             <div class="j-num">{{ .Nrus }}</div>
                   </div></div>
 </div>
