@@ -42,3 +42,12 @@ x3270:
 logging:
   logfilelocation: /var/log/jane/jane.log
   sessionupdatelogging: false
+
+
+#Authentication (optional - if this section is missing, no login is required)
+#Users are held in the "users" collection, e.g. in mongosh:
+#  db.users.insertOne({username: "ian", password: "secret"})
+#auth:
+#  web: true            # require a login for the Web UI
+#  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
+#  sessiontimeout: 8h   # Web UI login expires after this long without use
