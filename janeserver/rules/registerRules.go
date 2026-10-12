@@ -4,6 +4,7 @@ import (
 	"a10/operations"
 	"a10/structures"
 
+	"a10/rules/chares"
 	"a10/rules/keylime"
 	//	"a10/rules/marblerun"
 	"a10/rules/nullrule"
@@ -22,6 +23,7 @@ func RegisterRules() {
 	registerListOfRules(sysrules.Registration())
 	registerListOfRules(keylime.Registration())
 	registerListOfRules(veraison.Registration())
+	registerListOfRules(chares.Registration())
 
 }
 
