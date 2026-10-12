@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -70,13 +71,27 @@ func processAttest(c echo.Context) error {
 	sid, _ := operations.OpenSession(attreq.Msg)
 	s, _ := operations.GetSessionByItemID(sid)
 
-	// Call attest
-	// https://stackoverflow.com/questions/47400358/go-converting-json-string-to-mapstringinterface
-	// should be pps here, but we need to covert the pps from string to map[string]interface{}
-	empty := make(map[string]interface{})
+	// Intent parameters from the page (JSON object) are passed as the additional parameters,
+	// rule parameters (JSON object) are passed to every selected rule
+	aps := make(map[string]interface{})
+	if strings.TrimSpace(attreq.Pps) != "" {
+		if err := json.Unmarshal([]byte(attreq.Pps), &aps); err != nil {
+			fmt.Printf("Intent parameters are not a JSON object: %v\n", err.Error())
+			_ = operations.CloseSession(sid)
+			return c.Redirect(http.StatusSeeOther, "/attest")
+		}
+	}
+	rps := make(map[string]interface{})
+	if attreq.Av != "AO" && strings.TrimSpace(attreq.Rps) != "" {
+		if err := json.Unmarshal([]byte(attreq.Rps), &rps); err != nil {
+			fmt.Printf("Rule parameters are not a JSON object: %v\n", err.Error())
+			_ = operations.CloseSession(sid)
+			return c.Redirect(http.StatusSeeOther, "/attest")
+		}
+	}
 
 	// Call attest
-	cid, err := operations.Attest(e, epn, p, s, empty)
+	cid, err := operations.Attest(e, epn, p, s, aps)
 
 	// need to handle errors here - there will be no claim ID so we can't redirect there
 	// for the moment, let's go back to the attest page
@@ -110,8 +125,7 @@ func processAttest(c echo.Context) error {
 		r, _ := operations.GetRule(rn)
 		//fmt.Printf("** verify %v\n", r)
 
-		//rid, rv, err := operations.Verify(cl, r, s, empty) // rps conversion goes here
-		operations.Verify(cl, r, s, empty) // rps conversion goes here
+		operations.Verify(cl, r, s, rps)
 		//fmt.Printf("results of verify %v - %v - %v\n", err, rv, rid)
 
 	}
