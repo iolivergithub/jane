@@ -8,10 +8,9 @@ import (
 )
 
 // View model for the single element page: the element's claims and results
-// grouped into attestation sessions, plus the data behind the timeline charts
-// and the rule/claim history matrix.
+// grouped into attestation sessions, and the rule/claim history matrix.
 
-// How much history the element page fetches and how many sessions it plots.
+// How much history the element page fetches and how many sessions the history matrix shows.
 const (
 	elementClaimsFetched    = 300
 	elementResultsFetched   = 600
@@ -19,7 +18,7 @@ const (
 	elementListLimit        = 100 // rows per list at the bottom of the page
 )
 
-// Outcome classes shared by the charts, the matrix and the lists.
+// Outcome classes shared by the matrix and the lists.
 const (
 	outcomePass     = "pass"
 	outcomeFail     = "fail"
@@ -81,18 +80,6 @@ type matrixRow struct {
 	Cells []matrixCell
 }
 
-// timelineChart is serialised into the page for Chart.js (html/template
-// JSON-encodes it in the script context).
-type timelineChart struct {
-	Labels     []string `json:"labels"`
-	SessionIDs []string `json:"sessionIds"`
-	Pass       []int    `json:"pass"`
-	Fail       []int    `json:"fail"`
-	Other      []int    `json:"other"`
-	Claims     []int    `json:"claims"`
-	ClaimErr   []int    `json:"claimErr"`
-}
-
 // elementPage is what element.html renders. E, CS and RS keep their old names.
 type elementPage struct {
 	E  structures.Element
@@ -100,12 +87,11 @@ type elementPage struct {
 	RS []structures.Result // newest first
 
 	Sessions []elementSession // newest first
-	Timeline []elementSession // oldest first, at most elementTimelineSessions
+	Timeline []elementSession // history matrix columns: oldest first, at most elementTimelineSessions
 	Latest   *elementSession
 
 	RuleRows  []matrixRow
 	ClaimRows []matrixRow
-	Chart     timelineChart
 
 	NPass, NFail, NOther, NClaimErrors int
 
@@ -232,23 +218,13 @@ func buildElementPage(e structures.Element, cs []structures.Claim, rs []structur
 		p.Latest = &p.Sessions[0]
 	}
 
-	// timeline: the most recent sessions, oldest first (time runs left to right)
+	// history matrix columns: the most recent sessions, oldest first (time runs left to right)
 	n := len(p.Sessions)
 	if n > elementTimelineSessions {
 		n = elementTimelineSessions
 	}
 	for i := n - 1; i >= 0; i-- {
 		p.Timeline = append(p.Timeline, p.Sessions[i])
-	}
-
-	for _, s := range p.Timeline {
-		p.Chart.Labels = append(p.Chart.Labels, s.Label)
-		p.Chart.SessionIDs = append(p.Chart.SessionIDs, s.ID)
-		p.Chart.Pass = append(p.Chart.Pass, s.Pass)
-		p.Chart.Fail = append(p.Chart.Fail, s.Fail)
-		p.Chart.Other = append(p.Chart.Other, s.Other)
-		p.Chart.Claims = append(p.Chart.Claims, len(s.Claims)-s.ClaimErrors)
-		p.Chart.ClaimErr = append(p.Chart.ClaimErr, s.ClaimErrors)
 	}
 
 	p.RuleRows = buildMatrix(p.Timeline, func(s elementSession, add func(label, outcome, link, title string)) {

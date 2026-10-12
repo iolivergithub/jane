@@ -180,33 +180,10 @@
 </div>
 
 {{ if .Timeline }}
-<!-- timeline -->
-<div class="card mb-3">
-   <div class="card-header py-2 d-flex flex-wrap align-items-center gap-3">
-      <span><i class="fa fa-line-chart me-1"></i> Timeline <span class="text-body-secondary small">— last {{ len .Timeline }} sessions, oldest → newest (UTC). Click a bar to open the session.</span></span>
-   </div>
-   <div class="card-body">
-      <div class="d-flex flex-wrap gap-3 small mb-1">
-         <span class="fw-semibold">Results per session</span>
-         <span><span class="ev-swatch oc-pass"></span> Pass</span>
-         <span><span class="ev-swatch oc-fail"></span> Fail</span>
-         <span><span class="ev-swatch oc-other"></span> Other (no result / error)</span>
-      </div>
-      <div style="position: relative; height: 200px"><canvas id="resultsChart" aria-label="Results per session" role="img"></canvas></div>
-
-      <div class="d-flex flex-wrap gap-3 small mt-3 mb-1">
-         <span class="fw-semibold">Claims per session</span>
-         <span><span class="ev-swatch oc-claim"></span> Collected</span>
-         <span><span class="ev-swatch oc-claimerr"></span> Error</span>
-      </div>
-      <div style="position: relative; height: 130px"><canvas id="claimsChart" aria-label="Claims per session" role="img"></canvas></div>
-   </div>
-</div>
-
 <!-- history matrix -->
 <div class="card mb-3">
    <div class="card-header py-2 d-flex flex-wrap align-items-center gap-3">
-      <span><i class="fa fa-th me-1"></i> History <span class="text-body-secondary small">— each rule and claim across the same sessions</span></span>
+      <span><i class="fa fa-th me-1"></i> History <span class="text-body-secondary small">— each rule and claim across the last {{ len .Timeline }} sessions, oldest → newest (UTC). Click a session heading or a cell to open it.</span></span>
       <span class="small ms-auto d-flex flex-wrap gap-3">
          <span><span class="ev-swatch oc-pass"></span> Pass</span>
          <span><span class="ev-swatch oc-fail"></span> Fail</span>
@@ -348,61 +325,4 @@
    </div>
 </div>
 
-{{ if .Timeline }}
-<script>
-(function () {
-   if (typeof Chart === 'undefined') return;
-   var data = {{ .Chart }};
-   var css = getComputedStyle(document.documentElement);
-   function v(name) { return css.getPropertyValue(name).trim(); }
-   var surface = v('--bs-body-bg'), ink = v('--bs-secondary-color'), grid = v('--bs-border-color');
-
-   Chart.defaults.global.defaultFontColor = ink;
-   Chart.defaults.global.defaultFontFamily = v('--bs-body-font-family');
-
-   function ds(label, values, color) {
-      // 1px surface-coloured border keeps a visible gap between stacked segments
-      return { label: label, data: values, backgroundColor: color, borderColor: surface, borderWidth: 1,
-               barPercentage: 0.85, categoryPercentage: 0.9 };
-   }
-   function options() {
-      return {
-         maintainAspectRatio: false,
-         legend: { display: false },  // labelled legends are rendered in HTML above each chart
-         tooltips: { mode: 'index', intersect: false,
-                     callbacks: { title: function (items) { return 'Session ' + items[0].label + ' UTC'; } } },
-         hover: { mode: 'index', intersect: false },
-         scales: {
-            xAxes: [{ stacked: true, gridLines: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12 } }],
-            yAxes: [{ stacked: true, gridLines: { color: grid, zeroLineColor: grid, drawBorder: false },
-                      ticks: { beginAtZero: true, precision: 0, maxTicksLimit: 5 } }]
-         },
-         onClick: function (evt, items) {
-            if (items && items.length) { window.location = '/session/' + data.sessionIds[items[0]._index]; }
-         },
-         onHover: function (evt, items) { evt.target.style.cursor = items && items.length ? 'pointer' : 'default'; }
-      };
-   }
-
-   new Chart(document.getElementById('resultsChart'), {
-      type: 'bar',
-      data: { labels: data.labels, datasets: [
-         ds('Pass', data.pass, v('--bs-success')),
-         ds('Fail', data.fail, v('--bs-danger')),
-         ds('Other', data.other, v('--bs-warning'))
-      ]},
-      options: options()
-   });
-
-   new Chart(document.getElementById('claimsChart'), {
-      type: 'bar',
-      data: { labels: data.labels, datasets: [
-         ds('Collected', data.claims, v('--bs-info')),
-         ds('Error', data.claimErr, v('--bs-danger'))
-      ]},
-      options: options()
-   });
-})();
-</script>
-{{ end }}
 {{end}}
