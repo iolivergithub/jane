@@ -1,156 +1,172 @@
 {{define "content"}}
 <div class="container-md">
-   <div class="row">
-      <div class="col-md-3">
-         <div class="card">
-            <div class="card-header"><a href="/elements">Elements</a></div>
-            <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nes }}</p></div>
-         </div>
-      </div>
-      <div class="col-md-3">
-         <div class="card">
-            <div class="card-header"><a href="/intents">Intents</a></div>
-            <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nps }}</p></div>
-         </div>
-      </div>
-      <div class="col-md-3">
-         <div class="card">
-            <div class="card-header"><a href="/expectedvalues">Expected Values</a></div>
-            <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nevs }}</p></div>
-         </div>
-      </div>
-      <div class="col-md-3">
-         <div class="card">
-            <div class="card-header"><a href="/sessions">Sessions</a></div>
-            <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nses }}</p></div>
-         </div>
-      </div>
+
+   <div class="d-flex flex-wrap align-items-baseline justify-content-between mb-3">
+      <h4 class="mb-0">{{ .Cfg.System.Name }}</h4>
+      <span class="text-body-secondary small">Database <b>{{ .Cfg.Database.Name }}</b></span>
    </div>
-   <br/>
-   <div class="row">
-      <div class="col-md-3">
-         <div class="card">
-            <div class="card-header"><a href="/claims">Claims</a></div>
-            <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Ncs }}</p></div>
-         </div>      </div>
-         <div class="col-md-3">
-            <div class="card">
-               <div class="card-header"><a href="/results">Results</a></div>
-               <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nrs }}</p></div>
-            </div>      </div>
-            <div class="col-md-3">
-               <div class="card">
-                  <div class="card-header"><a href="/opaqueobjects">Objects</a></div>
-                  <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nhs }}</p></div>
-               </div>      </div>
-               <div class="col-md-3">
-                  <div class="card">
-                     <div class="card-header"><a href="/protocols">Protocols</a> / <a href="/rules">Rules</a></div>
-                     <div class="card-body"><p class="text-end fs-4 fw-bold">{{ .Nprs }} / {{ .Nrus }}</p></div>
-                  </div>      </div>
-               </div>
-            </div>
-            <hr/>
-            <div class="container-md">
-               
-               <div class="row">
-                  <div class="col-md-12">
-                     <div class="card">
-                        <div class="card-header">Command Line</div>
-                        <div class="card-body">
-                           Arguments: <b>{{ .CmdLineLength }}</b> :
-                           {{ range .CmdLine }}
-                           <span class="badge bg-info"> {{ . }} </span>
-                           {{end}}
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <br/>
-               <div class="row">
-                  <div class="col-md-6">
-                     <div class="card">
-                        <div class="card-header">Services</div>
-                        <div class="card-body">
-                           <table class="table table-sm table-striped">
-                              <tbody>
-                                 <tr><td scope="col">REST</td> <td scope="col">  <b>{{ .Cfg.Rest.ListenOn }}:{{ .Cfg.Rest.Port }} </b>
-                                 {{ if eq .Cfg.Rest.UseHTTP true }}
-                                 <span class="badge bg-danger">http</span>
-                                 {{ else }}
-                                 <span class="badge bg-success">https</span>
-                              {{ end }}</td> </tr>
-                              <tr><td scope="col">Web</td> <td scope="col">   <b>{{ .Cfg.Web.ListenOn }}:{{ .Cfg.Web.Port }}</b>
-                              {{ if eq .Cfg.Web.UseHTTP true }}
-                              <span class="badge bg-danger">http</span>
-                              {{ else }}
-                              <span class="badge bg-success">https</span>
-                           {{ end }} </td> </tr>
-                           <tr><td scope="col">X3270</td> <td scope="col"><b>:{{ .Cfg.X3270.Port }}</b></td> </tr>
-                           
-                           <tr><td scope="col">Keylime</td> <td scope="col">
-                           {{ if eq .Cfg.Keylime.ApiUrl "" }}
-                           <span class="badge bg-warning">Not utilised</span>
-                           {{ else }}
-                           <b>{{ .Cfg.Keylime.ApiUrl }}</b>
-                        {{ end }} </td> </tr>
-                     </tbody>
-                  </table>
-               </div>
-            </div>
-         </div>
-         <div class="col-md-6">
-            <div class="card">
-               <div class="card-header"><a href="/log">Logging (File)</a></div>
-               <div class="card-body">
-                  <table class="table table-sm table-striped">
-                     <tbody>
-                        <tr><td scope="col">Location</td> <td scope="col"><b>{{ .Cfg.Logging.LogFileLocation }}</b></td> </tr>
-                        <tr><td scope="col">Entries</td> <td scope="col"><b>{{ .Nlog }}</b></td> </tr>
-                        <tr><td scope="col">Size on disk</td> <td scope="col"><b>{{ .Szlog }}</b> bytes</td> </tr>
-                        <tr><td scope="col">Session update logging</td> <td scope="col">{{ if eq .Cfg.Logging.SessionUpdateLogging true }}
-                        <span class="badge bg-success">enabled</span>
-                        {{ else }}
-                        <span class="badge bg-warning">disabled</span>
-                     {{ end }} </td> </tr>
-                  </tbody>
-               </table>
-            </div>
-         </div>
+
+   <!-- What is configured: the things Jane attests and what it expects of them -->
+   <h6 class="text-body-secondary text-uppercase small mb-2">Configuration</h6>
+   <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/elements" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-server me-1"></i> Elements</a>
+            <div class="j-num">{{ .Nes }}</div>
+            {{ if eq .Nes 0 }}<div class="small"><a href="/new/element" class="position-relative" style="z-index: 2">Add an element</a></div>{{ end }}
+         </div></div>
       </div>
-   </div>
-   <br/>
-   <div class="row">
-      <div class="col-md-6">
-         <div class="card">
-            <div class="card-header">Database (Mongodb)</div>
-            <div class="card-body">
-               <table class="table table-sm table-striped">
-                  <tbody>
-                     <tr><td scope="col">Name</td> <td scope="col"><b> {{ .Cfg.Database.Name }} </b></td> </tr>
-                     <tr><td scope="col">Connection</td> <td scope="col"><b> {{ .Cfg.Database.Connection }}</b></td> </tr>
-                  </tbody>
-               </table>
-            </div>
-         </div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/intents" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-bullseye me-1"></i> Intents</a>
+            <div class="j-num">{{ .Nps }}</div>
+            {{ if eq .Nps 0 }}<div class="small"><a href="/loadstandardintents" class="position-relative" style="z-index: 2">Load the standard intents</a></div>{{ end }}
+         </div></div>
       </div>
-      <div class="col-md-6">
-         <div class="card">
-            <div class="card-header">Message Bus (MQTT)</div>
-            <div class="card-body">
-               <table class="table table-sm table-striped">
-                  <tbody>
-                     <tr><td scope="col">Broker</td> <td scope="col"><b> {{ .Cfg.Messaging.Broker }} </b></td> </tr>
-                     <tr><td scope="col">Port/PortWS</td> <td scope="col"><b> {{ .Cfg.Messaging.Port }} / {{ .Cfg.Messaging.PortWS }}</b></td> </tr>
-                     <tr><td scope="col">Client ID</td> <td scope="col"><b>{{ .Cfg.Messaging.ClientID }}</b></td> </tr>
-                  </tbody>
-               </table>
-            </div>
-         </div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/expectedvalues" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-check-square-o me-1"></i> Expected values</a>
+            <div class="j-num">{{ .Nevs }}</div>
+            {{ if and (eq .Nevs 0) (gt .Nes 0) }}<div class="small"><a href="/new/expectedvalue" class="position-relative" style="z-index: 2">Add an expected value</a></div>{{ else if eq .Nevs 0 }}<div class="small text-body-secondary">None yet</div>{{ end }}
+         </div></div>
       </div>
-   </div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/opaqueobjects" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-cube me-1"></i> Opaque objects</a>
+            <div class="j-num">{{ .Nhs }}</div>
+                  </div></div>
 </div>
-<hr/>
+   </div>
+
+   <!-- What attestation has produced -->
+   <h6 class="text-body-secondary text-uppercase small mb-2">Attestation activity</h6>
+   <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/sessions" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-list-alt me-1"></i> Sessions</a>
+            <div class="j-num">{{ .Nses }}</div>
+            {{ if and (eq .Nses 0) (gt .Nes 0) }}<div class="small"><a href="/attest" class="position-relative" style="z-index: 2">Attest an element</a></div>{{ else if eq .Nses 0 }}<div class="small text-body-secondary">None yet</div>{{ end }}
+         </div></div>
+      </div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/claims" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-file-text-o me-1"></i> Claims</a>
+            <div class="j-num">{{ .Ncs }}</div>
+                  </div></div>
 </div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/results" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-flag-checkered me-1"></i> Results</a>
+            <div class="j-num">{{ .Nrs }}</div>
+                  </div></div>
+</div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/log" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-book me-1"></i> Log entries</a>
+            <div class="j-num">{{ .Nlog }}</div>
+                  </div></div>
+</div>
+   </div>
+
+   <!-- What this server can do -->
+   <h6 class="text-body-secondary text-uppercase small mb-2">Engine</h6>
+   <div class="row g-2 mb-4">
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/protocols" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-plug me-1"></i> Protocols</a>
+            <div class="j-num">{{ .Nprs }}</div>
+                  </div></div>
+</div>
+      <div class="col-6 col-md-3">
+         <div class="card j-card j-tile h-100"><div class="card-body py-2">
+            <a href="/rules" class="small text-body-secondary text-decoration-none stretched-link"><i class="fa fa-gavel me-1"></i> Rules</a>
+            <div class="j-num">{{ .Nrus }}</div>
+                  </div></div>
+</div>
+   </div>
+
+   <!-- System settings -->
+   <div class="card mb-4 j-details">
+      <div class="card-header pb-0 border-bottom-0">
+         <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+               <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#home-services" type="button" role="tab"><i class="fa fa-sitemap me-1"></i> Services</button>
+            </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-logging" type="button" role="tab"><i class="fa fa-book me-1"></i> Logging</button>
+            </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-database" type="button" role="tab"><i class="fa fa-database me-1"></i> Database</button>
+            </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-mqtt" type="button" role="tab"><i class="fa fa-exchange me-1"></i> Message bus</button>
+            </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-cmdline" type="button" role="tab"><i class="fa fa-terminal me-1"></i> Command line <span class="badge bg-secondary">{{ .CmdLineLength }}</span></button>
+            </li>
+         </ul>
+      </div>
+      <div class="card-body tab-content">
+
+         <div class="tab-pane fade show active" id="home-services" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  <tr><td>REST</td><td><b>{{ .Cfg.Rest.ListenOn }}:{{ .Cfg.Rest.Port }}</b>
+                     {{ if .Cfg.Rest.UseHTTP }}<span class="badge bg-danger">http</span>{{ else }}<span class="badge bg-success">https</span>{{ end }}</td></tr>
+                  <tr><td>Web</td><td><b>{{ .Cfg.Web.ListenOn }}:{{ .Cfg.Web.Port }}</b>
+                     {{ if .Cfg.Web.UseHTTP }}<span class="badge bg-danger">http</span>{{ else }}<span class="badge bg-success">https</span>{{ end }}</td></tr>
+                  <tr><td>X3270</td><td><b>:{{ .Cfg.X3270.Port }}</b></td></tr>
+                  <tr><td>Keylime</td><td>
+                     {{ if eq .Cfg.Keylime.ApiUrl "" }}<span class="badge bg-warning">Not utilised</span>{{ else }}<b>{{ .Cfg.Keylime.ApiUrl }}</b>{{ end }}</td></tr>
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-logging" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  <tr><td>Location</td><td><b>{{ .Cfg.Logging.LogFileLocation }}</b></td></tr>
+                  <tr><td>Entries</td><td><b>{{ .Nlog }}</b> <a href="/log" class="small ms-2">View log</a></td></tr>
+                  <tr><td>Size on disk</td><td>{{ if lt .Szlog 0 }}<span class="badge bg-warning">File not found</span>{{ else }}<b>{{ .Szlog }}</b> bytes{{ end }}</td></tr>
+                  <tr><td>Session update logging</td><td>
+                     {{ if .Cfg.Logging.SessionUpdateLogging }}<span class="badge bg-success">enabled</span>{{ else }}<span class="badge bg-warning">disabled</span>{{ end }}</td></tr>
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-database" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  <tr><td>Type</td><td><b>MongoDB</b></td></tr>
+                  <tr><td>Name</td><td><b>{{ .Cfg.Database.Name }}</b></td></tr>
+                  <tr><td>Connection</td><td class="font-monospace small"><b>{{ .Cfg.Database.Connection }}</b></td></tr>
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-mqtt" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  <tr><td>Type</td><td><b>MQTT</b></td></tr>
+                  <tr><td>Broker</td><td><b>{{ .Cfg.Messaging.Broker }}</b></td></tr>
+                  <tr><td>Port / WebSocket port</td><td><b>{{ .Cfg.Messaging.Port }} / {{ .Cfg.Messaging.PortWS }}</b></td></tr>
+                  <tr><td>Client ID</td><td><b>{{ .Cfg.Messaging.ClientID }}</b></td></tr>
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-cmdline" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  {{ range $i, $a := .CmdLine }}
+                  <tr><td class="text-body-secondary">{{ $i }}</td><td class="font-monospace small">{{ $a }}</td></tr>
+                  {{ end }}
+               </tbody>
+            </table>
+         </div>
+
+      </div>
+   </div>
+
 </div>
 {{end}}
