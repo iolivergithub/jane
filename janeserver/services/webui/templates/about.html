@@ -1,33 +1,56 @@
 {{define "content"}}
 <div class="mt-4 p-5 bg-primary text-white rounded">
-    <h1>About</h1>
-    <p class="lead mb-0">Jane attestation server</p>
+   <h1>About</h1>
+   <p class="lead mb-0">Jane attestation server</p>
 </div>
 
-<div class="row g-3 mt-2">
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <div class="small text-body-secondary text-uppercase">Version</div>
-            <div class="fs-2 fw-semibold">{{ .Version }}</div>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <div class="small text-body-secondary text-uppercase">Build</div>
-            <div class="fs-4 fw-semibold j-wrap">{{ .Build }}</div>
-        </div></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100"><div class="card-body">
-            <div class="small text-body-secondary text-uppercase">Run session</div>
-            <div class="fs-5 fw-semibold font-monospace j-wrap">{{ .RunSession }}</div>
-            <div class="small text-body-secondary mt-1">Unique to this run of the server; it changes on every restart.</div>
-        </div></div>
-    </div>
+<!-- this running instance -->
+<div class="row g-3 mt-1">
+   <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+         <div class="small text-body-secondary text-uppercase">Version</div>
+         <div class="fs-2 fw-semibold j-wrap">{{ .Version }}</div>
+      </div></div>
+   </div>
+   <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+         <div class="small text-body-secondary text-uppercase">Build</div>
+         <div class="fs-5 fw-semibold j-wrap">{{ .Build }}</div>
+      </div></div>
+   </div>
+   <div class="col-md-4">
+      <div class="card h-100"><div class="card-body">
+         <div class="small text-body-secondary text-uppercase">Run session</div>
+         <div class="fs-6 fw-semibold font-monospace j-wrap">{{ .RunSession }}</div>
+         <div class="small text-body-secondary mt-1">Unique to this run of the server; it changes on every restart.</div>
+      </div></div>
+   </div>
 </div>
 
-<div class="mt-4">
-The source code and documentation are on the <a href="https://github.com/iolivergithub/jane" target="_blank">Github pages for this project</a>.
-For the story behind the name and earlier versions, see <a href="/history">History</a>.
+<div class="row g-3 mt-1 mb-4">
+   <!-- what Jane is -->
+   <div class="col-lg-7">
+      <div class="card h-100">
+         <div class="card-header"><i class="fa fa-info-circle me-1"></i> Jane and Tarzan</div>
+         <div class="card-body">
+            <p><b>Jane</b> is a remote attestation server. It collects claims from <b>elements</b> through their trust agents, checks them against <b>expected values</b> with <b>rules</b>, and records the <b>results</b>, grouped into sessions.</p>
+            <p class="mb-0"><b>Tarzan</b> is the matching trust agent: a single binary that runs on an element and provides evidence such as TPM 2.0 quotes and PCRs, UEFI event logs, IMA logs and system information.</p>
+         </div>
+      </div>
+   </div>
+
+   <!-- where to find more -->
+   <div class="col-lg-5">
+      <div class="card h-100">
+         <div class="card-header"><i class="fa fa-book me-1"></i> More information</div>
+         <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action" href="https://github.com/iolivergithub/jane" target="_blank" rel="noopener"><i class="fa fa-github fa-fw me-1"></i> Source code on GitHub</a>
+            <a class="list-group-item list-group-item-action" href="https://github.com/iolivergithub/jane/blob/main/docs/contents.md" target="_blank" rel="noopener"><i class="fa fa-file-text-o fa-fw me-1"></i> Documentation</a>
+            <a class="list-group-item list-group-item-action" href="https://github.com/iolivergithub/jane/blob/main/docs/gettingstarted.md" target="_blank" rel="noopener"><i class="fa fa-play-circle-o fa-fw me-1"></i> Getting started</a>
+            <a class="list-group-item list-group-item-action" href="/history"><i class="fa fa-history fa-fw me-1"></i> History, or why <em>Jane</em>?</a>
+         </div>
+         <div class="card-footer small text-body-secondary">Released under the Clear BSD License.</div>
+      </div>
+   </div>
 </div>
 {{end}}
