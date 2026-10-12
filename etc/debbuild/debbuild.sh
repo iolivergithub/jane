@@ -52,19 +52,19 @@ rm control_tarzan
 #compile Jane
 echo "${BLUE}Compiling Janeserver${NC}"
 cd ../../janeserver
-make -f ../etc/debbuild/Makefile.jane.$ARCHTECTURE build VERSION=$VERSIONNUMBER
+make -f ../etc/debbuild/Makefile.jane.$ARCHTECTURE build VERSION="$VERSIONNUMBER"
 ls -l janeserver
 
 #compile Tarzan
 echo "${BLUE}Compling Tarzan${NC}"
 cd ../tarzan
-make -f ../etc/debbuild/Makefile.tarzan.$ARCHTECTURE build VERSION=$VERSIONNUMBER
+make -f ../etc/debbuild/Makefile.tarzan.$ARCHTECTURE build VERSION="$VERSIONNUMBER"
 ls -l tarzan
 
 #compile Provisioner - included in the tarzan.deb package
 echo "${BLUE}Compling JP${NC}"
 cd ../provisioner
-make  -f ../etc/debbuild/Makefile.provisioner.amd64 build VERSION=$VERSIONNUMBER
+make  -f ../etc/debbuild/Makefile.provisioner.amd64 build VERSION="$VERSIONNUMBER"
 ls -l jp
 
 #return to this directory
