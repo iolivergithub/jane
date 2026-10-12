@@ -11,26 +11,26 @@
    <div class="row g-2 mb-3">
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-server me-1"></i> Elements</div>
+            <div class="small"><a href="/elements" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-server me-1"></i> Elements</a></div>
             <div class="j-num">{{ .Nes }}</div>
          </div></div>
       </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-bullseye me-1"></i> Intents</div>
+            <div class="small"><a href="/intents" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-bullseye me-1"></i> Intents</a></div>
             <div class="j-num">{{ .Nps }}</div>
             {{ if eq .Nps 0 }}<div class="small text-danger"><i class="fa fa-exclamation-triangle me-1"></i>Standard intents not loaded</div>{{ end }}
          </div></div>
       </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-check-square-o me-1"></i> Expected values</div>
+            <div class="small"><a href="/expectedvalues" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-check-square-o me-1"></i> Expected values</a></div>
             <div class="j-num">{{ .Nevs }}</div>
          </div></div>
       </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-cube me-1"></i> Opaque objects</div>
+            <div class="small"><a href="/opaqueobjects" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-cube me-1"></i> Opaque objects</a></div>
             <div class="j-num">{{ .Nhs }}</div>
                   </div></div>
 </div>
@@ -41,25 +41,25 @@
    <div class="row g-2 mb-3">
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-list-alt me-1"></i> Sessions</div>
+            <div class="small"><a href="/sessions" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-list-alt me-1"></i> Sessions</a></div>
             <div class="j-num">{{ .Nses }}</div>
          </div></div>
       </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-file-text-o me-1"></i> Claims</div>
+            <div class="small"><a href="/claims" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-file-text-o me-1"></i> Claims</a></div>
             <div class="j-num">{{ .Ncs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-flag-checkered me-1"></i> Results</div>
+            <div class="small"><a href="/results" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-flag-checkered me-1"></i> Results</a></div>
             <div class="j-num">{{ .Nrs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-book me-1"></i> Log entries</div>
+            <div class="small"><a href="/log" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-book me-1"></i> Log entries</a></div>
             <div class="j-num">{{ .Nlog }}</div>
                   </div></div>
 </div>
@@ -70,13 +70,13 @@
    <div class="row g-2 mb-4">
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-plug me-1"></i> Protocols</div>
+            <div class="small"><a href="/protocols" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-plug me-1"></i> Protocols</a></div>
             <div class="j-num">{{ .Nprs }}</div>
                   </div></div>
 </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
-            <div class="small text-body-secondary"><i class="fa fa-gavel me-1"></i> Rules</div>
+            <div class="small"><a href="/rules" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-gavel me-1"></i> Rules</a></div>
             <div class="j-num">{{ .Nrus }}</div>
                   </div></div>
 </div>
