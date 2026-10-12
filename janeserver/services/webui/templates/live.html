@@ -7,7 +7,7 @@
 
 <p>Messaging = {{ .Messaging }}</p>
 
-<p>Broker: <code data-r="broker"></code><br>
+<p>Broker: <code data-r="broker"></code> <span data-r="brokerNote"></span><br>
 Topic: <code data-r="topicLabel"></code><br>
 Status: <strong data-r="status">Starting...</strong></p>
 
@@ -29,10 +29,21 @@ Status: <strong data-r="status">Starting...</strong></p>
 <script>
 (function () {
   // ---------- configuration ----------
-   //In this form: wss://test.mosquitto.org:8081
-  var BROKER   = "ws://{{ .Messaging.Broker }}:{{ .Messaging.PortWS }}";  // WebSocket URL supplied by the calling environment
+  // The browser, not Jane, opens this connection. The broker address in Jane's config is
+  // as seen from Jane, so a loopback address (127.0.0.1, localhost) would point at the
+  // viewer's own machine; in that case use the host this page was loaded from instead.
+  var CONFIG_HOST = "{{ .Messaging.Broker }}";
+  var WS_PORT     = "{{ .Messaging.PortWS }}";
+  var host = CONFIG_HOST, hostNote = "";
+  if (/^(127\.|localhost$|::1$|\[::1\]$|0\.0\.0\.0$)/.test(CONFIG_HOST) && location.hostname) {
+    host = location.hostname;
+    if (host !== CONFIG_HOST) hostNote = "(config says " + CONFIG_HOST + "; using this page's host)";
+  }
+  if (host.indexOf(":") >= 0 && host.charAt(0) !== "[") host = "[" + host + "]";   // IPv6 literal
+  // A page served over HTTPS may only open secure WebSockets.
+  var BROKER   = (location.protocol === "https:" ? "wss" : "ws") + "://" + host + ":" + WS_PORT;
   var TOPIC    = "#";
-  var USERNAME = "";        // not required; set to a string to authenticate
+  var USERNAME = "";        // not required; set to a non-empty string to authenticate
   var PASSWORD = "";        // only sent if USERNAME is set
 
   // Minimal MQTT 3.1.1 client over WebSocket - no external libraries.
@@ -127,9 +138,9 @@ Status: <strong data-r="status">Starting...</strong></p>
       new Uint8Array([4, 0, KEEPALIVE >> 8, KEEPALIVE & 255]),
       mqttString("web-monitor-" + Math.random().toString(16).slice(2, 10))
     ];
-    if (USERNAME != null) {
+    if (USERNAME) {
       flags |= 0x80; parts.push(mqttString(USERNAME));
-      if (PASSWORD != null) { flags |= 0x40; parts.push(mqttString(PASSWORD)); }
+      if (PASSWORD) { flags |= 0x40; parts.push(mqttString(PASSWORD)); }
     }
     parts[1][1] = flags;
     send(packet(0x10, concat(parts)));
@@ -182,16 +193,27 @@ Status: <strong data-r="status">Starting...</strong></p>
   function open() {
     buf = new Uint8Array(0);
     setStatus("Connecting...");
+    var opened = false, gotConnack = false;
     try { ws = new WebSocket(BROKER, ["mqtt"]); }
     catch (e) { setStatus("Invalid broker URL: " + e.message); return; }
     ws.binaryType = "arraybuffer";
-    ws.onopen = sendConnect;
-    ws.onmessage = function (e) { onData(new Uint8Array(e.data)); };
-    ws.onerror = function () { setStatus("WebSocket error"); };
-    ws.onclose = function () {
+    ws.onopen = function () { opened = true; setStatus("WebSocket open, logging in to broker..."); sendConnect(); };
+    ws.onmessage = function (e) { if ((new Uint8Array(e.data))[0] >> 4 === 2) gotConnack = true; onData(new Uint8Array(e.data)); };
+    ws.onerror = function () {};   // the close handler below reports what happened
+    ws.onclose = function (e) {
       clearInterval(pingTimer); pingTimer = null;
       $("pauseBtn").disabled = true;
-      setStatus("Connection lost, reconnecting in 3 s...");
+      var why;
+      if (!opened) {
+        why = "Cannot reach the broker at " + BROKER + " (WebSocket code " + e.code + "). " +
+              "Check that the broker has a WebSocket listener on port " + WS_PORT +
+              ", that the port is open in the firewall, and that this address is reachable from your browser.";
+      } else if (!gotConnack) {
+        why = "The broker closed the connection before accepting the login (code " + e.code + ").";
+      } else {
+        why = "Connection lost (code " + e.code + ").";
+      }
+      setStatus(why + " Retrying in 3 s...");
       setTimeout(open, 3000);
     };
   }
@@ -204,6 +226,7 @@ Status: <strong data-r="status">Starting...</strong></p>
   $("clearBtn").addEventListener("click", function () { entries = []; total = 0; render(); });
 
   $("broker").textContent = BROKER;
+  $("brokerNote").textContent = hostNote;
   $("topicLabel").textContent = TOPIC;
 
   // Connect on page load
