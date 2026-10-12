@@ -303,6 +303,9 @@
             <tr><td><code>chares_validNonce</code></td><td><code>ratsd/chares</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
                 <td>The <code>eat_nonce</code> returned by ratsd equals the <code>ratsd/nonce</code> recorded in the claim's call parameters. Compared as bytes,
                 since ratsd returns standard base64 while Jane sends base64url.</td></tr>
+            <tr><td><code>chares_validAttesterNonces</code></td><td><code>ratsd/chares</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>Each leaf attester's evidence contains the nonce ratsd derived for it: <code>SHAKE(ratsd/nonce)</code> truncated to that attester's size in
+                <code>vnd.veraison.nonce_adjust_map</code>. Supports TSM reports (nonce in <code>outblob</code>; the mock TSM's hex form is accepted) and NVIDIA GPU evidence.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">Veraison</th></tr>
             <tr><td><code>veraisin_psa_token_verify</code></td><td><code>veraison/psa/get_token</code></td><td><span class="badge bg-success">EV</span> <span class="text-body-secondary">any</span></td><td class="text-body-secondary">none</td>

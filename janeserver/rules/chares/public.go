@@ -25,8 +25,9 @@ import (
 
 func Registration() []structures.Rule {
 	ruleValidNonce := structures.Rule{"chares_validNonce", "Checks that the eat_nonce returned by ratsd matches the nonce sent in the ratsd/chares call", ValidNonce, false}
+	ruleAttesterNonces := structures.Rule{"chares_validAttesterNonces", "Checks that each leaf attester's evidence contains the nonce ratsd derived for it from the nonce sent in the ratsd/chares call", ValidAttesterNonces, false}
 
-	return []structures.Rule{ruleValidNonce}
+	return []structures.Rule{ruleValidNonce, ruleAttesterNonces}
 }
 
 // ValidNonce compares the eat_nonce in the RATSD token with the ratsd/nonce call parameter.
