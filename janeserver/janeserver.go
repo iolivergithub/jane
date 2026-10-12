@@ -26,8 +26,9 @@ import (
 	"a10/services/x3270"
 )
 
-// Version number
-const VERSION string = "v1.1 JANE"
+// Version number. A var rather than a const so it can be overridden at build time with
+// -ldflags "-X 'main.VERSION=...'"; the Makefiles set only BUILD.
+var VERSION string = "v1.1 JANE"
 
 // the BUILD value can be set during compilation.
 var BUILD string = "not set"
