@@ -1,28 +1,74 @@
 {{define "content"}}
-<h3>Rules</h3>
-<table class="table table-striped table-sm">
-   <thead>
-      <tr>
-         <th scope="col">Name</th>   
-         <th scope="col"> </th>                      
- 
-         <th scope="col">Description</th>             
-      </tr>
-   </thead>
-   <tbody>
-            {{ range . }} 
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+   <h3 class="mb-0 me-auto">Rules <span class="badge bg-secondary fs-6 align-middle">{{ len . }}</span></h3>
+   <input id="ruleFilter" type="search" class="form-control form-control-sm" style="max-width: 18rem"
+          placeholder="Filter by name or description…" aria-label="Filter rules">
+</div>
 
-      <tr> <td> {{ .Name }} </td>
-             <td>  
-        {{ if eq .NeedsEV true}}
-          <span class="badge bg-success">EV Required</span> 
-          {{else}}
-                   -
-          {{end}} 
+{{ if . }}
+<div class="card">
+   <div class="card-body p-0">
+      <table class="table table-sm table-hover j-list j-details mb-0" id="ruleTable">
+         <thead>
+            <tr><th class="ps-3">Name</th><th>Expected value</th><th>Description</th></tr>
+         </thead>
+         <tbody>
+            {{ range . }}
+            <tr class="rule-row" data-name="{{ .Name }}">
+               <td class="ps-3 font-monospace small">{{ .Name }}</td>
+               <td class="text-nowrap">{{ if .NeedsEV }}<span class="badge bg-success">required</span>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+               <td>{{ .Description }}</td>
+            </tr>
+            {{ end }}
+         </tbody>
+      </table>
+   </div>
+</div>
+<div id="ruleNone" class="alert alert-secondary mt-3 d-none">No rules match the filter.</div>
+{{ else }}
+<div class="alert alert-secondary">No rules are registered.</div>
+{{ end }}
 
-             </td>             <td> {{ .Description }} </td>
-</tr>  {{end}}
-   </tbody>
-</table>
+<script>
+(function () {
+   var table = document.getElementById('ruleTable');
+   if (!table) return;
+   var body = table.tBodies[0];
+   var rows = Array.prototype.slice.call(body.querySelectorAll('tr.rule-row'));
+
+   // Rules are named <family>_<rule> and arrive sorted, so insert a heading row
+   // whenever the family changes (tpm2, sys, keylime, marblerun, ...).
+   var groups = [], current = null;
+   rows.forEach(function (row) {
+      var name = row.getAttribute('data-name');
+      var family = name.indexOf('_') > 0 ? name.slice(0, name.indexOf('_')) : name;
+      if (!current || current.family !== family) {
+         var head = document.createElement('tr');
+         head.className = 'rule-group';
+         head.innerHTML = '<th colspan="3" class="ps-3 pt-3 text-body-secondary small text-uppercase"></th>';
+         head.firstChild.textContent = family;
+         body.insertBefore(head, row);
+         current = { family: family, head: head, rows: [] };
+         groups.push(current);
+      }
+      current.rows.push(row);
+   });
+
+   var input = document.getElementById('ruleFilter');
+   var none = document.getElementById('ruleNone');
+   input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase(), shown = 0;
+      groups.forEach(function (g) {
+         var any = false;
+         g.rows.forEach(function (row) {
+            var hit = !q || row.textContent.toLowerCase().indexOf(q) >= 0;
+            row.classList.toggle('d-none', !hit);
+            if (hit) { any = true; shown++; }
+         });
+         g.head.classList.toggle('d-none', !any);
+      });
+      none.classList.toggle('d-none', shown > 0);
+   });
+})();
+</script>
 {{end}}
-

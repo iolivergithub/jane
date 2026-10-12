@@ -1,81 +1,87 @@
 {{define "content"}}
-<h3>Log</h3>
-<p>Showing {{ .Amount }} entries of {{ .Count }} for duration {{ .Duration }}</p>
+<style>
+   /* system start-up entries get a green edge so restarts stand out */
+   tr.j-init > :first-child { box-shadow: inset 3px 0 0 var(--bs-success); }
+</style>
 
-<input type="text" id="searchInput" onkeyup="searchLogTable()" placeholder="Search table..">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+   <h3 class="mb-0 me-auto">Log <span class="badge bg-secondary fs-6 align-middle">{{ len .LogEntries }}</span></h3>
+   <input id="logFilter" type="search" class="form-control form-control-sm" style="max-width: 18rem"
+          placeholder="Filter entries…" aria-label="Filter log entries">
+</div>
 
-<hr/>
-<table class="table table-striped table-sm" id="logtable">
-   <thead>
-      <tr>
-         <th scope="col">Timestamp</th>    
-         <th  style="text-align:center" scope="col">Channel</th>             
-         <th  style="text-align:center" scope="col">Operation</th>             
-         <th scope="col">Reference</th>             
-         <th scope="col">Message</th>             
-      </tr>
-   </thead>
-   <tbody>
-      {{ range .LogEntries }} 
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+   <span class="text-body-secondary small me-auto">
+      {{ if eq .Duration "always" }}Latest {{ len .LogEntries }} of {{ .Count }} entries, newest first{{ else }}{{ len .LogEntries }} entries in the last {{ .Duration }}, newest first{{ end }}
+      <span id="logShown"></span>
+   </span>
+   <div class="btn-group btn-group-sm" role="group" aria-label="Log range">
+      <a class="btn btn-outline-secondary{{ if eq .Duration "5m" }} active{{ end }}" href="/log/since?duration=5m">5 min</a>
+      <a class="btn btn-outline-secondary{{ if eq .Duration "1h" }} active{{ end }}" href="/log/since?duration=1h">1 hour</a>
+      <a class="btn btn-outline-secondary{{ if eq .Duration "1d" }} active{{ end }}" href="/log/since?duration=1d">1 day</a>
+      <a class="btn btn-outline-secondary{{ if and (eq .Duration "always") (eq .Amount 200) }} active{{ end }}" href="/log">Latest 200</a>
+      <a class="btn btn-outline-secondary{{ if and (eq .Duration "always") (eq .Amount 10000) }} active{{ end }}" href="/log?max=10000">Latest 10000</a>
+   </div>
+</div>
 
-
-          {{ if eq .Operation "startup/INIT"}}
-             <tr class="table-success">
-          {{ else if eq .Channel "SYS"}}
-             <tr class="table-primary"> 
-          {{else}}
-             <tr> 
-          {{end}} 
-       <td>{{ epochToUTCdetailed .Timestamp }}</td>
-<td style="text-align:center">{{ .Channel }}</td>
-<td style="text-align:center">{{ .Operation }}</td>
-<td>
-  {{ if eq .RefType "element" }}
-     <a href="/element/{{ .RefID }}">element</a>
-  {{ else if eq .RefType "intent" }}
-     <a href="/intent/{{ .RefID }}">intent</a>
-  {{ else if eq .RefType "expectedvalue" }}
-     <a href="/expectedvalue/{{ .RefID }}">expectedvalue</a>
-  {{ else if eq .RefType "claim" }}
-     <a href="/claim/{{ .RefID }}">claim</a>
-  {{ else if eq .RefType "result" }}
-     <a href="/result/{{ .RefID }}">result</a>
-  {{ else if eq .RefType "session" }}
-     <a href="/session/{{ .RefID }}">session</a>     
-  {{ else }}
-    {{ .RefType }}
-  {{ end }}     
-          </td>
-<td>{{ .Message }}</td> </tr>
-             
-      {{end}}
-   </tbody>
-</table>
+{{ if .LogEntries }}
+<div class="card">
+   <div class="card-body p-0">
+      <div class="table-responsive">
+      <table class="table table-sm table-hover j-list mb-0" id="logTable">
+         <thead>
+            <tr><th class="ps-3">Time (UTC)</th><th>Channel</th><th>Operation</th><th>Reference</th><th>Message</th></tr>
+         </thead>
+         <tbody>
+            {{ range .LogEntries }}
+            <tr{{ if eq .Operation "startup/INIT" }} class="j-init"{{ else if eq .Operation "login/FAIL" }} class="j-err"{{ end }}>
+               <td class="ps-3 text-nowrap small font-monospace">{{ epochToUTCdetailed .Timestamp }}</td>
+               <td class="text-nowrap">
+                  {{ if eq .Channel "SYS" }}<span class="badge bg-primary-subtle text-primary-emphasis">SYS</span>
+                  {{ else if eq .Channel "AUTH" }}<span class="badge bg-warning-subtle text-warning-emphasis">AUTH</span>
+                  {{ else }}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ .Channel }}</span>{{ end }}
+               </td>
+               <td class="text-nowrap small font-monospace">{{ .Operation }}</td>
+               <td class="text-nowrap small">
+                  {{ if eq .RefType "element" }}<a href="/element/{{ .RefID }}" title="{{ .RefID }}">element</a>
+                  {{ else if eq .RefType "intent" }}<a href="/intent/{{ .RefID }}" title="{{ .RefID }}">intent</a>
+                  {{ else if eq .RefType "expectedvalue" }}<a href="/expectedvalue/{{ .RefID }}" title="{{ .RefID }}">expected value</a>
+                  {{ else if eq .RefType "claim" }}<a href="/claim/{{ .RefID }}" title="{{ .RefID }}">claim</a>
+                  {{ else if eq .RefType "result" }}<a href="/result/{{ .RefID }}" title="{{ .RefID }}">result</a>
+                  {{ else if eq .RefType "session" }}<a href="/session/{{ .RefID }}" title="{{ .RefID }}">session</a>
+                  {{ else }}{{ .RefType }}{{ if .RefID }} <span class="text-body-secondary">· {{ .RefID }}</span>{{ end }}{{ end }}
+               </td>
+               <td class="small j-wrap">{{ .Message }}</td>
+            </tr>
+            {{ end }}
+         </tbody>
+      </table>
+      </div>
+   </div>
+</div>
+<div id="logNone" class="alert alert-secondary mt-3 d-none">No entries match the filter.</div>
+{{ else }}
+<div class="alert alert-secondary">No log entries {{ if eq .Duration "always" }}yet{{ else }}in the last {{ .Duration }}{{ end }}.</div>
+{{ end }}
 
 <script>
-function searchLogTable() {
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("searchInput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("logtable");
-  tr = table.getElementsByTagName("tr");
-
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td");
-    for (var j = 0; j < td.length; j++) {
-      txtValue = td[j].textContent || td[j].innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-        break;
-      } else {
-        tr[i].style.display = "none";
-      }
-    }
-  }
-}
+(function () {
+   var table = document.getElementById('logTable');
+   if (!table) return;
+   var rows = Array.prototype.slice.call(table.tBodies[0].rows);
+   var input = document.getElementById('logFilter');
+   var none = document.getElementById('logNone');
+   var shownLabel = document.getElementById('logShown');
+   input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase(), shown = 0;
+      rows.forEach(function (row) {
+         var hit = !q || row.textContent.toLowerCase().indexOf(q) >= 0;
+         row.classList.toggle('d-none', !hit);
+         if (hit) shown++;
+      });
+      none.classList.toggle('d-none', shown > 0);
+      shownLabel.textContent = q ? '· ' + shown + ' shown' : '';
+   });
+})();
 </script>
-
 {{end}}
-
-
-
