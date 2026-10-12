@@ -213,7 +213,7 @@
 
             <tr class="fn-row"><th colspan="4">ratsd/chares <span class="fn-note">&mdash; collects evidence from the leaf attesters as a CMW collection</span></th></tr>
             <tr><td><code>ratsd/nonce</code></td><td>string, base64url</td><td><span class="badge text-bg-secondary src">JANE</span></td>
-                <td>Fresh 64-byte nonce, base64url without padding. ratsd echoes it back as <code>eat_nonce</code>.</td></tr>
+                <td>Fresh 64-byte nonce, base64url without padding. ratsd echoes it back as <code>eat_nonce</code>, re-encoded as standard base64; check it with the <code>chares_validNonce</code> rule.</td></tr>
             <tr><td><code>ratsd/attester-selection</code></td><td>list of strings, or one comma-separated string</td><td><span class="badge text-bg-warning src">YOU</span></td>
                 <td>Which leaf attesters to ask, e.g. <code>["mock-tsm"]</code> or <code>"mock-tsm,tsm-report"</code>. If omitted, ratsd asks <b>all</b> of them and the whole call
                 fails if any one of them fails, so on a machine without confidential-computing hardware you will normally need this.
@@ -298,6 +298,11 @@
             <tr><td><code>keylime_ima</code></td><td><code>ima/asciilog</code></td><td><span class="badge bg-success">EV</span> <code>runtime_policy</code></td>
                 <td><code>hash_alg</code><br/><code>pcrscid</code></td>
                 <td>Keylime validates the IMA log against the runtime policy, using PCR 10 from the <code>tpm2/pcrs</code> claim named by <code>pcrscid</code>.</td></tr>
+
+            <tr class="fn-row grp-row"><th colspan="5">RATSD</th></tr>
+            <tr><td><code>chares_validNonce</code></td><td><code>ratsd/chares</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The <code>eat_nonce</code> returned by ratsd equals the <code>ratsd/nonce</code> recorded in the claim's call parameters. Compared as bytes,
+                since ratsd returns standard base64 while Jane sends base64url.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">Veraison</th></tr>
             <tr><td><code>veraisin_psa_token_verify</code></td><td><code>veraison/psa/get_token</code></td><td><span class="badge bg-success">EV</span> <span class="text-body-secondary">any</span></td><td class="text-body-secondary">none</td>
