@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Add a Jane user, or set a new password for an existing one.
+
+Usage:
+    addjaneuser USERNAME MONGODB_URL DATABASE
+
+Example:
+    addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+
+MONGODB_URL and DATABASE are the `database: connection` and `database: name`
+values from Jane's config.yaml.
+
+The password is asked for twice and never appears on the command line. To use
+the script non-interactively, pipe the password in on standard input:
+
+    echo 'secret' | addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+
+If USERNAME does not exist it is created; if it does, its password is replaced
+(the old password is not needed). Passwords are stored as Argon2id hashes in
+PHC format, which is what Jane's login checks against.
+
+Requires: argon2-cffi and pymongo
+    Debian/Ubuntu:  apt install python3-argon2 python3-pymongo
+    or:             pip install argon2-cffi pymongo
+"""
+
+import getpass
+import sys
+
+try:
+    from argon2 import PasswordHasher, Type
+    from pymongo import MongoClient
+    from pymongo.errors import PyMongoError
+except ImportError as e:
+    sys.exit(f"addjaneuser: missing Python package ({e.name}). "
+             "Install with: apt install python3-argon2 python3-pymongo  "
+             "(or pip install argon2-cffi pymongo)")
+
+USERS_COLLECTION = "users"
+MAX_PASSWORD_BYTES = 1024  # Jane rejects longer passwords
+
+# OWASP-recommended Argon2id parameters: 19 MiB memory, 2 iterations, 1 lane.
+HASHER = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1,
+                        hash_len=32, salt_len=16, type=Type.ID)
+
+
+def read_password():
+    """Prompt twice on a terminal, or read one line from piped standard input."""
+    if sys.stdin.isatty():
+        password = getpass.getpass("New password: ")
+        if password != getpass.getpass("Repeat password: "):
+            sys.exit("addjaneuser: passwords do not match")
+    else:
+        password = sys.stdin.readline().rstrip("\r\n")
+    if not password:
+        sys.exit("addjaneuser: empty password")
+    if len(password.encode("utf-8")) > MAX_PASSWORD_BYTES:
+        sys.exit(f"addjaneuser: password longer than {MAX_PASSWORD_BYTES} bytes")
+    return password
+
+
+def set_user(collection, username, password):
+    """Create the user or replace its password. Returns True if the user was created."""
+    result = collection.update_one(
+        {"username": username},
+        {"$set": {"username": username, "password": HASHER.hash(password)}},
+        upsert=True,
+    )
+    return result.upserted_id is not None
+
+
+def main(argv):
+    if len(argv) == 2 and argv[1] in ("-h", "--help"):
+        print(__doc__.strip())
+        return
+    if len(argv) != 4:
+        print("usage: addjaneuser USERNAME MONGODB_URL DATABASE   (-h for help)", file=sys.stderr)
+        sys.exit(2)
+    _, username, url, database = argv
+    username = username.strip()
+    if not username:
+        sys.exit("addjaneuser: empty username")
+
+    password = read_password()
+
+    try:
+        client = MongoClient(url, serverSelectionTimeoutMS=5000)
+        created = set_user(client[database][USERS_COLLECTION], username, password)
+    except PyMongoError as e:
+        sys.exit(f"addjaneuser: database error: {e}")
+
+    print(f"{'Created user' if created else 'Updated password for'} {username!r} in {database}.{USERS_COLLECTION}")
+
+
+if __name__ == "__main__":
+    main(sys.argv)

@@ -26,7 +26,8 @@ func (f fakeUsers) Count() (int64, error) { return int64(len(f)), nil }
 func setup(t *testing.T, web, rest bool) (webRouter, restRouter *echo.Echo) {
 	t.Helper()
 	cfg = Config{Web: web, Rest: rest, SessionTimeout: time.Hour}
-	users = fakeUsers{"ian": "secret"}
+	// password "secret", hashed by etc/addjaneuser
+	users = fakeUsers{"ian": "$argon2id$v=19$m=19456,t=2,p=1$LqgRkKVdLySSZH7eD36sxg$ILzOqYRwfvBiYHJQq9tvrfqO/T+GtVWMpVNJYEGq49w"}
 	sessions = newMemorySessionStore(time.Hour)
 	authoriser = AllowAuthenticated{}
 	logEntry = func(string, string, string, string, string) {}

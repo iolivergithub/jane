@@ -23,13 +23,15 @@ auth:
   sessiontimeout: 8h   # sliding expiry of a Web UI login
 ```
 
-Create users directly in Mongo for now:
+Create users, or reset a password, with `etc/addjaneuser`. It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
 
 ```
-db.users.insertOne({username: "ian", password: "secret"})
+etc/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
 ```
 
-Passwords are plain text at the moment. Only `checkPassword` in `users.go` knows this, so hashing can be added there.
+It needs the Python packages `argon2-cffi` and `pymongo` (`apt install python3-argon2 python3-pymongo`).
+
+Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>`). Jane only verifies them, in `checkPassword` (`password.go`), reading the parameters from each stored hash. Anything else in the `password` field, including plain text, never matches, so users created before hashing need their password set again with `addjaneuser`.
 
 ## Behaviour
 
