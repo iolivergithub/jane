@@ -170,6 +170,7 @@ func setUpDisplayEndpoints(router *echo.Echo) {
 
 	//live
 	router.GET(PREFIX+"/live", showLive)
+	router.GET(PREFIX+"/live/element", liveElementName)
 
 }
 

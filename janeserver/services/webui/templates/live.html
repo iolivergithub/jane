@@ -1,30 +1,65 @@
 {{define "content"}}
+<style>
+   tr.j-init > :first-child { box-shadow: inset 3px 0 0 var(--bs-success); }
+   tr.j-new > * { animation: j-flash 1.5s ease-out; }
+   @keyframes j-flash { from { background-color: rgba(var(--bs-info-rgb), .25); } to { background-color: transparent; } }
+</style>
 
+<!-- connection -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+   <h3 class="mb-0 me-auto">Live <span data-r="statusBadge" class="badge bg-warning fs-6 align-middle">connecting</span></h3>
+   <button type="button" class="btn btn-sm btn-outline-secondary" data-r="pauseBtn"><i class="fa fa-pause me-1"></i>Pause</button>
+   <button type="button" class="btn btn-sm btn-outline-secondary" data-r="clearBtn"><i class="fa fa-eraser me-1"></i>Clear</button>
+</div>
+<div class="small text-body-secondary mb-3">
+   Broker <code data-r="broker"></code> <span data-r="brokerNote"></span> · topic <code data-r="topicLabel"></code>
+   <div data-r="status">Starting…</div>
+</div>
 
+<!-- statistics -->
+<h6 class="text-body-secondary text-uppercase small mb-2">Last {{ .WindowHours }} hours</h6>
+<div class="row g-2 mb-3">
+   <div class="col-6 col-md-3">
+      <div class="card j-tile h-100"><div class="card-body py-2">
+         <div class="small text-body-secondary"><i class="fa fa-book me-1"></i> Log entries</div>
+         <div class="j-num" data-r="sEntries">–</div>
+      </div></div>
+   </div>
+   <div class="col-6 col-md-3">
+      <div class="card j-tile h-100"><div class="card-body py-2">
+         <div class="small text-body-secondary"><i class="fa fa-paper-plane me-1"></i> Attestations requested</div>
+         <div class="j-num" data-r="sAttest">–</div>
+      </div></div>
+   </div>
+   <div class="col-12 col-md-6">
+      <div class="card j-tile h-100"><div class="card-body py-2">
+         <div class="small text-body-secondary"><i class="fa fa-flag-checkered me-1"></i> Results <span data-r="sResults"></span></div>
+         <div class="d-flex flex-wrap gap-4">
+            <div><span class="j-swatch oc-pass"></span> <span class="small text-body-secondary">Pass</span> <span class="j-num" data-r="sPass">–</span></div>
+            <div><span class="j-swatch oc-fail"></span> <span class="small text-body-secondary">Fail</span> <span class="j-num" data-r="sFail">–</span></div>
+            <div><span class="j-swatch oc-other"></span> <span class="small text-body-secondary">Other</span> <span class="j-num" data-r="sOther">–</span></div>
+         </div>
+      </div></div>
+   </div>
+</div>
 
-<div>
-<h2>Jane Live Monitor</h2>
-
-<p>Messaging = {{ .Messaging }}</p>
-
-<p>Broker: <code data-r="broker"></code> <span data-r="brokerNote"></span><br>
-Topic: <code data-r="topicLabel"></code><br>
-Status: <strong data-r="status">Starting...</strong></p>
-
-<p>
-  <button type="button" data-r="pauseBtn" disabled>Pause</button>
-  <button type="button" data-r="clearBtn">Clear</button>
-  <span data-r="count">0 / 20 shown, 0 received</span>
-</p>
-
-<table border="1" cellpadding="4">
-  <thead>
-    <tr><th>Time</th><th>Topic</th><th>QoS</th><th>Retained</th><th>Payload</th></tr>
-  </thead>
-  <tbody data-r="list">
-    <tr><td colspan="5">No messages yet.</td></tr>
-  </tbody>
-</table>
+<!-- entries -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+   <h6 class="text-body-secondary text-uppercase small mb-0 me-auto">Latest entries</h6>
+   <span class="small text-body-secondary" data-r="count"></span>
+</div>
+<div class="card">
+   <div class="card-body p-0">
+      <div class="table-responsive">
+      <table class="table table-sm j-list mb-0">
+         <thead>
+            <tr><th class="ps-3">Time (UTC)</th><th>Channel</th><th>Operation</th><th>Reference</th><th>Message</th></tr>
+         </thead>
+         <tbody data-r="list"></tbody>
+      </table>
+      </div>
+   </div>
+</div>
 
 <script>
 (function () {
@@ -42,20 +77,169 @@ Status: <strong data-r="status">Starting...</strong></p>
   if (host.indexOf(":") >= 0 && host.charAt(0) !== "[") host = "[" + host + "]";   // IPv6 literal
   // A page served over HTTPS may only open secure WebSockets.
   var BROKER   = (location.protocol === "https:" ? "wss" : "ws") + "://" + host + ":" + WS_PORT;
-  var TOPIC    = "#";
+  var TOPIC    = "AS/#";    // Jane publishes each log entry on AS/<channel>
   var USERNAME = "";        // not required; set to a non-empty string to authenticate
   var PASSWORD = "";        // only sent if USERNAME is set
 
-  // Minimal MQTT 3.1.1 client over WebSocket - no external libraries.
+  // Seed data from Jane: the latest entries and per-minute counts for the statistics window.
+  var MAX        = {{ .MaxRows }};
+  var WINDOW_MIN = {{ .WindowHours }} * 60;
+  var seed       = {{ .Recent }} || [];
+  var minutes    = {};                       // minute since epoch -> {n, a, p, f, o}
+  ({{ .Minutes }} || []).forEach(function (m) { minutes[m.m] = m; });
+
   var root = document.currentScript.parentElement;
   function $(n) { return root.querySelector('[data-r="' + n + '"]'); }
 
-  var MAX = 20, KEEPALIVE = 30;
-  var ws = null, paused = false, total = 0, entries = [];
+  var KEEPALIVE = 30;
+  var ws = null, paused = false, received = 0;
+  var entries = [], seenIds = {};            // newest first, at most MAX
+  var names = {};                            // "reftype/refid" -> element name ("" if none)
   var buf = new Uint8Array(0), pingTimer = null, nextId = 1;
   var enc = new TextEncoder(), dec = new TextDecoder();
 
-  // ---------- encoding helpers ----------
+  // ---------- log entries ----------
+  // Jane's CSV form: itemid,timestamp,channel,operation,refid,reftype,"message" (message Go-quoted)
+  function parseCSV(text) {
+    text = text.replace(/\r?\n$/, "");
+    var f = [], p = 0;
+    for (var i = 0; i < 6; i++) {
+      var c = text.indexOf(",", p);
+      if (c < 0) return null;
+      f.push(text.slice(p, c)); p = c + 1;
+    }
+    var msg = text.slice(p);
+    if (msg.charAt(0) === '"') {
+      try { msg = JSON.parse(msg); }
+      catch (e) { msg = msg.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, "\\"); }
+    }
+    return { itemid: f[0], ts: f[1], channel: f[2], op: f[3], refid: f[4], reftype: f[5], message: msg };
+  }
+
+  // nanoseconds (string) -> "YYYY-MM-DD HH:MM:SS.fffffff" UTC, as on the log page
+  function formatTs(ns) {
+    try {
+      var n = BigInt(ns), ms = Number(n / 1000000n);
+      var frac = String(n % 1000000000n).padStart(9, "0").slice(0, 7);
+      return new Date(ms).toISOString().slice(0, 19).replace("T", " ") + "." + frac;
+    } catch (e) { return ns; }
+  }
+  function minuteOf(ns) { try { return Number(BigInt(ns) / 60000000000n); } catch (e) { return 0; } }
+
+  // ---------- statistics ----------
+  function resultClass(msg) { return msg === "0" ? "pass" : msg === "9001" ? "fail" : "other"; }
+  function count(e) {
+    var m = minuteOf(e.ts), b = minutes[m] || (minutes[m] = { m: m, n: 0, a: 0, p: 0, f: 0, o: 0 });
+    b.n++;
+    if (e.channel === "C" && e.op === "add") b.a++;
+    if (e.channel === "R" && e.op === "add") b[resultClass(e.message).charAt(0)]++;
+  }
+  function renderStats() {
+    var from = Math.floor(Date.now() / 60000) - WINDOW_MIN, t = { n: 0, a: 0, p: 0, f: 0, o: 0 };
+    Object.keys(minutes).forEach(function (k) {
+      var b = minutes[k];
+      if (b.m <= from) { delete minutes[k]; return; }   // dropped out of the window
+      t.n += b.n; t.a += b.a; t.p += b.p; t.f += b.f; t.o += b.o;
+    });
+    $("sEntries").textContent = t.n; $("sAttest").textContent = t.a;
+    $("sPass").textContent = t.p; $("sFail").textContent = t.f; $("sOther").textContent = t.o;
+    $("sResults").textContent = "· " + (t.p + t.f + t.o);
+  }
+
+  // ---------- element names ----------
+  var RESOLVABLE = { element: 1, claim: 1, result: 1 };
+  function nameKey(e) { return e.reftype + "/" + e.refid; }
+  function resolve(e) {
+    var k = nameKey(e);
+    if (!RESOLVABLE[e.reftype] || !e.refid || k in names) return;
+    names[k] = "";   // mark as pending so it is only asked for once
+    fetch("/live/element?reftype=" + encodeURIComponent(e.reftype) + "&refid=" + encodeURIComponent(e.refid),
+          { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : { element: "" }; })
+      .then(function (j) { if (j.element) { names[k] = j.element; render(); } })
+      .catch(function () {});
+  }
+
+  // ---------- table ----------
+  var CHANNEL_BADGE = { SYS: "bg-primary-subtle text-primary-emphasis", AUTH: "bg-warning-subtle text-warning-emphasis" };
+  var OUTCOME_BADGE = { pass: "bg-success", fail: "bg-danger", other: "bg-warning" };
+  function el(tag, cls, text) {
+    var x = document.createElement(tag);
+    if (cls) x.className = cls;
+    if (text != null) x.textContent = text;
+    return x;
+  }
+  function row(e) {
+    var tr = el("tr");
+    if (e.op === "startup/INIT") tr.className = "j-init";
+    else if (e.op === "login/FAIL") tr.className = "j-err";
+    if (e.fresh) { tr.classList.add("j-new"); e.fresh = false; }
+
+    tr.appendChild(el("td", "ps-3 text-nowrap small font-monospace", formatTs(e.ts)));
+
+    var ch = el("td", "text-nowrap");
+    ch.appendChild(el("span", "badge " + (CHANNEL_BADGE[e.channel] || "bg-secondary-subtle text-secondary-emphasis"), e.channel));
+    tr.appendChild(ch);
+
+    tr.appendChild(el("td", "text-nowrap small font-monospace", e.op));
+
+    var ref = el("td", "text-nowrap small");
+    var name = names[nameKey(e)] || e.element || "";
+    if (name) {
+      ref.appendChild(document.createTextNode(e.reftype + " · "));
+      ref.appendChild(el("b", null, name));
+    } else {
+      ref.appendChild(document.createTextNode(e.reftype));
+      if (e.refid) ref.appendChild(el("span", "text-body-secondary", " · " + e.refid));
+    }
+    tr.appendChild(ref);
+
+    var msg = el("td", "small j-wrap");
+    if (e.channel === "R" && e.op === "add") {
+      var oc = resultClass(e.message);
+      msg.appendChild(el("span", "badge " + OUTCOME_BADGE[oc], oc));
+      msg.appendChild(el("span", "text-body-secondary ms-1", "(" + e.message + ")"));
+    } else {
+      msg.textContent = e.message;
+    }
+    tr.appendChild(msg);
+    return tr;
+  }
+  function render() {
+    if (paused) return;
+    var list = $("list");
+    list.innerHTML = "";
+    if (!entries.length) {
+      var tr = el("tr"), td = el("td", "ps-3 text-body-secondary fst-italic", "No entries yet.");
+      td.colSpan = 5; tr.appendChild(td); list.appendChild(tr);
+    }
+    entries.forEach(function (e) { list.appendChild(row(e)); });
+    updateCount();
+  }
+  function updateCount() {
+    $("count").textContent = "showing " + entries.length + " of the last " + MAX + " · " + received +
+                             " received since opened" + (paused ? " · paused" : "");
+  }
+
+  function addEntry(e, fromBroker) {
+    if (!e || !e.itemid || seenIds[e.itemid]) return;
+    seenIds[e.itemid] = true;
+    if (fromBroker) { received++; count(e); e.fresh = true; }
+    if (!e.element) resolve(e);
+    entries.unshift(e);
+    entries.sort(function (a, b) { return a.ts.length - b.ts.length || (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0); });
+    while (entries.length > MAX) delete seenIds[entries.pop().itemid];
+  }
+
+  // ---------- connection status ----------
+  function setStatus(state, text) {
+    var badge = $("statusBadge");
+    badge.className = "badge fs-6 align-middle " + ({ ok: "bg-success", wait: "bg-warning", bad: "bg-danger" })[state];
+    badge.textContent = ({ ok: "connected", wait: "connecting", bad: "disconnected" })[state];
+    $("status").textContent = text || "";
+  }
+
+  // ---------- MQTT 3.1.1 over WebSocket (no external libraries) ----------
   function concat(arrs) {
     var n = 0, p = 0, i;
     for (i = 0; i < arrs.length; i++) n += arrs[i].length;
@@ -79,64 +263,12 @@ Status: <strong data-r="status">Starting...</strong></p>
   }
   function send(bytes) { if (ws && ws.readyState === 1) ws.send(bytes); }
 
-  // ---------- UI ----------
-  function setStatus(text) { $("status").textContent = text; }
-  function updateCount() {
-    $("count").textContent = entries.length + " / " + MAX + " shown, " + total + " received" + (paused ? " (paused)" : "");
-  }
-  function formatPayload(bytes) {
-    var text = dec.decode(bytes);
-    try {
-      var obj = JSON.parse(text);
-      if (typeof obj === "object" && obj !== null) return JSON.stringify(obj, null, 2);
-    } catch (e) {}
-    return text;
-  }
-  function cell(tr, text, pre) {
-    var td = document.createElement("td");
-    if (pre) { var p = document.createElement("pre"); p.textContent = text; td.appendChild(p); }
-    else td.textContent = text;
-    tr.appendChild(td);
-  }
-  function render() {
-    var list = $("list");
-    list.innerHTML = "";
-    if (!entries.length) {
-      var tr0 = document.createElement("tr");
-      var td0 = document.createElement("td");
-      td0.colSpan = 5; td0.textContent = "No messages yet.";
-      tr0.appendChild(td0); list.appendChild(tr0);
-    }
-    entries.forEach(function (e) {
-      var tr = document.createElement("tr");
-      cell(tr, e.time);
-      cell(tr, e.topic);
-      cell(tr, String(e.qos));
-      cell(tr, e.retain ? "yes" : "");
-      cell(tr, e.payload, true);
-      list.appendChild(tr);
-    });
-    updateCount();
-  }
-  function onMessage(topic, payload, qos, retain) {
-    total++;
-    if (paused) { updateCount(); return; }
-    var t = new Date();
-    entries.unshift({
-      time: t.toLocaleTimeString([], { hour12: false }) + "." + String(t.getMilliseconds()).padStart(3, "0"),
-      topic: topic, qos: qos, retain: retain, payload: formatPayload(payload)
-    });
-    if (entries.length > MAX) entries.length = MAX;
-    render();
-  }
-
-  // ---------- MQTT protocol ----------
   function sendConnect() {
     var flags = 0x02; // clean session
     var parts = [
       mqttString("MQTT"),
       new Uint8Array([4, 0, KEEPALIVE >> 8, KEEPALIVE & 255]),
-      mqttString("web-monitor-" + Math.random().toString(16).slice(2, 10))
+      mqttString("jane-live-" + Math.random().toString(16).slice(2, 10))
     ];
     if (USERNAME) {
       flags |= 0x80; parts.push(mqttString(USERNAME));
@@ -152,25 +284,26 @@ Status: <strong data-r="status">Starting...</strong></p>
   function handle(header, body) {
     var type = header >> 4;
     if (type === 2) {            // CONNACK
-      if (body[1] !== 0) { setStatus("Connection refused by broker (code " + body[1] + ")"); return; }
-      setStatus("Connected, subscribing...");
+      if (body[1] !== 0) { setStatus("bad", "Connection refused by the broker (code " + body[1] + ")."); return; }
+      setStatus("wait", "Logged in, subscribing…");
       sendSubscribe(TOPIC);
       clearInterval(pingTimer);
       pingTimer = setInterval(function () { send(new Uint8Array([0xC0, 0])); }, KEEPALIVE * 750);
-      $("pauseBtn").disabled = false;
     } else if (type === 9) {     // SUBACK
-      if (body[2] === 0x80) setStatus("Subscription rejected by broker");
-      else setStatus("Connected, subscribed");
+      if (body[2] === 0x80) setStatus("bad", "The broker rejected the subscription to " + TOPIC + ".");
+      else setStatus("ok", "");
     } else if (type === 3) {     // PUBLISH
-      var qos = (header >> 1) & 3, retain = !!(header & 1);
+      var qos = (header >> 1) & 3;
       var tl = (body[0] << 8) | body[1];
-      var topic = dec.decode(body.subarray(2, 2 + tl));
       var p = 2 + tl;
       if (qos > 0) {
         var idBytes = body.slice(p, p + 2); p += 2;
         send(packet(qos === 1 ? 0x40 : 0x50, idBytes)); // PUBACK or PUBREC
       }
-      onMessage(topic, body.slice(p), qos, retain);
+      addEntry(parseCSV(dec.decode(body.slice(p))), true);
+      renderStats();
+      render();
+      if (paused) updateCount();
     } else if (type === 6) {     // PUBREL -> PUBCOMP
       send(packet(0x70, body.slice(0, 2)));
     }
@@ -189,20 +322,22 @@ Status: <strong data-r="status">Starting...</strong></p>
     }
   }
 
-  // ---------- connection lifecycle ----------
   function open() {
     buf = new Uint8Array(0);
-    setStatus("Connecting...");
+    setStatus("wait", "Connecting…");
     var opened = false, gotConnack = false;
     try { ws = new WebSocket(BROKER, ["mqtt"]); }
-    catch (e) { setStatus("Invalid broker URL: " + e.message); return; }
+    catch (e) { setStatus("bad", "Invalid broker URL: " + e.message); return; }
     ws.binaryType = "arraybuffer";
-    ws.onopen = function () { opened = true; setStatus("WebSocket open, logging in to broker..."); sendConnect(); };
-    ws.onmessage = function (e) { if ((new Uint8Array(e.data))[0] >> 4 === 2) gotConnack = true; onData(new Uint8Array(e.data)); };
-    ws.onerror = function () {};   // the close handler below reports what happened
+    ws.onopen = function () { opened = true; setStatus("wait", "WebSocket open, logging in to the broker…"); sendConnect(); };
+    ws.onmessage = function (e) {
+      var d = new Uint8Array(e.data);
+      if (d[0] >> 4 === 2) gotConnack = true;
+      onData(d);
+    };
+    ws.onerror = function () {};   // the close handler reports what happened
     ws.onclose = function (e) {
       clearInterval(pingTimer); pingTimer = null;
-      $("pauseBtn").disabled = true;
       var why;
       if (!opened) {
         why = "Cannot reach the broker at " + BROKER + " (WebSocket code " + e.code + "). " +
@@ -213,29 +348,35 @@ Status: <strong data-r="status">Starting...</strong></p>
       } else {
         why = "Connection lost (code " + e.code + ").";
       }
-      setStatus(why + " Retrying in 3 s...");
+      setStatus("bad", why + " Retrying in 3 s…");
       setTimeout(open, 3000);
     };
   }
 
+  // ---------- controls ----------
   $("pauseBtn").addEventListener("click", function () {
     paused = !paused;
-    $("pauseBtn").textContent = paused ? "Resume" : "Pause";
-    updateCount();
+    this.innerHTML = paused ? '<i class="fa fa-play me-1"></i>Resume' : '<i class="fa fa-pause me-1"></i>Pause';
+    this.classList.toggle("active", paused);
+    if (paused) updateCount(); else render();
   });
-  $("clearBtn").addEventListener("click", function () { entries = []; total = 0; render(); });
+  $("clearBtn").addEventListener("click", function () {
+    entries.forEach(function (e) { delete seenIds[e.itemid]; });
+    entries = [];
+    var was = paused; paused = false; render(); paused = was;
+  });
 
   $("broker").textContent = BROKER;
   $("brokerNote").textContent = hostNote;
   $("topicLabel").textContent = TOPIC;
 
-  // Connect on page load
+  seed.forEach(function (e) { addEntry(e, false); });
+  render();
+  renderStats();
+  setInterval(renderStats, 30000);   // let old minutes drop out of the window
+
   if (document.readyState === "complete") open();
   else window.addEventListener("load", open);
 })();
 </script>
-</div>
-
-
-
 {{end}}
