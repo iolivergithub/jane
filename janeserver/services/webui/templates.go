@@ -37,7 +37,6 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 	}
 
 	page("home.html")
-	page("help.html")
 	page("about.html")
 	page("history.html")
 	page("live.html")

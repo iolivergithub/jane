@@ -130,7 +130,7 @@ func setupEditEndpoints(router *echo.Echo) {
 
 func setupHomeEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/", homepage)
-	router.GET(PREFIX+"/help", helppage)
+	router.GET(PREFIX+"/help", helpredirect)
 	router.GET(PREFIX+"/about", aboutpage)
 	router.GET(PREFIX+"/history", historypage)
 }

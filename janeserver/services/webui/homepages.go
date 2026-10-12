@@ -76,8 +76,9 @@ func homepage(c echo.Context) error {
 	return c.Render(http.StatusOK, "home.html", hps)
 }
 
-func helppage(c echo.Context) error {
-	return c.Render(http.StatusOK, "help.html", nil)
+// helpredirect keeps the old /help address working: help now lives on the about page.
+func helpredirect(c echo.Context) error {
+	return c.Redirect(http.StatusMovedPermanently, PREFIX+"/about")
 }
 
 func aboutpage(c echo.Context) error {
