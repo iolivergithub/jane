@@ -36,7 +36,13 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 		return fmt.Errorf("Error rendering %v with %v\n", name, data)
 	}
 
-	return tmpl.ExecuteTemplate(w, "base.html", data)
+	// Bind per-request template functions (e.g. currentUser) to a copy of the page template.
+	// The registered templates are never executed directly, so they can always be cloned.
+	page, err := tmpl.Clone()
+	if err != nil {
+		return err
+	}
+	return page.Funcs(auth.RequestTemplateFuncs(c)).ExecuteTemplate(w, "base.html", data)
 }
 
 func StartWebUI(ctx context.Context) {

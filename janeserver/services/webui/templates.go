@@ -8,13 +8,17 @@ import (
 
 // templateFunctions are the functions available to every template.
 func templateFunctions() template.FuncMap {
-	return template.FuncMap{
+	functions := template.FuncMap{
 		"defaultMessage": DefaultMessage, "epochToUTCdetailed": EpochToUTCdetailed, "epochToUTC": EpochToUTCsimple, "base64decode": Base64decode,
 		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
 		"opaqueObject": GetOpaqueObjectByValue,
 		"resultClass":  ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
-		"authEnabled": auth.WebEnabled,
 	}
+	// authEnabled and currentUser, used by base.html for the username and logout button
+	for name, f := range auth.TemplateFuncs() {
+		functions[name] = f
+	}
+	return functions
 }
 
 // parseTemplates parses every page template with its partials and base.html.

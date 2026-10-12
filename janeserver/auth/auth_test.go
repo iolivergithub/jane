@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -273,5 +274,36 @@ func TestConfigParsing(t *testing.T) {
 	}
 	if c := parse("auth:\n  web: true\n  sessiontimeout: 30m\n"); !c.Web || c.Rest || c.SessionTimeout != 30*time.Minute {
 		t.Fatalf("section: %+v", c)
+	}
+}
+
+func TestTemplateFuncsBindPerRequest(t *testing.T) {
+	setup(t, true, false)
+	master := template.Must(template.New("p").Funcs(TemplateFuncs()).Parse(`{{ if authEnabled }}[{{ currentUser }}]{{ end }}`))
+
+	render := func(user string) string {
+		c := echo.New().NewContext(httptest.NewRequest(http.MethodGet, "/", nil), httptest.NewRecorder())
+		if user != "" {
+			c.Set(contextUserKey, user)
+		}
+		page, err := master.Clone()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var sb strings.Builder
+		if err := page.Funcs(RequestTemplateFuncs(c)).Execute(&sb, nil); err != nil {
+			t.Fatal(err)
+		}
+		return sb.String()
+	}
+	if got := render("ian"); got != "[ian]" {
+		t.Fatalf("got %q", got)
+	}
+	if got := render("<b>pekka</b>"); got != "[&lt;b&gt;pekka&lt;/b&gt;]" {
+		t.Fatalf("username not escaped: %q", got)
+	}
+	cfg.Web = false
+	if got := render("ian"); got != "" {
+		t.Fatalf("shown when disabled: %q", got)
 	}
 }

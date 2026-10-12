@@ -2,14 +2,15 @@
 
 Authentication and authorisation for Jane's Web UI and REST API.
 
-All user, password, session and cookie handling lives here. The rest of Jane touches it in four places:
+All user, password, session and cookie handling lives here. The rest of Jane touches it in these places:
 
 | File | Hook |
 |---|---|
 | `janeserver.go` | `auth.Initialise(*configFile)` after the datalayer is up |
 | `services/webui/initwebapi.go` | `auth.RegisterEndpoints(router)` and `router.Use(auth.WebUIMiddleware())` |
 | `services/restapi/initrestapi.go` | `router.Use(auth.RESTMiddleware())` |
-| `services/webui/templates.go` | `"authEnabled": auth.WebEnabled`, used by `base.html` to show the logout button |
+| `services/webui/templates.go` | adds `auth.TemplateFuncs()` (`authEnabled`, `currentUser`) to the template functions |
+| `services/webui/initwebapi.go` `Render` | binds `auth.RequestTemplateFuncs(c)` to a clone of the page, so `currentUser` is the request's user |
 
 ## Enabling
 
