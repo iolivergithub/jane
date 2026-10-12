@@ -5,9 +5,10 @@
 </div>
 
 <div class="alert alert-warning mt-3" role="alert">
-   <h5 class="alert-heading"><i class="fa fa-exclamation-triangle me-1"></i> Disclaimer</h5>
+   <h5 class="alert-heading"><i class="fa fa-exclamation-triangle me-1"></i> Disclaimer, or: Don't Panic</h5>
    <p>Use this at your own risk. There is a good chance of database inconsistencies, crashes and Deity-knows-what-else.</p>
-   <p class="mb-0">Also, there is no security per se implemented...no authentication, no login, no authorisation, no encryption, HTTP-everywhere etc...well we have HTTPS but you are own your own with the key management. We can integrate with YubiHSM but this is on going (and theoretically any PKCS#11 interface)...theoretically...someone needs to impement (and test!) this.  Anyway, you get the idea.</p>
+   <p>Security has got better than it was: the Web UI now has a login, passwords are stored as Argon2id hashes, and the REST API can be made to ask for a username and password too. That is roughly where it ends. Once logged in, everybody can do everything (there is no authorisation to speak of), HTTP is still the default, HTTPS works but the key management is entirely your problem, and the live monitor's MQTT stream and the x3270 interface take no notice of the login at all. YubiHSM and PKCS#11 remain theoretical...someone needs to implement (and test!) them.</p>
+   <p class="mb-0">In short, you are on your own. Jane comes with no warranty whatsoever (see the <a href="https://github.com/iolivergithub/jane/blob/main/LICENSE" target="_blank" rel="noopener" class="alert-link">licence</a>), so know where your towel is, and good luck.</p>
 </div>
 
 <h4 class="mt-4">A Bit of History</h4>
