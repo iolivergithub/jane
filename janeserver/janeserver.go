@@ -94,6 +94,10 @@ func main() {
 	msg = fmt.Sprintf("DB,MQTT,Rules initialised. Starting services: web %v, rest %v, x3720 %v", *flagWEB, *flagREST, *flagX3270)
 	logging.MakeLogEntry("SYS", "startup", RUNSESSION, configuration.ConfigData.System.Name, msg)
 
+	// make the version, build and run session identifier available to the Web UI
+
+	webui.SetSystemInfo(VERSION, BUILD, RUNSESSION)
+
 	// start the internal services
 
 	internalservices()

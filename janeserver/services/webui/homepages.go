@@ -26,6 +26,7 @@ type homepagestructure struct {
 	Cfg           *configuration.ConfigurationStruct
 	CmdLineLength int
 	CmdLine       []string
+	Info          SystemInfo
 }
 
 func homepage(c echo.Context) error {
@@ -65,6 +66,8 @@ func homepage(c echo.Context) error {
 	hps.CmdLineLength = len(os.Args)
 	hps.CmdLine = os.Args
 
+	hps.Info = sysInfo
+
 	fmt.Printf("hps is %v\n", hps)
 
 	return c.Render(http.StatusOK, "home.html", hps)
@@ -75,5 +78,9 @@ func helppage(c echo.Context) error {
 }
 
 func aboutpage(c echo.Context) error {
-	return c.Render(http.StatusOK, "about.html", nil)
+	return c.Render(http.StatusOK, "about.html", sysInfo)
+}
+
+func historypage(c echo.Context) error {
+	return c.Render(http.StatusOK, "history.html", nil)
 }

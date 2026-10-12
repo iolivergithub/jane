@@ -32,8 +32,8 @@
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/opaqueobjects" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-cube me-1"></i> Opaque objects</a></div>
             <div class="j-num">{{ .Nhs }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
    </div>
 
    <!-- What attestation has produced -->
@@ -49,20 +49,20 @@
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/claims" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-file-text-o me-1"></i> Claims</a></div>
             <div class="j-num">{{ .Ncs }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/results" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-flag-checkered me-1"></i> Results</a></div>
             <div class="j-num">{{ .Nrs }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/log" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-book me-1"></i> Log entries</a></div>
             <div class="j-num">{{ .Nlog }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
    </div>
 
    <!-- What this server can do -->
@@ -72,14 +72,28 @@
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/protocols" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-plug me-1"></i> Protocols</a></div>
             <div class="j-num">{{ .Nprs }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
       <div class="col-6 col-md-3">
          <div class="card j-tile h-100"><div class="card-body py-2">
             <div class="small"><a href="/rules" class="link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"><i class="fa fa-gavel me-1"></i> Rules</a></div>
             <div class="j-num">{{ .Nrus }}</div>
-                  </div></div>
-</div>
+         </div></div>
+      </div>
+   </div>
+
+   <!-- This instance of Jane -->
+   <div class="card mb-3 j-details">
+      <div class="card-header"><i class="fa fa-info-circle me-1"></i> Jane <a href="/about" class="small ms-2">About</a></div>
+      <div class="card-body">
+         <table class="table table-sm mb-0">
+            <tbody>
+               <tr><td>Version</td><td><b>{{ .Info.Version }}</b></td></tr>
+               <tr><td>Build</td><td><b>{{ .Info.Build }}</b></td></tr>
+               <tr><td>Run session</td><td class="font-monospace small"><b>{{ .Info.RunSession }}</b></td></tr>
+            </tbody>
+         </table>
+      </div>
    </div>
 
    <!-- System settings -->
