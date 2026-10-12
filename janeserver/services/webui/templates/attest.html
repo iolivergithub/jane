@@ -71,20 +71,273 @@
       </div>
 
       <div class="col-md-4">
-         <label for="intentparameters"><b>Intent Parameters (JSON)</b></label>
-         <textarea class="form-control" rows="4" id="intentparameters" name="pps"></textarea>
+         <label for="intentparameters"><b>Intent Parameters (JSON)</b> <a href="#ref-intents" class="small">reference</a></label>
+         <textarea class="form-control font-monospace" rows="4" id="intentparameters" name="pps" placeholder='{"pcrSelection": "0,1,2,3", "bank": "sha256"}'></textarea>
       </div>
 
       <div class="col-md-4">
-         <label for="ruleparameters"><b>Rule Parameters (JSON)</b></label>
-         <textarea class="form-control" rows="4" id="ruleparameters" name="rps"></textarea>      
+         <label for="ruleparameters"><b>Rule Parameters (JSON)</b> <a href="#ref-rules" class="small">reference</a></label>
+         <textarea class="form-control font-monospace" rows="4" id="ruleparameters" name="rps" placeholder='{"hash_alg": "sha256", "pcrscid": "..."}'></textarea>
       </div>
    </div>
 </div>
 <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 
-<hr />
+<hr class="my-4"/>
 
+<style>
+   .ref-section { scroll-margin-top: 1rem; }
+   .ref .card { margin-bottom: 1rem; }
+   .ref .card-header { font-weight: 600; }
+   .ref table { margin-bottom: 0; }
+   .ref td, .ref th { overflow-wrap: anywhere; vertical-align: top; }
+   .ref td:first-child:not([colspan]) { white-space: nowrap; overflow-wrap: normal; }
+   .ref table { min-width: 46rem; }
+   .ref .fn-row th { background: var(--bs-tertiary-bg); font-family: var(--bs-font-monospace); font-weight: 600; }
+   .ref .grp-row th { font-family: var(--bs-body-font-family); }
+   .ref .fn-row th .fn-note { font-family: var(--bs-body-font-family); font-weight: normal; color: var(--bs-secondary-color); }
+   .ref pre.ref-ex { margin: 0; padding: .5rem .75rem; background: var(--bs-tertiary-bg); border-radius: var(--bs-border-radius); white-space: pre-wrap; overflow-wrap: anywhere; }
+   .ref .src { font-size: .75em; font-weight: 600; }
+</style>
+
+<div class="ref">
+
+<h4 class="mb-1">Reference</h4>
+<p class="text-body-secondary">
+   What can go in the two parameter boxes above. Both take a single JSON object; leave a box empty if you have nothing to add.
+   Jump to <a href="#ref-intents">intent parameters</a> or <a href="#ref-rules">rule parameters</a>.
+</p>
+
+<!-- ============================================================ -->
+<!-- INTENT PARAMETERS                                            -->
+<!-- ============================================================ -->
+
+<h5 id="ref-intents" class="ref-section mt-4">Intent parameters</h5>
+
+<div class="row g-3 mb-3">
+   <div class="col-lg-7">
+      <p class="mb-2">The parameters sent with a call are built in three layers. A key in a later layer replaces the same key from an earlier one:</p>
+      <ol class="mb-2">
+         <li><b>Set by Jane</b> &mdash; values the protocol generates (nonces) or copies from the selected element.</li>
+         <li><b>The intent</b> &mdash; the <code>parameters</code> stored with the intent you selected.</li>
+         <li><b>This page</b> &mdash; whatever you type in <i>Intent Parameters</i>.</li>
+      </ol>
+      <p class="mb-0">The merged set is recorded in the claim as its call parameters, so you can always see what was actually sent.
+      Which keys mean anything depends on the <b>protocol of the endpoint</b> you selected and the <b>function</b> of the intent.</p>
+   </div>
+   <div class="col-lg-5">
+      <div class="small">
+         <div class="mb-1"><b>Set by</b> column:</div>
+         <ul class="list-unstyled mb-0">
+            <li class="mb-1"><span class="badge text-bg-secondary src">JANE</span> generated on every call</li>
+            <li class="mb-1"><span class="badge text-bg-info src">ELEMENT</span> copied from the element</li>
+            <li class="mb-1"><span class="badge text-bg-primary src">INTENT</span> normally stored in the intent</li>
+            <li class="mb-1"><span class="badge text-bg-warning src">YOU</span> supply it here</li>
+         </ul>
+         <div class="mt-2 text-body-secondary">Anything set by Jane or the element can still be overridden from this page.</div>
+      </div>
+   </div>
+</div>
+
+<!-- A10HTTPRESTv2 / tarzan -->
+<div class="card">
+   <div class="card-header">A10HTTPRESTv2 <span class="fw-normal text-body-secondary">&mdash; the tarzan trust agent</span></div>
+   <div class="card-body">
+      <div class="table-responsive"><table class="table table-sm">
+         <thead>
+            <tr><th style="width:12rem">Key</th><th style="width:9rem">Type</th><th style="width:7rem">Set by</th><th>Meaning</th></tr>
+         </thead>
+         <tbody>
+            <tr class="fn-row"><th colspan="4">tpm2/quote <span class="fn-note">&mdash; signed TPM quote over a set of PCRs</span></th></tr>
+            <tr><td><code>bank</code></td><td>string, <b>required</b></td><td><span class="badge text-bg-primary src">INTENT</span></td>
+                <td>PCR bank to quote: <code>sha1</code>, <code>sha256</code>, <code>sha384</code> or <code>sha512</code>. The call fails without it.</td></tr>
+            <tr><td><code>pcrSelection</code></td><td>string, <b>required</b></td><td><span class="badge text-bg-primary src">INTENT</span></td>
+                <td>Comma-separated PCR indices with no spaces, e.g. <code>"0,1,2,3,4,5,6,7"</code>. The call fails without it.</td></tr>
+            <tr><td><code>tpm2/nonce</code></td><td>string, base64</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>Fresh 24-byte nonce (standard base64), used as the quote's qualifying data. Checked afterwards by the <code>tpm2_validNonce</code> rule.</td></tr>
+            <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Handle of the attestation key that signs the quote, from the element's <code>tpm2.ak.handle</code>, e.g. <code>"0x810100AA"</code>.</td></tr>
+            <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>TPM device on the target, from the element's <code>tpm2.device</code>, e.g. <code>"/dev/tpmrm0"</code>.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">tpm2/pcrs <span class="fn-note">&mdash; unsigned read of PCRs 0&ndash;23 in every bank the TPM has</span></th></tr>
+            <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>TPM device, as above. There is no bank or PCR selection: everything is read.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">uefi/eventlog <span class="fn-note">&mdash; the UEFI measured-boot event log, base64 encoded</span></th></tr>
+            <tr><td><code>uefi/eventlog</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Log location, from the element's <code>uefi.eventlog</code>. Only honoured if tarzan was started with <code>-unsafe</code>; otherwise tarzan always reads
+                <code>/sys/kernel/security/tpm0/binary_bios_measurements</code>.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">ima/asciilog <span class="fn-note">&mdash; the Linux IMA runtime measurement list, base64 encoded</span></th></tr>
+            <tr><td><code>ima/ASCIIlog</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Log location, from the element's <code>ima.asciilog</code>. Note the capitals in the key. Only honoured with <code>-unsafe</code>; otherwise tarzan always reads
+                <code>/sys/kernel/security/ima/ascii_runtime_measurements</code>.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">sys/info &nbsp; uefi/efivars &nbsp; uefi/bootconfig <span class="fn-note">&mdash; no parameters</span></th></tr>
+            <tr><td colspan="4" class="text-body-secondary">These take no parameters; anything supplied is sent but ignored.
+                <code>sys/info</code> reports OS, architecture, hostname, machine ID and whether tarzan is in unsafe mode.
+                <code>uefi/bootconfig</code> is a placeholder in tarzan and returns a fixed message.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">txt/log <span class="fn-note">&mdash; not currently available</span></th></tr>
+            <tr><td colspan="4" class="text-body-secondary">Jane sends the element's <code>txt.log</code> as <code>ima/log</code>, but tarzan's TXT endpoint is disabled, so this call fails.</td></tr>
+         </tbody>
+      </table></div>
+
+      <div class="row g-3 mt-1">
+         <div class="col-md-6">
+            <div class="small text-body-secondary mb-1">Quote PCRs 0&ndash;7 from the SHA-256 bank:</div>
+<pre class="ref-ex">{"pcrSelection": "0,1,2,3,4,5,6,7", "bank": "sha256"}</pre>
+         </div>
+         <div class="col-md-6">
+            <div class="small text-body-secondary mb-1">Use a different TPM device for this one call:</div>
+<pre class="ref-ex">{"tpm2/device": "/dev/tpm0"}</pre>
+         </div>
+      </div>
+   </div>
+</div>
+
+<!-- RATSD -->
+<div class="card">
+   <div class="card-header">RATSD <span class="fw-normal text-body-secondary">&mdash; the Veraison ratsd daemon</span></div>
+   <div class="card-body">
+      <div class="table-responsive"><table class="table table-sm">
+         <thead>
+            <tr><th style="width:12rem">Key</th><th style="width:9rem">Type</th><th style="width:7rem">Set by</th><th>Meaning</th></tr>
+         </thead>
+         <tbody>
+            <tr class="fn-row"><th colspan="4">ratsd/subattesters <span class="fn-note">&mdash; lists ratsd's leaf attesters and their options</span></th></tr>
+            <tr><td><code>ratsd/nonce</code></td><td>string, base64url</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>Generated and recorded in the claim, but not sent: this call takes no parameters.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">ratsd/chares <span class="fn-note">&mdash; collects evidence from the leaf attesters as a CMW collection</span></th></tr>
+            <tr><td><code>ratsd/nonce</code></td><td>string, base64url</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>Fresh 64-byte nonce, base64url without padding. ratsd echoes it back as <code>eat_nonce</code>.</td></tr>
+            <tr><td><code>ratsd/attester-selection</code></td><td>list of strings, or one comma-separated string</td><td><span class="badge text-bg-warning src">YOU</span></td>
+                <td>Which leaf attesters to ask, e.g. <code>["mock-tsm"]</code> or <code>"mock-tsm,tsm-report"</code>. If omitted, ratsd asks <b>all</b> of them and the whole call
+                fails if any one of them fails, so on a machine without confidential-computing hardware you will normally need this.
+                ratsd's own key <code>attester-selection</code> is accepted too. Run <code>ratsd/subattesters</code> first to see the names.</td></tr>
+            <tr><td colspan="4" class="text-body-secondary">Only the nonce and attester selection are sent to ratsd; any other keys are recorded in the claim but not used.</td></tr>
+         </tbody>
+      </table></div>
+
+      <div class="mt-3">
+         <div class="small text-body-secondary mb-1">Collect evidence from the mock attester only:</div>
+<pre class="ref-ex">{"ratsd/attester-selection": ["mock-tsm"]}</pre>
+      </div>
+   </div>
+</div>
+
+<!-- Test protocols -->
+<div class="card">
+   <div class="card-header">Test protocols <span class="fw-normal text-body-secondary">&mdash; A10NULLPROTOCOL, A10NETCONF, TESTCONTAINERPROTOCOL, EVCLI_PSA</span></div>
+   <div class="card-body">
+      <p class="mb-0">These return fixed test claims and ignore all intent parameters. Each records its own random 32-byte <code>nonce</code> in the claim.
+      A10NULLPROTOCOL and A10NETCONF only produce a non-error claim for function <code>null/null</code>; EVCLI_PSA only for <code>veraison/psa/get_token</code>.</p>
+   </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- RULES                                                        -->
+<!-- ============================================================ -->
+
+<h5 id="ref-rules" class="ref-section mt-5">Rules and rule parameters</h5>
+
+<div class="row g-3 mb-3">
+   <div class="col-lg-7">
+      <p class="mb-2">Each selected rule is run against the claim just collected, and the <i>Rule Parameters</i> object is given to every one of them.
+      Rules are ignored when <i>Attest Only</i> is chosen.</p>
+      <p class="mb-0">Most rules take <b>no</b> rule parameters: they read what they need from the claim, from the element, or from an
+      <a href="/expectedvalues">expected value</a>. Only the Keylime rules use rule parameters.</p>
+   </div>
+   <div class="col-lg-5 small">
+      <div class="mb-1"><b>Before you verify:</b></div>
+      <ul class="mb-0 ps-3">
+         <li>Pick rules that match the intent's function; a TPM rule run on a <code>sys/info</code> claim will not pass.</li>
+         <li>A rule marked <span class="badge bg-success">EV</span> needs an expected value for this element, endpoint and intent, or the result is <i>missing expected value</i>.</li>
+         <li>Running any rule on an error claim gives <i>verify claim error attempt</i>.</li>
+      </ul>
+   </div>
+</div>
+
+<div class="card">
+   <div class="card-body">
+      <div class="table-responsive"><table class="table table-sm">
+         <thead>
+            <tr><th style="width:14rem">Rule</th><th style="width:9rem">Use with</th><th style="width:11rem">Expected value</th><th style="width:13rem">Rule parameters</th><th>What it checks</th></tr>
+         </thead>
+         <tbody>
+            <tr class="fn-row grp-row"><th colspan="5">TPM 2.0</th></tr>
+            <tr><td><code>tpm2_attestedValue</code></td><td><code>tpm2/quote</code></td><td><span class="badge bg-success">EV</span> <code>attestedValue</code></td><td class="text-body-secondary">none</td>
+                <td>The quote's PCR digest (base64) equals the expected value.</td></tr>
+            <tr><td><code>tpm2_firmware</code></td><td><code>tpm2/quote</code></td><td><span class="badge bg-success">EV</span> <code>firmwareVersion</code></td><td class="text-body-secondary">none</td>
+                <td>The TPM firmware version in the quote equals the expected value.</td></tr>
+            <tr><td><code>tpm2_magicNumber</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The quote's magic number is <code>ff544347</code>, i.e. it was produced by a TPM.</td></tr>
+            <tr><td><code>tpm2_type</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The attestation structure type is <code>8018</code> (a quote).</td></tr>
+            <tr><td><code>tpm2_safe</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The TPM clock's <i>safe</i> flag is set, i.e. no uncommanded shutdown.</td></tr>
+            <tr><td><code>tpm2_validNonce</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The quote's qualifying data equals the <code>tpm2/nonce</code> recorded in the claim's call parameters.</td></tr>
+
+            <tr class="fn-row grp-row"><th colspan="5">System</th></tr>
+            <tr><td><code>sys_taRunningSafely</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>tarzan is <b>not</b> running in <code>-unsafe</code> mode.</td></tr>
+            <tr><td><code>sys_machineID_Agent</code></td><td><code>sys/info</code></td><td><span class="badge bg-success">EV</span> <code>machineid</code></td><td class="text-body-secondary">none</td>
+                <td>The machine ID reported by tarzan equals the expected value.</td></tr>
+            <tr><td><code>sys_machineID_CrossRef</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The machine ID reported by tarzan equals the element's <code>host.machineid</code>.</td></tr>
+
+            <tr class="fn-row grp-row"><th colspan="5">Keylime <span class="fn-note">&mdash; needs the Keylime API URL in Jane's configuration</span></th></tr>
+            <tr><td><code>keylime_mb</code></td><td><code>uefi/eventlog</code></td><td><span class="badge bg-success">EV</span> <code>mb_refstate</code></td>
+                <td><code>hash_alg</code><br/><code>pcrs_inquote</code><br/><code>pcrscid</code></td>
+                <td>Keylime validates the measured-boot event log against the reference state, and the PCR values it computes are compared with those in the
+                <code>tpm2/pcrs</code> claim named by <code>pcrscid</code>.</td></tr>
+            <tr><td><code>keylime_ima</code></td><td><code>ima/asciilog</code></td><td><span class="badge bg-success">EV</span> <code>runtime_policy</code></td>
+                <td><code>hash_alg</code><br/><code>pcrscid</code></td>
+                <td>Keylime validates the IMA log against the runtime policy, using PCR 10 from the <code>tpm2/pcrs</code> claim named by <code>pcrscid</code>.</td></tr>
+
+            <tr class="fn-row grp-row"><th colspan="5">Veraison</th></tr>
+            <tr><td><code>veraisin_psa_token_verify</code></td><td><code>veraison/psa/get_token</code></td><td><span class="badge bg-success">EV</span> <span class="text-body-secondary">any</span></td><td class="text-body-secondary">none</td>
+                <td>Placeholder: needs an expected value to exist but always succeeds. The name's spelling is as registered.</td></tr>
+
+            <tr class="fn-row grp-row"><th colspan="5">Test rules</th></tr>
+            <tr><td><code>testcontainer_LIFE</code><br/><code>testcontainer_43</code><br/><code>testcontainer_FOOBAR</code></td><td>test protocol claims</td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>Check the fixed test claim's <code>aNumber</code> is 42 or 43, or that <code>foo</code> is <code>bar</code>.</td></tr>
+            <tr><td><code>null_success</code>, <code>null_fail</code>, &hellip;</td><td>any claim</td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>Always return the result in their name, without looking at the claim. Useful for testing result handling.</td></tr>
+         </tbody>
+      </table></div>
+   </div>
+</div>
+
+<div class="card">
+   <div class="card-header">Keylime rule parameters</div>
+   <div class="card-body">
+      <div class="table-responsive"><table class="table table-sm">
+         <thead>
+            <tr><th style="width:12rem">Key</th><th style="width:9rem">Type</th><th style="width:9rem">Used by</th><th>Meaning</th></tr>
+         </thead>
+         <tbody>
+            <tr><td><code>hash_alg</code></td><td>string</td><td>both</td>
+                <td>Hash algorithm and PCR bank, e.g. <code>"sha256"</code>. Must be a bank present in the <code>tpm2/pcrs</code> claim.</td></tr>
+            <tr><td><code>pcrscid</code></td><td>string</td><td>both</td>
+                <td>Item ID of an earlier <code>tpm2/pcrs</code> claim for the same element; take it from that claim's page.</td></tr>
+            <tr><td><code>pcrs_inquote</code></td><td>list of strings</td><td><code>keylime_mb</code></td>
+                <td>The PCRs covered, as strings, e.g. <code>["0","1","2","3","4","5","6","7"]</code>.</td></tr>
+         </tbody>
+      </table></div>
+      <div class="mt-3">
+         <div class="small text-body-secondary mb-1">For <code>keylime_mb</code> (drop <code>pcrs_inquote</code> for <code>keylime_ima</code>):</div>
+<pre class="ref-ex">{"hash_alg": "sha256", "pcrs_inquote": ["0","1","2","3","4","5","6","7"], "pcrscid": "&lt;claim item id&gt;"}</pre>
+      </div>
+      <p class="small text-body-secondary mt-3 mb-0">A missing key gives a <i>fail</i> result naming it. The same object goes to every selected rule; extra keys are ignored,
+      so supplying all three lets you run both Keylime rules together.</p>
+   </div>
+</div>
+
+</div>
 
 {{end}}
