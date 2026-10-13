@@ -33,6 +33,10 @@ type fakeJane struct {
 	raw      map[string][]string
 	evExists bool // whether GET /expectedValue/... finds one
 
+	elements      []fakeElement // elements already in Jane, for create's checks
+	elementLookup int           // if non-zero, element lookups answer this status
+	claimBody     string        // if set, the body of every claim
+
 	ruleResults map[string]int  // rule -> result code; default 0 (Success)
 	ruleErrors  map[string]bool // rule -> answer 500 without a result, as for an unknown rule
 	failIntents map[string]bool // intent -> /attest fails
@@ -59,6 +63,14 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 			io.WriteString(w, `{"itemid":"S1"}`)
 		case r.Method == "DELETE" && strings.HasPrefix(r.URL.Path, "/session/"):
 			io.WriteString(w, `{}`)
+		case r.Method == "GET" && (r.URL.Path == "/elements" || strings.HasPrefix(r.URL.Path, "/elements/name/") ||
+			strings.HasPrefix(r.URL.Path, "/element/")):
+			if f.elementLookup != 0 {
+				w.WriteHeader(f.elementLookup)
+				io.WriteString(w, `{"error":"database unavailable"}`)
+				return
+			}
+			f.answerElementLookup(w, r.URL.Path)
 		case r.URL.Path == "/element":
 			io.WriteString(w, `{"itemid":"E1"}`)
 		case r.Method == "POST" && r.URL.Path == "/attest":
@@ -71,8 +83,13 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 			}
 			io.WriteString(w, `{"itemid":"C1"}`)
 		case r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/claim/"):
-			io.WriteString(w, `{"itemid":"C1","body":{"machineid":"abc123",
-				"quote":{"attested":{"pcrdigest":"deadbeef"},"firmwareVersion":9007199254740993}}}`)
+			body := f.claimBody
+			if body == "" {
+				body = `{"machineid":"abc123",
+				"quote":{"attested":{"pcrdigest":"deadbeef"},"firmwareVersion":9007199254740993},
+				"efivars":` + fakeEfivars + `,"count":6}`
+			}
+			io.WriteString(w, `{"itemid":"C1","body":`+body+`}`)
 		case r.Method == "POST" && r.URL.Path == "/verify":
 			var v struct{ Rule string }
 			json.Unmarshal([]byte(f.raw["POST /verify"][len(f.raw["POST /verify"])-1]), &v)
@@ -98,6 +115,47 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}
+}
+
+type fakeElement struct{ ID, Name, MachineID string }
+
+func (f *fakeJane) answerElementLookup(w http.ResponseWriter, path string) {
+	var ids []string
+	switch {
+	case path == "/elements":
+		for _, e := range f.elements {
+			ids = append(ids, e.ID)
+		}
+	case strings.HasPrefix(path, "/elements/name/"):
+		name := strings.TrimPrefix(path, "/elements/name/")
+		for _, e := range f.elements {
+			if e.Name == name {
+				ids = append(ids, e.ID)
+			}
+		}
+	default: // /element/<id>
+		id := strings.TrimPrefix(path, "/element/")
+		for _, e := range f.elements {
+			if e.ID == id {
+				fmt.Fprintf(w, `{"itemid":%q,"name":%q,"host":{"machineid":%q}}`, e.ID, e.Name, e.MachineID)
+				return
+			}
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, `{"error":"no such element"}`)
+		return
+	}
+	b, _ := json.Marshal(map[string]any{"elements": ids, "length": len(ids)}) // null when empty, as janeserver sends
+	w.Write(b)
+}
+
+// mutations counts the requests that change anything in Jane.
+func (f *fakeJane) mutations() int {
+	n := 0
+	for _, k := range []string{"POST /element", "PUT /element", "POST /expectedValue", "PUT /expectedValue", "POST /attest", "POST /session"} {
+		n += f.count(k)
+	}
+	return n
 }
 
 func firstSeg(p string) string {
@@ -382,19 +440,6 @@ func TestSafetyPrompts(t *testing.T) {
 	h.pv.In = bufio.NewReader(strings.NewReader(""))
 	if _, err := h.pv.ProcessWorklist(); err == nil || errors.Is(err, errQuit) {
 		t.Errorf("EOF: err = %v, want a read error", err)
-	}
-}
-
-func TestCreateWithExistingIDFileAsks(t *testing.T) {
-	h := newHarness(t, "create")
-	h.pv.Unsafe = false
-	os.WriteFile(h.pv.IDFile, []byte("OLD"), 0o644)
-	h.pv.In = bufio.NewReader(strings.NewReader("n\n"))
-	if code := h.pv.Run(); code != 0 {
-		t.Errorf("exit code %d", code)
-	}
-	if len(h.jane.calls) != 0 || len(h.tpm.opened) != 0 {
-		t.Error("declining should stop before any work")
 	}
 }
 

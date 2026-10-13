@@ -31,6 +31,7 @@ type Variable struct {
 }
 
 // Variables lists the variables checked by the UEFI_ rules, in registration order.
+// provisioner/uefi.go (uefiRuleVariables) records expected values for the same list; keep them in step.
 var Variables = []Variable{
 	// static, security relevant
 	{"SecureBoot", utilities.EfiGlobalVariableGUID, "Secure Boot enabled state"},

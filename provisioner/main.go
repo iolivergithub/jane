@@ -2,7 +2,7 @@
 // an element with a Jane attestation server and, optionally, provisions the
 // TPM and records expected values; it can then attest the element.
 //
-//	jp create|update|attest <provisioning file> [-u|--unsafe]
+//	jp create|update|attest <provisioning file> [-u|--unsafe] [--recreate]
 package main
 
 import (
@@ -11,12 +11,15 @@ import (
 	"os"
 )
 
-const usage = `usage: jp [-h] [-u] operation pfile
+const usage = `usage: jp [-h] [-u] [--recreate] operation pfile
 
 Jane Element Configurator
 
 positional arguments:
-  operation      create   register this machine as a new element
+  operation      create   register this machine as a new element; refuses if it
+                          is already registered (element ID file present,
+                          or an element in Jane with the same name or
+                          machine ID)
                  update   update the element registered earlier
                  attest   attest the registered element against every intent
                           and rule under evs, without changing anything
@@ -25,6 +28,9 @@ positional arguments:
 options:
   -h, --help     show this help message and exit
   -u, --unsafe   do not ask for confirmation before TPM and overwrite steps
+  --recreate     create only: register a new element even though this
+                 machine is already registered (asks first unless -u);
+                 the old element is left in Jane, orphaned
 
 exit status:
   0  success (attest: every rule passed)
@@ -41,12 +47,14 @@ func run(argv []string) int {
 	fmt.Println("Jane Element Configuration")
 
 	// Flags may appear anywhere, as with the original argparse CLI.
-	unsafe := false
+	unsafe, recreate := false, false
 	var pos []string
 	for _, a := range argv {
 		switch a {
 		case "-u", "--unsafe":
 			unsafe = true
+		case "--recreate":
+			recreate = true
 		case "-h", "--help":
 			fmt.Print(usage)
 			return exitOK
@@ -73,6 +81,11 @@ func run(argv []string) int {
 		return exitUsage
 	}
 
+	if recreate && op != "create" {
+		fmt.Fprintf(os.Stderr, "jp: --recreate only applies to create\n%s", usage)
+		return exitUsage
+	}
+
 	if fi, err := os.Stat(pfile); err != nil || !fi.Mode().IsRegular() {
 		fmt.Println("Provisioning file", pfile, "does not exist")
 		return exitError
@@ -85,6 +98,7 @@ func run(argv []string) int {
 	}
 
 	pv := NewProvisioner(p, op, unsafe)
+	pv.Recreate = recreate
 	return pv.Run()
 }
 
@@ -102,16 +116,9 @@ func (pv *Provisioner) Run() int {
 		return pv.runAttest()
 	}
 
-	if pv.Op == "create" && exists {
-		fmt.Println("######################################################")
-		ok, err := pv.ContinueQuestion("Create mode and element ID file exists?")
-		if errors.Is(err, errQuit) || (err == nil && !ok) {
-			fmt.Println("Terminating safely.")
-			return exitOK
-		}
-		if err != nil {
-			fmt.Println("Error:", err)
-			return exitError
+	if pv.Op == "create" {
+		if code, stop := pv.createPreflight(exists); stop {
+			return code
 		}
 	}
 

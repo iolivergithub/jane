@@ -77,3 +77,24 @@ evs:
       protocol: tarzan  
   - std::intent::uefi::efivars :
       protocol: tarzan
+      type: uefiefivars
+      rules:
+        - UEFI_SecureBoot
+        - UEFI_SetupMode
+        - UEFI_AuditMode
+        - UEFI_DeployedMode
+        - UEFI_VendorKeys
+        - UEFI_PK
+        - UEFI_KEK
+        - UEFI_db
+        - UEFI_MokSBStateRT
+        # these change with firmware (fwupd) and shim/SBAT (apt) updates;
+        # run jp update afterwards to refresh the expected value
+        - UEFI_dbx
+        - UEFI_SbatLevelRT
+        - UEFI_MokListRT
+        - UEFI_MokListXRT
+        - UEFI_PKDefault
+        - UEFI_KEKDefault
+        - UEFI_dbDefault
+        - UEFI_dbxDefault

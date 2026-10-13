@@ -62,6 +62,10 @@ type Provisioner struct {
 	// Unsafe skips the y/n/q safety prompts.
 	Unsafe bool
 
+	// Recreate lets create register a new element for a machine that is
+	// already registered. Without it create refuses, even with Unsafe.
+	Recreate bool
+
 	IDFile string // where the element's itemid is stored
 	KeyDir string // where tpmprovision writes ek.pub, ak.pub and ak.name
 
@@ -304,6 +308,13 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 			"attestedValue":   b.Quote.Attested.PCRDigest,
 			"firmwareVersion": b.Quote.FirmwareVersion,
 		}
+
+	case "uefiefivars":
+		v, err := uefiEVs(c.Body, pv.Out)
+		if err != nil {
+			return err
+		}
+		evs = v
 
 	default:
 		fmt.Fprintln(pv.Out, "Unknown expected value type", typ, "for", pid)

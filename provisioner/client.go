@@ -113,6 +113,57 @@ func (c *Client) UpdateElement(e *Element) (string, error) {
 	return id, err
 }
 
+// getJSON GETs path and decodes a 200 response into v.
+func (c *Client) getJSON(path string, v any) error {
+	status, rb, err := c.do(http.MethodGet, path, nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusOK {
+		return &ServerError{http.MethodGet, path, status, strings.TrimSpace(string(rb))}
+	}
+	if err := json.Unmarshal(rb, v); err != nil {
+		return &ServerError{http.MethodGet, path, status, "bad response: " + err.Error()}
+	}
+	return nil
+}
+
+type elementList struct {
+	Elements []string `json:"elements"` // null when there are none
+}
+
+// ElementIDs returns the itemids of every element.
+func (c *Client) ElementIDs() ([]string, error) {
+	var l elementList
+	err := c.getJSON("/elements", &l)
+	return l.Elements, err
+}
+
+// ElementIDsByName returns the itemids of the elements with this name.
+func (c *Client) ElementIDsByName(name string) ([]string, error) {
+	var l elementList
+	err := c.getJSON("/elements/name/"+url.PathEscape(name), &l)
+	return l.Elements, err
+}
+
+// ElementSummary is the part of a stored element the create checks read.
+type ElementSummary struct {
+	ItemID string `json:"itemid"`
+	Name   string `json:"name"`
+	Host   struct {
+		MachineID string `json:"machineid"`
+	} `json:"host"`
+}
+
+// GetElement fetches one element.
+func (c *Client) GetElement(id string) (*ElementSummary, error) {
+	var e ElementSummary
+	if err := c.getJSON("/element/"+url.PathEscape(id), &e); err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
 type attestRequest struct {
 	EID        string         `json:"eid"`
 	PID        string         `json:"pid"`

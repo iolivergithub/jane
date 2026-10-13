@@ -30,9 +30,19 @@ the machine ID.
 ## Operations
 
 - `create` runs `provisionworklist` and registers a new element, writing its
-  ID to the element ID file. If that file exists it asks first.
+  ID to the element ID file. It is for the first provisioning only: before
+  anything else (in particular before `tpmclear`/`tpmprovision`) it refuses,
+  exit 1, if the machine already looks registered: the element ID file exists,
+  or Jane already holds an element with the same `element.name` or the same
+  machine ID. It also refuses if Jane cannot be asked. `-u` does not lift
+  this. `--recreate` does (asking first unless `-u`): it registers a new
+  element and leaves the old one in Jane, whose TPM keys stop matching if the
+  worklist re-provisions the TPM. A cloned VM that kept its source's
+  `/etc/machine-id` is refused too; give it a new machine ID.
 - `update` runs `provisionworklist` and updates the element whose ID is in the
-  element ID file.
+  element ID file, replacing its expected values. Run it after anything that
+  changes what is measured, e.g. a firmware update (fwupd) or a shim, SBAT or
+  kernel update (apt).
 - `attest` attests the element whose ID is in the element ID file against
   every intent under `evs`, and verifies every rule listed for each, in one
   Jane session. It does not run `provisionworklist`, touch the TPM, or change
@@ -51,6 +61,26 @@ Exit status: 0 success (for `attest`, every rule passed); 1 error (bad
 provisioning file, missing element ID file, Jane server or TPM unreachable);
 2 bad command line; 3 `attest` completed but a rule did not pass or an intent
 could not be attested.
+
+## Expected value types
+
+An `evs` entry's `type` says how its claim becomes an expected value for the
+element, intent and endpoint (created by `create`, replaced by `update`):
+
+- `sysmachineid`: the claim's `machineid`, for the `sys_machineID_` rules.
+- `tpm2quote`: the quote's PCR digest and firmware version, for the `tpm2_`
+  rules.
+- `uefiefivars`: one entry per variable checked by the `UEFI_` rules
+  (`janeserver/rules/uefirules`), matched by name and vendor GUID: the value
+  as hex if it is at most 32 bytes, otherwise `sha256:<hex>`, or `absent` if
+  the variable is not in the claim (tarzan sends every variable efivarfs
+  lists). A variable the agent could not read is left out with a warning, so
+  its rule fails until it can be read. A claim with no variables at all (the
+  agent could not list efivarfs) or from an agent too old to send `rawvalue`
+  is refused rather than recorded. The variable list in `uefi.go` must be kept
+  in step with janeserver's.
+
+An entry without a `type` is attested (and its rules run) but records nothing.
 
 ## TPM device
 
@@ -106,7 +136,7 @@ that a quote from the new AK verifies with its exported PEM key.
   include `ak.ctx`, which only tpm2-tools can use.
 - Errors stop the run with exit code 1 and a message instead of a traceback;
   a missing `itemid` in a server response is reported with the server's body.
-  User-requested stops (`q`, or declining the create-overwrite check) exit 0
+  User-requested stops (`q`, or declining the `--recreate` check) exit 0
   as before.
 - The session opened for `processevs` is always closed, even on error.
 - `processevs` / `processevs_withrules` without an earlier `processelement`
@@ -121,6 +151,9 @@ that a quote from the new AK verifies with its exported PEM key.
 - `host.os` is `sysname-release-machine` from uname (e.g.
   `Linux-6.12.48-amd64-x86_64`), or `Windows-10.0.<build>`; Python's
   `platform.platform()` also appended a libc suffix.
+- `create` refuses on an already registered machine (above) instead of
+  asking, and `-u` no longer skips that check; `--recreate` is new.
+- New `uefiefivars` expected-value type.
 - New `attest` operation (above), and rule results are printed by name
   (`9001 Fail`) during `processevs_withrules` rather than as HTTP statuses.
 - `-u` prints "unsafe mode" rather than the confusingly named
