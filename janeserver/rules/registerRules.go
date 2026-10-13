@@ -10,6 +10,7 @@ import (
 	"a10/rules/nullrule"
 	"a10/rules/sysrules"
 	"a10/rules/tpm2rules"
+	"a10/rules/uefirules"
 	"a10/rules/veraison"
 
 	"a10/rules/testcontainerrules"
@@ -18,6 +19,7 @@ import (
 func RegisterRules() {
 	registerListOfRules(nullrule.Registration())
 	registerListOfRules(tpm2rules.Registration())
+	registerListOfRules(uefirules.Registration())
 	//	registerListOfRules(marblerun.Registration())
 	registerListOfRules(testcontainerrules.Registration())
 	registerListOfRules(sysrules.Registration())

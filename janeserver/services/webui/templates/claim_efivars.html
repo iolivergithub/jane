@@ -19,7 +19,7 @@
    {{ range $v.Vars }}
       <tr>
          <td class="text-nowrap">
-            <b class="font-monospace">{{ .Name }}</b><br>
+            <b class="font-monospace">{{ .Name }}</b>{{ if .RuleName }} <span class="badge bg-info-subtle text-info-emphasis" data-bs-toggle="tooltip" title="Checked by rule {{ .RuleName }}">rule</span>{{ end }}<br>
             <span class="font-monospace small text-body-secondary" {{ if .GUIDName }}data-bs-toggle="tooltip" title="{{ .GUIDName }}"{{ end }}>{{ .GUID }}</span>
             {{ if .GUIDName }}<br><span class="small text-body-secondary">{{ .GUIDName }}</span>{{ end }}
          </td>
@@ -39,6 +39,7 @@
                <pre class="small mb-0 overflow-auto">{{ .HexDump }}</pre>
             </details>
             {{ else if not .Error }}<i class="text-body-secondary small">empty</i>{{ end }}
+            {{ if and .RuleName .EVValue }}<div class="small text-body-secondary mt-1">Expected value: <span class="font-monospace user-select-all text-break">{{ .EVValue }}</span></div>{{ end }}
          </td>
       </tr>
    {{ end }}

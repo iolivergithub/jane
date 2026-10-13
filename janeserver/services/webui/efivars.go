@@ -1,15 +1,18 @@
 package webui
 
 import (
-	"encoding/base64"
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"a10/rules/uefirules"
+	"a10/utilities"
 )
 
 // EfiVar is one UEFI variable from a uefi/efivars claim, prepared for display.
@@ -23,6 +26,8 @@ type EfiVar struct {
 	Decoded        string   // interpretation of the value for well-known variables, if any
 	Text           string   // value as text, if it looks like UCS-2 or ASCII text
 	HexDump        string   // offset / hex / ASCII dump of the value
+	EVValue        string   // the value as the UEFI_ rules expect it in an expected value
+	RuleName       string   // the UEFI_ rule that checks this variable, if any
 	Error          string
 	Lossy          bool // the value was sent as a string and non-UTF-8 bytes were lost in transit
 }
@@ -36,9 +41,9 @@ type EfiVarsView struct {
 }
 
 var efiKnownGUIDs = map[string]string{
-	"8be4df61-93ca-11d2-aa0d-00e098032b8c": "EFI Global Variable",
-	"d719b2cb-3d3a-4596-a3bc-dad00e67656f": "Image Security Database",
-	"605dab50-e046-4300-abb6-3dd810dd8b23": "Shim",
+	utilities.EfiGlobalVariableGUID:        "EFI Global Variable",
+	utilities.EfiImageSecurityDatabaseGUID: "Image Security Database",
+	utilities.ShimLockGUID:                 "Shim",
 	"4a67b082-0a4c-41cf-b6c7-440b29bb8c4f": "systemd-boot / Loader",
 	"eb704011-1402-11d3-8e77-00a0c969723b": "MTC Vendor",
 	"77fa9abd-0359-4d32-bd60-28f4e78f784b": "Microsoft",
@@ -70,17 +75,17 @@ func EfiAttributeDescription(flag string) string {
 }
 
 // EfiVarsBody turns the body of a uefi/efivars claim into something a template can render.
-// It accepts the body as decoded from JSON or read back from the database, so lists may be
-// []interface{} or a named slice type, and numbers may be any numeric type.
 func EfiVarsBody(body map[string]interface{}) EfiVarsView {
 	view := EfiVarsView{}
 
-	for _, item := range asSlice(body["efivars"]) {
-		m := asMap(item)
-		if m == nil {
-			continue
-		}
-		v := makeEfiVar(m)
+	parsed, err := utilities.ParseEfiVars(body)
+	if err != nil {
+		return view
+	}
+	view.Count = parsed.Count
+
+	for _, ev := range parsed.Variables {
+		v := makeEfiVar(ev)
 		if v.Error != "" {
 			view.Errors++
 		}
@@ -102,80 +107,55 @@ func EfiVarsBody(body map[string]interface{}) EfiVarsView {
 		return a.Name < b.Name
 	})
 
-	if c, ok := asInt(body["count"]); ok {
-		view.Count = c
-	} else {
-		view.Count = len(view.Vars)
-	}
 	return view
 }
 
-func makeEfiVar(m map[string]interface{}) EfiVar {
-	v := EfiVar{}
-	v.Name, _ = m["name"].(string)
-	v.GUID, _ = m["guid"].(string)
-	v.GUIDName = efiKnownGUIDs[strings.ToLower(v.GUID)]
-	v.Error, _ = m["errorvalue"].(string)
+// efiEVInlineLimit is the largest value the claim view offers as hex for an expected value;
+// anything longer is offered as its SHA-256 (the UEFI_ rules accept either form).
+const efiEVInlineLimit = 32
 
-	if a, ok := asInt(m["attributes"]); ok {
-		v.Attributes = uint32(a)
-		for _, b := range efiAttributeBits {
-			if v.Attributes&b.bit != 0 {
-				v.AttributeFlags = append(v.AttributeFlags, b.name)
-			}
+func makeEfiVar(e utilities.EfiVariable) EfiVar {
+	v := EfiVar{
+		Name:       e.Name,
+		GUID:       e.GUID,
+		GUIDName:   efiKnownGUIDs[e.GUID],
+		Attributes: e.Attributes,
+		Size:       e.Size,
+		Error:      e.Error,
+		Lossy:      e.Lossy,
+	}
+	for _, b := range efiAttributeBits {
+		if v.Attributes&b.bit != 0 {
+			v.AttributeFlags = append(v.AttributeFlags, b.name)
+		}
+	}
+	for _, r := range uefirules.Variables {
+		if r.Name == v.Name && r.GUID == v.GUID {
+			v.RuleName = uefirules.RuleName(r.Name)
 		}
 	}
 
-	// tarzan reports the number of bytes read as "somevalue"
-	size, haveSize := asInt(m["somevalue"])
-
-	var data []byte
-	if raw, ok := m["rawvalue"].(string); ok && raw != "" {
-		if d, err := base64.StdEncoding.DecodeString(raw); err == nil {
-			data = d
+	data := e.Data
+	if len(data) == 0 {
+		return v
+	}
+	if !v.Lossy {
+		v.Decoded = decodeKnownEfiVar(v.Name, v.GUID, data)
+		if len(data) <= efiEVInlineLimit {
+			v.EVValue = hex.EncodeToString(data)
+		} else {
+			h := sha256.Sum256(data)
+			v.EVValue = "sha256:" + hex.EncodeToString(h[:])
 		}
 	}
-	if data == nil {
-		// Older agents send the raw bytes as a Go string; JSON encoding replaced any
-		// invalid UTF-8 with U+FFFD, so this is only an approximation of the value.
-		s, _ := m["value"].(string)
-		if !utf8.ValidString(s) || strings.ContainsRune(s, utf8.RuneError) {
-			v.Lossy = true
-		}
-		data = []byte(s)
-	}
-
-	// The agent's buffer may be larger than the value; trim it to the bytes actually read.
-	// A lossy value has had bytes expanded to U+FFFD, so byte offsets no longer line up
-	// and only trailing padding can be removed.
-	if v.Lossy {
-		data = []byte(strings.TrimRight(string(data), "\x00"))
-	} else if haveSize && size >= 0 && size < len(data) {
-		data = data[:size]
-	}
-	if v.Error != "" && !haveSize {
-		data = nil
-	}
-
-	v.Size = len(data)
-	if haveSize && size >= 0 {
-		v.Size = size
-	}
-	if v.Error == "" || size > 0 {
-		if !v.Lossy {
-			v.Decoded = decodeKnownEfiVar(v.Name, strings.ToLower(v.GUID), data)
-		}
-		v.Text = efiValueAsText(data)
-		v.HexDump = hexDump(data)
-	}
+	v.Text = efiValueAsText(data)
+	v.HexDump = hexDump(data)
 	return v
 }
 
-const efiGlobalGUID = "8be4df61-93ca-11d2-aa0d-00e098032b8c"
-
 // decodeKnownEfiVar interprets the handful of well-known variables whose formats are simple.
 func decodeKnownEfiVar(name, guid string, data []byte) string {
-	if guid != efiGlobalGUID {
+	if guid != utilities.EfiGlobalVariableGUID {
 		return ""
 	}
 	switch name {
@@ -318,69 +298,4 @@ func hexDump(b []byte) string {
 		}
 	}
 	return sb.String()
-}
-
-func asSlice(x interface{}) []interface{} {
-	if x == nil {
-		return nil
-	}
-	if s, ok := x.([]interface{}); ok {
-		return s
-	}
-	rv := reflect.ValueOf(x)
-	if rv.Kind() != reflect.Slice {
-		return nil
-	}
-	out := make([]interface{}, rv.Len())
-	for i := range out {
-		out[i] = rv.Index(i).Interface()
-	}
-	return out
-}
-
-func asMap(x interface{}) map[string]interface{} {
-	if m, ok := x.(map[string]interface{}); ok {
-		return m
-	}
-	rv := reflect.ValueOf(x)
-	switch rv.Kind() {
-	case reflect.Map:
-		if rv.Type().Key().Kind() != reflect.String {
-			return nil
-		}
-		out := make(map[string]interface{}, rv.Len())
-		for _, k := range rv.MapKeys() {
-			out[k.String()] = rv.MapIndex(k).Interface()
-		}
-		return out
-	case reflect.Slice:
-		// an ordered document (e.g. bson.D): a slice of {Key, Value} structs
-		out := make(map[string]interface{}, rv.Len())
-		for i := 0; i < rv.Len(); i++ {
-			e := reflect.Indirect(rv.Index(i))
-			if e.Kind() != reflect.Struct {
-				return nil
-			}
-			k, v := e.FieldByName("Key"), e.FieldByName("Value")
-			if !k.IsValid() || !v.IsValid() || k.Kind() != reflect.String {
-				return nil
-			}
-			out[k.String()] = v.Interface()
-		}
-		return out
-	}
-	return nil
-}
-
-func asInt(x interface{}) (int, bool) {
-	rv := reflect.ValueOf(x)
-	switch rv.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return int(rv.Int()), true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return int(rv.Uint()), true
-	case reflect.Float32, reflect.Float64:
-		return int(rv.Float()), true
-	}
-	return 0, false
 }
