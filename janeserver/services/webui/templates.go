@@ -12,7 +12,8 @@ func templateFunctions() template.FuncMap {
 		"defaultMessage": DefaultMessage, "epochToUTCdetailed": EpochToUTCdetailed, "epochToUTC": EpochToUTCsimple, "base64decode": Base64decode,
 		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
 		"opaqueObject": GetOpaqueObjectByValue,
-		"resultClass":  ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
+		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription,
+		"resultClass": ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
 	}
 	// authEnabled and currentUser, used by base.html for the username and logout button
 	for name, f := range auth.TemplateFuncs() {
