@@ -94,7 +94,7 @@ func TestRules(t *testing.T) {
 		{"SecureBoot", "01", structures.Success},
 		{"SecureBoot", "0x01", structures.Success},
 		{"SecureBoot", "00", structures.Fail},
-		{"SecureBoot", nil, structures.MissingExpectedValue},
+		{"SecureBoot", nil, structures.Fail},
 		{"SetupMode", "00", structures.Success},
 		{"PK", "sha256:" + hex.EncodeToString(pkHash[:]), structures.Success},
 		{"PK", "SHA256:" + hex.EncodeToString(pkHash[:]), structures.Success},
@@ -107,7 +107,7 @@ func TestRules(t *testing.T) {
 		{"SecureBoot", "absent", structures.Fail},
 		{"dbx", "01", structures.Fail}, // only present under another GUID
 		{"KEK", "sha256:00", structures.Fail},
-		{"KEK", nil, structures.MissingExpectedValue},
+		{"KEK", nil, structures.Fail},
 	}
 	for _, c := range cases {
 		evs := map[string]interface{}{}

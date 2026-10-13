@@ -7,8 +7,9 @@
 //	"PK":         "sha256:3c4f...e1"   the SHA-256 of the value, for long values
 //	"MokSBStateRT": "absent"           the variable must not be present
 //
-// A variable not mentioned in the expected value gives MissingExpectedValue. A variable
-// that is mentioned passes if the claim matches and fails otherwise.
+// A variable not mentioned in the expected value fails, as the tpm2_ rules do when their
+// entry is missing (MissingExpectedValue is only for when there is no expected value at
+// all). A variable that is mentioned passes if the claim matches and fails otherwise.
 package uefirules
 
 import (
@@ -81,7 +82,7 @@ const absent = "absent"
 func checkVariable(v Variable, claim structures.Claim, ev structures.ExpectedValue) (structures.ResultValue, string, error) {
 	evEntry, ok := ev.EVS[v.Name]
 	if !ok || evEntry == nil {
-		return structures.MissingExpectedValue, fmt.Sprintf("Expected value %v does not mention %v", ev.Name, v.Name), nil
+		return structures.Fail, fmt.Sprintf("Expected value %v does not mention %v", ev.Name, v.Name), nil
 	}
 	expected := normalise(fmt.Sprintf("%v", evEntry))
 
