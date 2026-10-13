@@ -118,6 +118,9 @@
             <li class="nav-item" role="presentation">
                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-auth" type="button" role="tab"><i class="fa fa-lock me-1"></i> Authentication {{ if or .Auth.Web .Auth.Rest }}<span class="badge bg-success">on</span>{{ else }}<span class="badge bg-warning">off</span>{{ end }}</button>
             </li>
+            <li class="nav-item" role="presentation">
+               <button class="nav-link" data-bs-toggle="tab" data-bs-target="#home-signing" type="button" role="tab"><i class="fa fa-key me-1"></i> Signing {{ if .Signing.Error }}<span class="badge bg-danger">error</span>{{ else if eq .Signing.Source "file" }}<span class="badge bg-success">{{ .Signing.Alg }}</span>{{ else }}<span class="badge bg-warning">ephemeral</span>{{ end }}</button>
+            </li>
          </ul>
       </div>
       <div class="card-body tab-content">
@@ -192,6 +195,23 @@
                   <tr><td>Users</td><td>{{ if lt .Auth.Users 0 }}<span class="badge bg-danger">users collection unreadable</span>{{ else }}<b>{{ .Auth.Users }}</b>{{ if and (eq .Auth.Users 0) (or .Auth.Web .Auth.Rest) }} <span class="badge bg-danger">nobody can log in</span>{{ end }}{{ end }}</td></tr>
                   <tr><td>Password storage</td><td><b>{{ .Auth.PasswordHash }}</b> hashes</td></tr>
                   <tr><td>Add user / reset password</td><td class="font-monospace small">{{ .Auth.UserTool }}</td></tr>
+               </tbody>
+            </table>
+         </div>
+
+         <div class="tab-pane fade" id="home-signing" role="tabpanel">
+            <table class="table table-sm mb-0">
+               <tbody>
+                  {{ if .Signing.Error }}
+                  <tr><td>Error</td><td><span class="badge bg-danger">{{ .Signing.Error }}</span></td></tr>
+                  {{ else }}
+                  <tr><td>Key source</td><td>{{ if eq .Signing.Source "file" }}<b>file</b>{{ else }}<span class="badge bg-warning">ephemeral</span> generated at startup; footers cannot be verified after Jane stops. Set <span class="font-monospace">signing: keyfile:</span> in the configuration.{{ end }}</td></tr>
+                  {{ if .Signing.KeyFile }}<tr><td>Key file</td><td class="font-monospace small"><b>{{ .Signing.KeyFile }}</b></td></tr>{{ end }}
+                  <tr><td>Key type</td><td><b>{{ .Signing.KeyType }}</b></td></tr>
+                  <tr><td>Algorithm (alg)</td><td><b>{{ .Signing.Alg }}</b></td></tr>
+                  <tr><td>Key ID (kid)</td><td class="font-monospace small"><b>{{ .Signing.Kid }}</b></td></tr>
+                  <tr><td>Hash</td><td><b>SHA-256</b> over canonical JSON (RFC 8785, integers kept exact)</td></tr>
+                  {{ end }}
                </tbody>
             </table>
          </div>

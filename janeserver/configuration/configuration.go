@@ -32,6 +32,12 @@ import (
 //  crt: temporary.crt                          -- File containing the certificate to use for the HTTPS server
 //  key: temporary.key                          -- File containing the private key for the HTTPS server
 //  usehttp: true                               -- Use HTTP (true) instead of HTTPS. Default is false
+//
+//#Footer signing (optional)
+//signing:
+//  keyfile: /etc/opt/jane/signing.key          -- PEM private key (PKCS#8, PKCS#1 or SEC1; RSA, ECDSA or Ed25519)
+//                                                 used to sign claim/result/session footers. If missing, an
+//                                                 ephemeral key is generated at each start.
 
 type ConfigurationStruct struct {
 	System struct {
@@ -70,6 +76,9 @@ type ConfigurationStruct struct {
 	}
 	Keylime struct {
 		ApiUrl string
+	}
+	Signing struct {
+		KeyFile string // PEM private key for claim/result/session footers; empty = ephemeral key
 	}
 }
 

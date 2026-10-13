@@ -142,6 +142,8 @@
    <div class="tab-pane fade j-details" id="tab-footer" role="tabpanel">
       <table class="table table-sm mb-0">
          <tbody>
+            <tr><td>Kid</td><td class="font-monospace small">{{ .S.Footer.Kid }}</td></tr>
+            <tr><td>Alg</td><td class="font-monospace small">{{ .S.Footer.Alg }}</td></tr>
             <tr><td>Hash</td><td class="font-monospace small">{{ encodeAsHexString .S.Footer.Hash }}</td></tr>
             <tr><td>Signature</td><td class="font-monospace small">{{ encodeAsHexString .S.Footer.Signature }}</td></tr>
          </tbody>

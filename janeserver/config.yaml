@@ -41,6 +41,13 @@ logging:
   logfilelocation: /tmp/ga10.log
   sessionupdatelogging: false
 
+#Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
+#and footers on claims, results and sessions cannot be verified once Jane stops)
+#The key is a PEM private key: PKCS#8, PKCS#1 or SEC1; RSA (PS256), ECDSA P-256/384/521 (ES256/384/512) or Ed25519 (EdDSA)
+#e.g. openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out signing.key
+#signing:
+#  keyfile: /etc/opt/jane/signing.key
+
 #Authentication (optional - if this section is missing, no login is required)
 #Users are held in the "users" collection; add them or reset passwords with etc/addjaneuser, e.g.
 #  etc/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal

@@ -19,6 +19,7 @@ import (
 	"a10/logging"
 	"a10/protocols"
 	"a10/rules"
+	"a10/signing"
 	"a10/utilities"
 
 	"a10/services/restapi"
@@ -71,6 +72,12 @@ func main() {
 	// authentication/authorisation for the Web UI and REST API, see auth/auth.go
 
 	auth.Initialise(*configFile)
+
+	// the key used to sign claim, result and session footers, see signing/signing.go
+
+	if err := signing.Initialise(configuration.ConfigData.Signing.KeyFile); err != nil {
+		panic(fmt.Sprintf("Unable to initialise footer signing. Exiting with error %v", err))
+	}
 
 	// Ok, we're up...let's log this.
 
