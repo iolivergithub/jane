@@ -23,6 +23,8 @@ type SessionTiming struct {
 }
 
 type SessionFooter struct {
+	Kid       string `json:"kid" bson:"kid"`
+	Alg       string `json:"alg" bson:"alg"`
 	Hash      []byte `json:"hash" bson:"hash"`
 	Signature []byte `json:"signature" bson:"signature"`
 }

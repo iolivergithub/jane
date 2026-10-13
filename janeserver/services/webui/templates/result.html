@@ -89,6 +89,8 @@
       <div class="tab-pane fade" id="rs-footer" role="tabpanel">
          <table class="table table-sm mb-0">
             <tbody>
+               <tr><td>Kid</td><td class="font-monospace small">{{ .R.Footer.Kid }}</td></tr>
+               <tr><td>Alg</td><td class="font-monospace small">{{ .R.Footer.Alg }}</td></tr>
                <tr><td>Hash</td><td class="font-monospace small">{{ encodeAsHexString .R.Footer.Hash }}</td></tr>
                <tr><td>Signature</td><td class="font-monospace small">{{ encodeAsHexString .R.Footer.Signature }}</td></tr>
             </tbody>

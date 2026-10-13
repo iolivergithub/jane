@@ -10,6 +10,7 @@ import (
 	"a10/auth"
 	"a10/configuration"
 	"a10/operations"
+	"a10/signing"
 )
 
 type homepagestructure struct {
@@ -29,6 +30,7 @@ type homepagestructure struct {
 	CmdLine       []string
 	Info          SystemInfo
 	Auth          auth.Status
+	Signing       signing.Status
 }
 
 func homepage(c echo.Context) error {
@@ -70,6 +72,7 @@ func homepage(c echo.Context) error {
 
 	hps.Info = sysInfo
 	hps.Auth = auth.CurrentStatus()
+	hps.Signing = signing.CurrentStatus()
 
 	fmt.Printf("hps is %v\n", hps)
 
