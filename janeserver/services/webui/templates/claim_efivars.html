@@ -1,21 +1,48 @@
 {{define "claim_efivars.html"}}
+{{ $v := efivars . }}
+<p class="mb-2">
+   <b>{{ $v.Count }}</b> UEFI variable{{ if ne $v.Count 1 }}s{{ end }}
+   {{ if $v.Errors }}<span class="badge bg-warning-subtle text-warning-emphasis ms-1">{{ $v.Errors }} with read errors</span>{{ end }}
+</p>
+{{ if $v.AnyLossy }}
+<div class="alert alert-warning py-1 px-2 small">
+   <i class="fa fa-exclamation-triangle me-1"></i>This claim was collected by an agent that sends variable values as text, so bytes that are not valid UTF-8 were replaced in transit (shown as <span class="font-monospace">ef bf bd</span>). Values marked <i>approximate</i> are not exact.
+</div>
+{{ end }}
 
-<h4>Count {{ .count }}</h4>
-
- <table class="table table-sm table-striped">
+<div class="table-responsive">
+<table class="table table-sm table-striped align-top mb-0">
+   <thead>
+      <tr><th>Variable</th><th>Attributes</th><th class="text-end">Size</th><th class="w-100">Value</th></tr>
+   </thead>
    <tbody>
-     {{ range .efivars  }}
-         <tr>
-            <td scope="col"><b>{{ .name }}</b></td> 
-            <td scope="col">{{ .value }}</td> 
-            <td scope="col">{{ .attributes }}</td>        
-            <td scope="col">{{ .somevalue }}</td>             
-            <td scope="col">{{ .errorvalue }}</td>             
-         </tr>     
-     {{ end }}
+   {{ range $v.Vars }}
+      <tr>
+         <td class="text-nowrap">
+            <b class="font-monospace">{{ .Name }}</b><br>
+            <span class="font-monospace small text-body-secondary" {{ if .GUIDName }}data-bs-toggle="tooltip" title="{{ .GUIDName }}"{{ end }}>{{ .GUID }}</span>
+            {{ if .GUIDName }}<br><span class="small text-body-secondary">{{ .GUIDName }}</span>{{ end }}
+         </td>
+         <td class="text-nowrap">
+            {{ range .AttributeFlags }}<span class="badge bg-secondary-subtle text-secondary-emphasis me-1" data-bs-toggle="tooltip" title="{{ efiAttributeDescription . }}">{{ . }}</span>{{ end }}
+            <br><span class="font-monospace small text-body-secondary">0x{{ printf "%02x" .Attributes }}</span>
+         </td>
+         <td class="text-end font-monospace small text-nowrap">{{ .Size }}</td>
+         <td style="max-width: 0;">
+            {{ if .Error }}<span class="badge bg-danger-subtle text-danger-emphasis">{{ .Error }}</span><br>{{ end }}
+            {{ if .Lossy }}<span class="badge bg-warning-subtle text-warning-emphasis">approximate</span>{{ end }}
+            {{ if .Decoded }}<div>{{ .Decoded }}</div>
+            {{ else if .Text }}<div class="font-monospace small j-wrap">{{ .Text }}</div>{{ end }}
+            {{ if .HexDump }}
+            <details {{ if and (not .Decoded) (not .Text) (le .Size 64) }}open{{ end }}>
+               <summary class="small text-body-secondary">hex</summary>
+               <pre class="small mb-0 overflow-auto">{{ .HexDump }}</pre>
+            </details>
+            {{ else if not .Error }}<i class="text-body-secondary small">empty</i>{{ end }}
+         </td>
+      </tr>
+   {{ end }}
    </tbody>
-</table> 
-
+</table>
+</div>
 {{end}}
-
-   

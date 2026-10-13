@@ -66,9 +66,10 @@ type efivardata struct {
 	Name       string `json:"name"`
 	Guid       string `json:"guid"`
 	Attributes int32  `json:"attributes"`
-	SomeValue  int    `json:"somevalue"` // no idea what this is supposed to represent
-	Value      string `json:"value"`
+	SomeValue  int    `json:"somevalue"` // number of bytes read
+	Value      string `json:"value"`     // raw bytes as a string; non-UTF-8 bytes are lost in JSON, kept for older Jane versions
 	ErrorValue string `json:"errorvalue"`
+	RawValue   string `json:"rawvalue"` // the bytes actually read, base64 encoded
 }
 
 type returnEfivars struct {
@@ -99,7 +100,13 @@ func Efivars(c echo.Context) error {
 			errval = err.Error()
 		}
 
-		efd := efivardata{v.Name, v.GUID.String(), int32(a), i, string(out[:]), errval}
+		n := i
+		if n < 0 || n > len(out) {
+			n = len(out)
+		}
+		raw := base64.StdEncoding.EncodeToString(out[:n])
+
+		efd := efivardata{v.Name, v.GUID.String(), int32(a), i, string(out[:]), errval, raw}
 
 		fmt.Printf("X=%v\n\n", efd)
 
