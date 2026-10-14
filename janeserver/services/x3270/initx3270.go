@@ -23,11 +23,12 @@ func init() {
 
 func StartX3270(ctx context.Context) {
 	port := configuration.ConfigData.X3270.Port
+	addr := configuration.ListenAddress(configuration.ConfigData.X3270.ListenOn, port)
 
 	fmt.Println(" -> 3270 starting")
 
 	//start the server
-	listener, err := net.Listen("tcp", ":"+port)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", "X3270 service listener failed to start: "+err.Error())
 		fmt.Printf("X3270 service listener failed to start: %v\n", err.Error())
@@ -49,7 +50,7 @@ func StartX3270(ctx context.Context) {
 		return
 	}
 
-	msg := fmt.Sprintf("X3270 service started on port %v", port)
+	msg := fmt.Sprintf("X3270 service started on %v", addr)
 	logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "JANE", msg)
 
 	go func() {

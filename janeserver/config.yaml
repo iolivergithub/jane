@@ -31,9 +31,10 @@ web:
   listenon: 0.0.0.0
 
 
-#Web Interface Configuration
+#X3270 (tn3270 terminal) Interface Configuration
 x3270:
   port: 3270
+  listenon: 0.0.0.0
     
 
 #Log file
