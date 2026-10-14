@@ -52,3 +52,64 @@ func TestElementMatrixRuleRowsPerIntent(t *testing.T) {
 		}
 	}
 }
+
+// Rule rows are grouped by rule type, case-insensitively, and each group's
+// summary cell holds the worst outcome in that session (#59).
+func TestGroupRuleRows(t *testing.T) {
+	timeline := []elementSession{{ID: "s1", Label: "a"}, {ID: "s2", Label: "b"}, {ID: "s3", Label: "c"}}
+	row := func(label string, outcomes ...string) matrixRow {
+		r := matrixRow{Label: label}
+		for _, o := range outcomes {
+			r.Cells = append(r.Cells, matrixCell{Outcome: o})
+		}
+		return r
+	}
+	rows := []matrixRow{
+		row("UEFI_PK", outcomePass, outcomePass, ""),
+		row("UEFI_db", outcomePass, outcomePass, ""),
+		row("sys_machineID_Agent · std::intent::sys::info", outcomePass, outcomeOther, ""),
+		row("tpm2_firmware", outcomePass, outcomeOther, ""),
+		row("tpm2_safe", outcomeFail, outcomePass, ""),
+		row("uefi_lowercase", "", outcomeFail, ""),
+		row("norule", outcomePass, "", ""),
+	}
+
+	gs := groupRuleRows(rows, timeline)
+
+	names := []string{}
+	for _, g := range gs {
+		names = append(names, g.Name)
+	}
+	if got, want := strings.Join(names, ","), "other,sys,tpm2,UEFI"; got != want {
+		t.Fatalf("groups = %s, want %s", got, want)
+	}
+
+	tpm2 := gs[2]
+	if len(tpm2.Rows) != 2 {
+		t.Fatalf("tpm2 has %d rows, want 2", len(tpm2.Rows))
+	}
+	if got := []string{tpm2.Summary[0].Outcome, tpm2.Summary[1].Outcome, tpm2.Summary[2].Outcome}; got[0] != outcomeFail || got[1] != outcomeOther || got[2] != "" {
+		t.Errorf("tpm2 summary = %q, want [fail other \"\"]", got)
+	}
+	if tpm2.Summary[0].Link != "/session/s1" {
+		t.Errorf("summary link = %q, want /session/s1", tpm2.Summary[0].Link)
+	}
+	if !strings.Contains(tpm2.Summary[0].Title, "1 pass, 1 fail, 0 other") {
+		t.Errorf("summary title = %q", tpm2.Summary[0].Title)
+	}
+
+	uefi := gs[3]
+	order := []string{}
+	for _, r := range uefi.Rows {
+		order = append(order, r.Label)
+	}
+	if got, want := strings.Join(order, ","), "UEFI_db,uefi_lowercase,UEFI_PK"; got != want {
+		t.Errorf("UEFI rows = %s, want %s (UEFI_ and uefi_ together, case-insensitive order)", got, want)
+	}
+	if uefi.Summary[1].Outcome != outcomeFail {
+		t.Errorf("UEFI session 2 summary = %q, want fail", uefi.Summary[1].Outcome)
+	}
+	if gs[0].ID == gs[1].ID {
+		t.Errorf("group ids are not unique: %q", gs[0].ID)
+	}
+}

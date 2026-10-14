@@ -3,6 +3,7 @@ package configuration
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 
 	"gopkg.in/yaml.v3"
 )
@@ -68,7 +69,8 @@ type ConfigurationStruct struct {
 		ListenOn string
 	}
 	X3270 struct {
-		Port string
+		Port     string
+		ListenOn string
 	}
 	Logging struct {
 		LogFileLocation      string
@@ -101,4 +103,11 @@ func SetupConfiguration(f string) {
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse configuration file. Exiting with error %v", err.Error()))
 	}
+}
+
+// ListenAddress joins a listenon address and a port for net.Listen and the
+// Web/REST servers. An empty listenon means all interfaces, as before the
+// setting was honoured.
+func ListenAddress(listenOn, port string) string {
+	return net.JoinHostPort(listenOn, port)
 }

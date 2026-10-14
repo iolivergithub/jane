@@ -35,6 +35,7 @@ mkdir -p $JANEBASE/opt/jane
 mkdir -p $JANEBASE/var/log/jane
 mkdir -p $JANEBASE/etc/opt/jane
 mkdir -p $JANEBASE/etc/systemd/system
+mkdir -p $JANEBASE/usr/share/doc/janeattestationengine
 
 mkdir -p $TARZANBASE
 mkdir -p $TARZANBASE/DEBIAN
@@ -44,8 +45,7 @@ mkdir -p $TARZANBASE/etc/opt/jane
 
 #constructing control files
 echo "${BLUE}Constructing control files for deb packaging${NC}"
-rm control_jane
-rm control_tarzan
+rm -f control_jane control_tarzan
 { cat control_jane_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_jane
 { cat control_tarzan_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_tarzan
 
@@ -76,6 +76,9 @@ cd $DEBBUILDDIR
 echo "${BLUE}Copying binaries"
 pwd
 cp ../../janeserver/janeserver $JANEBASE/opt/jane
+cp ../addjaneuser/addjaneuser $JANEBASE/opt/jane/addjaneuser
+chmod 755 $JANEBASE/opt/jane/addjaneuser
+cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
 cp ../../tarzan/tarzan $TARZANBASE/opt/jane
 cp ../../provisioner/jp $TARZANBASE/opt/jane
 
@@ -88,7 +91,7 @@ cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
 
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
-cp templateprovisinerconfig.yaml $TARZANBASE/etc/opt/jane
+cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example
 
 
 
@@ -120,9 +123,8 @@ dpkg-deb --root-owner-group --build tarzan
 
 echo "${BLUE}Build complete${NC}"
 
-echo "${BLUE}Just making sure there are no old files about...there should be errors here from rm${NC}"
-rm ${JANEDEBNAME}.deb
-rm ${TARZANDEBNAME}.deb
+echo "${BLUE}Removing any old packages of this version${NC}"
+rm -f ${JANEDEBNAME}.deb ${TARZANDEBNAME}.deb
 
 echo "${BLUE}Renaming tarzan and jane to something saner${NC}"
 mv jane.deb ${JANEDEBNAME}.deb

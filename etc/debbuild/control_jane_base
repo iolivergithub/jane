@@ -3,4 +3,6 @@ Maintainer: Ian Oliver <ian.oliver@oulu.fi>
 Architecture: amd64
 Priority: optional
 Section: admin
+Depends: adduser
+Recommends: python3, python3-argon2, python3-pymongo
 Description: Jane Attestation Engine

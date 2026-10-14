@@ -45,26 +45,27 @@ func StartRESTInterface(ctx context.Context) {
 	setUpLoggingEndpoints(router)
 
 	//get configuration data
-	port := ":" + configuration.ConfigData.Rest.Port
 	crt := configuration.ConfigData.Rest.Crt
 	key := configuration.ConfigData.Rest.Key
 	usehttp := configuration.ConfigData.Rest.UseHTTP
-	listenon := configuration.ConfigData.Web.ListenOn
+	listenon := configuration.ConfigData.Rest.ListenOn
+	port := configuration.ConfigData.Rest.Port
+	addr := configuration.ListenAddress(listenon, port)
 
 	//start the server
 	if usehttp == true {
 		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
 		go func() {
-			if err := router.Start(port); err != nil && err != http.ErrServerClosed {
+			if err := router.Start(addr); err != nil && err != http.ErrServerClosed {
 				router.Logger.Fatal("shutting down the server")
 			}
 		}()
 	} else {
-		msg := fmt.Sprintf("REST HTTP mode starting, listening on %v at %v.", listenon, port)
+		msg := fmt.Sprintf("REST HTTPS mode starting, listening on %v at %v.", listenon, port)
 		logging.MakeLogEntry("SYS", "startup", configuration.ConfigData.System.Name, "RESTAPI", msg)
 		go func() {
-			if err := router.StartTLS(port, crt, key); err != nil && err != http.ErrServerClosed {
+			if err := router.StartTLS(addr, crt, key); err != nil && err != http.ErrServerClosed {
 				router.Logger.Fatal("shutting down the server")
 			}
 		}()

@@ -42,7 +42,7 @@
          <div class="d-flex align-items-center gap-2 results-row">
             <a href="/session/{{ .SessionID }}" class="results-when font-monospace text-body-secondary text-decoration-none"
                title="Session {{ .SessionID }} at {{ epochToUTC .VerifiedAt }} UTC">{{ slice (epochToUTC .VerifiedAt) 5 16 }}</a>
-            <div class="d-flex flex-wrap gap-1">
+            <div class="result-cells">
                {{ range .Results }}
                <a href="/result/{{ .ItemID }}" title="{{ .RuleName }}{{ if .Message }}: {{ .Message }}{{ end }}"
                   class="result-cell {{ if eq .Result 0 }}bg-success{{ else if eq .Result 9001 }}bg-danger{{ else }}bg-warning{{ end }}"></a>

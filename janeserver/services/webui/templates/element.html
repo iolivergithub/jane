@@ -16,18 +16,27 @@
 
    /* history matrix */
    .mx-wrap { overflow-x: auto; }
-   .mx { border-collapse: separate; border-spacing: 2px; font-size: .8rem; }
+   .mx { border-collapse: separate; border-spacing: 2px; font-size: calc(.75rem + 1pt); line-height: 1.1; }
    .mx th.mx-label { position: sticky; left: 0; z-index: 1; background: var(--bs-body-bg);
-                     font-weight: normal; text-align: right; padding-right: .5rem; white-space: nowrap;
+                     font-weight: normal; text-align: right; padding: 0 .5rem 0 0; white-space: nowrap;
                      max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
    .mx th.mx-group { position: sticky; left: 0; background: var(--bs-body-bg); text-align: left;
-                     padding-top: .5rem; color: var(--bs-secondary-color); font-weight: 600; }
+                     padding-top: .35rem; color: var(--bs-secondary-color); font-weight: 600; }
+   .mx tr.mx-sub th.mx-label { color: var(--bs-secondary-color); }
+   /* horizontal bar between the rules and claims sections */
+   .mx tr.mx-gap th { height: 1rem; padding: 0; }   /* space above the bar */
+   .mx th.mx-group.mx-sep { border-top: 1px solid var(--bs-border-color); padding-top: .5rem; }
+   .mx .mx-toggle { border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 600; }
+   .mx .mx-toggle .fa { width: .8rem; transition: transform .1s; }
+   .mx .mx-toggle[aria-expanded="true"] .fa { transform: rotate(90deg); }
+   /* an expanded group shows its rules, so its summary row keeps only the label */
+   .mx tr.mx-grp.mx-open td { display: none; }
    .mx th.mx-col { font-weight: normal; vertical-align: bottom; padding: 0; }
    .mx th.mx-col a { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .7rem;
                      color: var(--bs-secondary-color); text-decoration: none; font-family: var(--bs-font-monospace); }
    .mx th.mx-col a:hover { color: var(--bs-body-color); }
-   .mx td { width: 14px; height: 14px; padding: 0; }
-   .mx td a, .mx td span { display: block; width: 14px; height: 14px; border-radius: 2px; }
+   .mx td { width: 12px; height: 10px; padding: 0; }
+   .mx td a, .mx td span { display: block; width: 12px; height: 10px; border-radius: 2px; }
    .mx td a:hover { outline: 2px solid var(--bs-body-color); }
    .mx td .mx-none, .ev-swatch.oc-none { background: transparent; box-shadow: inset 0 0 0 1px var(--bs-border-color); }
 
@@ -201,20 +210,31 @@
                {{ range .Timeline }}<th class="mx-col"><a href="/session/{{ .ID }}" title="Session {{ .ID }}">{{ .Label }}</a></th>{{ end }}
             </tr>
          </thead>
-         {{ if .RuleRows }}
+         {{ if .RuleGroups }}
          <tbody>
-            <tr><th class="mx-group" colspan="999">Rules</th></tr>
-            {{ range .RuleRows }}
-            <tr>
+            <tr><th class="mx-group" colspan="999">Rules
+               <a href="#" class="fw-normal small ms-2" id="mx-expand-all">expand all</a>
+               <a href="#" class="fw-normal small ms-1" id="mx-collapse-all">collapse all</a></th></tr>
+            {{ range .RuleGroups }}
+            {{ $g := . }}
+            <tr class="mx-grp">
+               <th class="mx-label"><button type="button" class="mx-toggle" data-group="{{ .ID }}" aria-expanded="false"
+                  title="Show or hide the {{ len .Rows }} {{ .Name }} rules"><i class="fa fa-caret-right"></i>{{ .Name }} <span class="fw-normal text-body-secondary">({{ len .Rows }})</span></button></th>
+               {{ range .Summary }}<td>{{ if .Outcome }}<a href="{{ .Link }}" class="oc-{{ .Outcome }}" title="{{ .Title }}"></a>{{ else }}<span class="mx-none"></span>{{ end }}</td>{{ end }}
+            </tr>
+            {{ range .Rows }}
+            <tr class="mx-sub" data-group="{{ $g.ID }}" hidden>
                <th class="mx-label" title="{{ .Label }}">{{ .Label }}</th>
                {{ range .Cells }}<td>{{ if .Outcome }}<a href="{{ .Link }}" class="oc-{{ .Outcome }}" title="{{ .Title }}"></a>{{ else }}<span class="mx-none"></span>{{ end }}</td>{{ end }}
             </tr>
+            {{ end }}
             {{ end }}
          </tbody>
          {{ end }}
          {{ if .ClaimRows }}
          <tbody>
-            <tr><th class="mx-group" colspan="999">Claims (intent)</th></tr>
+            {{ if $p.RuleGroups }}<tr class="mx-gap" aria-hidden="true"><th colspan="999"></th></tr>{{ end }}
+            <tr><th class="mx-group{{ if $p.RuleGroups }} mx-sep{{ end }}" colspan="999">Claims (intent)</th></tr>
             {{ range .ClaimRows }}
             <tr>
                <th class="mx-label" title="{{ .Label }}">{{ .Label }}</th>
@@ -226,6 +246,23 @@
       </table>
    </div>
 </div>
+<script>
+// History matrix rule groups (#59): each type of rule is one summary row
+// (worst outcome per session); its button shows or hides the individual rules.
+(function () {
+   const toggles = document.querySelectorAll(".mx-toggle");
+   function setGroup(btn, open) {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.closest("tr").classList.toggle("mx-open", open); // the rules are shown, so the summary cells are hidden
+      document.querySelectorAll('tr.mx-sub[data-group="' + btn.dataset.group + '"]').forEach(r => { r.hidden = !open; });
+   }
+   toggles.forEach(btn => btn.addEventListener("click", () => setGroup(btn, btn.getAttribute("aria-expanded") !== "true")));
+   const all = (open) => (e) => { e.preventDefault(); toggles.forEach(btn => setGroup(btn, open)); };
+   const ex = document.getElementById("mx-expand-all"), co = document.getElementById("mx-collapse-all");
+   if (ex) ex.addEventListener("click", all(true));
+   if (co) co.addEventListener("click", all(false));
+})();
+</script>
 {{ else }}
 <div class="alert alert-secondary">This element has not been attested yet. <a href="/attest">Run an attestation</a>.</div>
 {{ end }}
