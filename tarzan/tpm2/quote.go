@@ -38,7 +38,7 @@ func NewQuote(c echo.Context) error {
 
 	// Here we parse the tpm2 device
 	// We have a default of /dev/tpm0
-	tpm2device := params["tpm2/device"].(string)
+	tpm2device := tpmDeviceParam(params)
 
 	tpm, err := OpenTPM(tpm2device)
 	if err != nil {
