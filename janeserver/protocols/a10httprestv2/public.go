@@ -16,7 +16,7 @@ import (
 const nonceSize int = 24
 
 func Registration() structures.Protocol {
-	intents := []string{"tpm2/pcrs", "tpm2/quote", "uefi/eventlog", "ima/asciilog", "txt/log", "sys/info"}
+	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/activatecredential", "uefi/eventlog", "ima/asciilog", "txt/log", "sys/info"}
 
 	return structures.Protocol{"A10HTTPRESTv2", "HTTP protcol for Go based trust agents", Call, intents}
 }
@@ -84,6 +84,14 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		ips["tpm2/nonce"] = base64.StdEncoding.EncodeToString(nce)
 	}
 
+	if p.Function == "tpm2/activatecredential" {
+		ips["tpm2/device"] = (e.TPM2).Device
+		ips["tpm2/akhandle"] = (e.TPM2).AK.Handle
+		ips["tpm2/ekhandle"] = (e.TPM2).EK.Handle
+		ips["tpm2/akpublic"] = (e.TPM2).AK.Public
+		ips["tpm2/ekpublic"] = (e.TPM2).EK.Public
+	}
+
 	if p.Function == "uefi/eventlog" {
 		ips["uefi/eventlog"] = (e.UEFI).Eventlog
 	}
@@ -100,6 +108,13 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 
 	pps := mergeMaps(ips, p.Parameters)
 	cps := mergeMaps(pps, aps) // this is the final set of call parameters and should be returned to be part of the claim
+
+	// The credential is made from the AK and EK after any overrides, see credential.go
+	if p.Function == "tpm2/activatecredential" {
+		if err := addCredential(cps); err != nil {
+			return empty, cps, err
+		}
+	}
 
 	// Construct the call
 
@@ -128,7 +143,7 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	}
 
 	if resp.Status != "200 OK" { // is it always 200 ? This might cause issues later if the TA reponds otherwise!
-		return bodymap, cps, fmt.Errorf("TA reports error %v with response %v", resp.Status, taResponse)
+		return bodymap, cps, fmt.Errorf("TA reports error %v with response %s", resp.Status, taResponse)
 	}
 
 	return bodymap, cps, nil

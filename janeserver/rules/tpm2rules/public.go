@@ -18,8 +18,10 @@ func Registration() []structures.Rule {
 	ruleIsSafe := structures.Rule{"tpm2_safe", "Checks that the value of safe is 1", IsSafe, false}
 	//ruleValidSignature := structures.Rule{"tpm2_validSignature", "Checks that the signature of rule is valid against the signing attestation key", ValidSignature, false}
 	ruleValidNonce := structures.Rule{"tpm2_validNonce", "Checks that nonce used for the claim matches the nonce in the quote", ValidNonce, false}
+	ruleCredentialActivated := structures.Rule{"tpm2_credentialActivated", "Checks the TPM recovered the secret of a credential made for the AK and EK (tpm2/activatecredential)", CredentialActivated, false}
+	ruleAKAttributes := structures.Rule{"tpm2_akAttributes", "Checks the AK used in tpm2/activatecredential is a restricted, fixedTPM signing key", AKAttributes, false}
 
-	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType}
+	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType, ruleCredentialActivated, ruleAKAttributes}
 }
 
 func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
