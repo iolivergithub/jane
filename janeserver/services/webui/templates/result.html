@@ -66,7 +66,7 @@
                <tr><td>Values</td><td>{{ if .EV.EVS }}{{ template "genericList.html" .EV.EVS }}{{ else }}<i class="text-body-secondary">None</i>{{ end }}</td></tr>
             </tbody>
          </table>
-         {{ else }}<i class="text-body-secondary">This rule did not use an expected value.</i>{{ end }}
+         {{ else }}<i class="text-body-secondary">No expected value is stored with this result. Either the rule does not use one, or the result was verified before expected values were recorded.</i>{{ end }}
       </div>
 
       <div class="tab-pane fade" id="rs-siblings" role="tabpanel">

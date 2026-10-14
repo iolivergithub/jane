@@ -23,10 +23,10 @@ auth:
   sessiontimeout: 8h   # sliding expiry of a Web UI login
 ```
 
-Create users, or reset a password, with `etc/addjaneuser`. It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
+Create users, or reset a password, with `etc/addjaneuser/addjaneuser`. It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
 
 ```
-etc/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+etc/addjaneuser/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
 ```
 
 It needs the Python packages `argon2-cffi` and `pymongo` (`apt install python3-argon2 python3-pymongo`).

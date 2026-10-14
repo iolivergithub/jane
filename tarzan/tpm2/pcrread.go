@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/google/go-tpm/tpm2"
+	"github.com/google/go-tpm/tpm2/transport"
 )
 
 func NewPCRs(c echo.Context) error {
@@ -24,9 +25,6 @@ func NewPCRs(c echo.Context) error {
 	// at a time and dump them all into a struct (banks)...ugly, it works, but awful
 	// Oh, and if the PCRs get modified during the call of this function, then the results
 	// might be inconsistent, but then again PCRs in this form aren't signed so good luck
-
-	//results := []tpm2.PCRReadResponse{}
-	banks := make(map[string]pcrValue)
 
 	fmt.Println("NEW tpm2 pcrs called")
 
@@ -44,7 +42,7 @@ func NewPCRs(c echo.Context) error {
 
 	// Here we parse the tpm2 device
 	// We have a default of /dev/tpm0
-	tpm2device := params["tpm2/device"].(string)
+	tpm2device := tpmDeviceParam(params)
 
 	tpm, err := OpenTPM(tpm2device)
 	if err != nil {
@@ -56,6 +54,17 @@ func NewPCRs(c echo.Context) error {
 			fmt.Printf("\ncan't close TPM %q: %v", tpm2device, err)
 		}
 	}()
+
+	banks := readPCRBanks(tpm)
+
+	return c.JSON(http.StatusOK, banks)
+}
+
+// readPCRBanks reads PCRs 0-23 of every bank in npcrbanks, one PCR at a time.
+// PCRs that do not exist, or that return no value because their bank is
+// allocated but not populated (#15), are left out of that bank's map.
+func readPCRBanks(tpm transport.TPM) map[string]pcrValue {
+	banks := make(map[string]pcrValue)
 
 	for _, b := range npcrbanks {
 		pcrvs := make(map[int]string)
@@ -73,13 +82,10 @@ func NewPCRs(c echo.Context) error {
 				//rtn := tpm2taErrorReturn{fmt.Sprintf("Could not read PCRs with error %v", err.Error())}
 				//return c.JSON(http.StatusUnprocessableEntity, rtn)
 				fmt.Printf("PCR %v on Bank %v does not exist\n", i, b)
+			} else if ashex, ok := firstDigestHex(pcrreadresponse.PCRValues.Digests); !ok {
+				// bank allocated but not populated (#15)
+				fmt.Printf("PCR %v on Bank %v returned no value\n", i, b)
 			} else {
-
-				pcrvalues := *pcrreadresponse
-				digests := pcrvalues.PCRValues.Digests[0]
-				digestsAsString := digests.Buffer
-
-				ashex := fmt.Sprintf("%x", digestsAsString)
 				fmt.Printf("  PCRValues are %v => %v\n", reflect.TypeOf(ashex), ashex)
 				pcrvs[i] = ashex
 			}
@@ -89,7 +95,7 @@ func NewPCRs(c echo.Context) error {
 		banks[bankNames[b]] = pcrvs
 	}
 
-	return c.JSON(http.StatusOK, banks)
+	return banks
 }
 
 // IGNORE THIS CODE; IT WORKS SO I AM NOT TOUCHING IT

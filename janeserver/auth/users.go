@@ -13,7 +13,7 @@ import (
 
 // usersCollection is the Mongo collection holding user records.
 //
-// Users are created, and their passwords set, with the etc/addjaneuser script;
+// Users are created, and their passwords set, with the etc/addjaneuser/addjaneuser script;
 // Jane itself only reads this collection.
 const usersCollection = "users"
 

@@ -227,13 +227,24 @@ func buildElementPage(e structures.Element, cs []structures.Claim, rs []structur
 		p.Timeline = append(p.Timeline, p.Sessions[i])
 	}
 
+	// One row per rule and intent: the same rule applied to claims of different
+	// intents gets a row each instead of being merged into one (#53).
 	p.RuleRows = buildMatrix(p.Timeline, func(s elementSession, add func(label, outcome, link, title string)) {
+		intentOf := map[string]string{}
+		for _, c := range s.Claims {
+			intentOf[c.ItemID] = claimLabel(c)
+		}
 		for _, r := range s.Results {
-			title := r.RuleName + " · " + s.Label + " · " + resultOutcome(r.Result)
+			label := ruleRowLabel(r.RuleName, intentOf[r.ClaimID])
+			title := r.RuleName
+			if in := intentOf[r.ClaimID]; in != "" {
+				title += " · intent " + in
+			}
+			title += " · " + s.Label + " · " + resultOutcome(r.Result)
 			if r.Message != "" {
 				title += " · " + r.Message
 			}
-			add(r.RuleName, resultOutcome(r.Result), "/result/"+r.ItemID, title)
+			add(label, resultOutcome(r.Result), "/result/"+r.ItemID, title)
 		}
 	})
 	p.ClaimRows = buildMatrix(p.Timeline, func(s elementSession, add func(label, outcome, link, title string)) {
@@ -251,6 +262,15 @@ func buildElementPage(e structures.Element, cs []structures.Claim, rs []structur
 	p.ListClaims = firstN(p.CS, elementListLimit)
 
 	return p
+}
+
+// ruleRowLabel names a history matrix row: the rule, and the intent of the
+// claim it was applied to when that is known.
+func ruleRowLabel(rule, intent string) string {
+	if intent == "" {
+		return rule
+	}
+	return rule + " · " + intent
 }
 
 // firstN returns at most the first n items of xs.

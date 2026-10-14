@@ -24,7 +24,7 @@ func CurrentStatus() Status {
 		SessionTimeout: shortDuration(cfg.SessionTimeout),
 		Users:          -1,
 		PasswordHash:   "Argon2id",
-		UserTool:       "etc/addjaneuser",
+		UserTool:       "etc/addjaneuser/addjaneuser",
 	}
 	if users != nil {
 		if n, err := users.Count(); err == nil {

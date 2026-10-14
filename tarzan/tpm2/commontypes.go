@@ -1,6 +1,8 @@
 package tpm2
 
 import (
+	"fmt"
+
 	"github.com/google/go-tpm/tpm2"
 	_ "github.com/google/go-tpm/tpm2/transport"
 	_ "github.com/google/go-tpm/tpm2/transport/linuxtpm"
@@ -53,4 +55,28 @@ var bankValues = map[string]tpm2.TPMAlgID{
 	"sha256": tpm2.TPMAlgSHA256,
 	"sha384": tpm2.TPMAlgSHA384,
 	"sha512": tpm2.TPMAlgSHA512,
+}
+
+// defaultTPMDevice is used when a request does not name a TPM device.
+const defaultTPMDevice = "/dev/tpm0"
+
+// tpmDeviceParam returns the "tpm2/device" parameter, or defaultTPMDevice when
+// it is missing, empty or not a string, rather than panicking on the type
+// assertion.
+func tpmDeviceParam(params map[string]interface{}) string {
+	if d, ok := params["tpm2/device"].(string); ok && d != "" {
+		return d
+	}
+	return defaultTPMDevice
+}
+
+// firstDigestHex returns the first digest of a PCRRead response as hex. A bank
+// can be allocated but not populated, e.g. SHA1 on modern TPMs and some vTPMs
+// (QEMU, Proxmox): the read then succeeds with no digests, so ok is false
+// instead of indexing an empty slice (#15).
+func firstDigestHex(digests []tpm2.TPM2BDigest) (hexValue string, ok bool) {
+	if len(digests) == 0 {
+		return "", false
+	}
+	return fmt.Sprintf("%x", digests[0].Buffer), true
 }
