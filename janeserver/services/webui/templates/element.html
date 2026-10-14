@@ -28,6 +28,8 @@
    .mx .mx-toggle { border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 600; }
    .mx .mx-toggle .fa { width: .8rem; transition: transform .1s; }
    .mx .mx-toggle[aria-expanded="true"] .fa { transform: rotate(90deg); }
+   /* an expanded group shows its rules, so its summary row keeps only the label */
+   .mx tr.mx-grp.mx-open td { display: none; }
    .mx th.mx-col { font-weight: normal; vertical-align: bottom; padding: 0; }
    .mx th.mx-col a { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .7rem;
                      color: var(--bs-secondary-color); text-decoration: none; font-family: var(--bs-font-monospace); }
@@ -214,7 +216,7 @@
                <a href="#" class="fw-normal small ms-1" id="mx-collapse-all">collapse all</a></th></tr>
             {{ range .RuleGroups }}
             {{ $g := . }}
-            <tr>
+            <tr class="mx-grp">
                <th class="mx-label"><button type="button" class="mx-toggle" data-group="{{ .ID }}" aria-expanded="false"
                   title="Show or hide the {{ len .Rows }} {{ .Name }} rules"><i class="fa fa-caret-right"></i>{{ .Name }} <span class="fw-normal text-body-secondary">({{ len .Rows }})</span></button></th>
                {{ range .Summary }}<td>{{ if .Outcome }}<a href="{{ .Link }}" class="oc-{{ .Outcome }}" title="{{ .Title }}"></a>{{ else }}<span class="mx-none"></span>{{ end }}</td>{{ end }}
@@ -249,6 +251,7 @@
    const toggles = document.querySelectorAll(".mx-toggle");
    function setGroup(btn, open) {
       btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.closest("tr").classList.toggle("mx-open", open); // the rules are shown, so the summary cells are hidden
       document.querySelectorAll('tr.mx-sub[data-group="' + btn.dataset.group + '"]').forEach(r => { r.hidden = !open; });
    }
    toggles.forEach(btn => btn.addEventListener("click", () => setGroup(btn, btn.getAttribute("aria-expanded") !== "true")));
