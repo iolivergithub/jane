@@ -9,6 +9,7 @@ import (
 type Status struct {
 	Web            bool   // Web UI requires a login
 	Rest           bool   // REST API requires HTTP Basic authentication
+	X3270          bool   // x3270 interface requires a logon
 	SessionTimeout string // e.g. "8h", "30m"
 	Users          int64  // number of users; -1 if the users collection could not be read
 	ActiveSessions int    // Web UI logins that have not expired
@@ -21,6 +22,7 @@ func CurrentStatus() Status {
 	st := Status{
 		Web:            cfg.Web,
 		Rest:           cfg.Rest,
+		X3270:          cfg.X3270,
 		SessionTimeout: shortDuration(cfg.SessionTimeout),
 		Users:          -1,
 		PasswordHash:   "Argon2id",

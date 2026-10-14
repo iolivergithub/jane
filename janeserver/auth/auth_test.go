@@ -324,3 +324,65 @@ func TestCurrentStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestAuthenticateForOtherInterfaces(t *testing.T) {
+	setup(t, false, false)
+	cfg.X3270 = true
+	var logged []string
+	logEntry = func(op, opname, item, itemtype, msg string) { logged = append(logged, opname+" "+item+" "+msg) }
+
+	if !X3270Enabled() {
+		t.Fatal("X3270Enabled() = false with x3270: true")
+	}
+	if Authenticate("ian", "wrong", "x3270", "10.0.0.5:1234") {
+		t.Error("wrong password accepted")
+	}
+	if Authenticate("nobody", "secret", "x3270", "10.0.0.5:1234") {
+		t.Error("unknown user accepted")
+	}
+	if !Authenticate("ian", "secret", "x3270", "10.0.0.5:1234") {
+		t.Error("correct password rejected")
+	}
+	LogLogoff("ian", "x3270", "10.0.0.5:1234", "logoff")
+
+	want := []string{
+		"login/FAIL ian failed x3270 login from 10.0.0.5:1234",
+		"login/FAIL nobody failed x3270 login from 10.0.0.5:1234",
+		"login/OK ian x3270 login from 10.0.0.5:1234",
+		"logout ian x3270 logoff from 10.0.0.5:1234",
+	}
+	if strings.Join(logged, "\n") != strings.Join(want, "\n") {
+		t.Errorf("log entries:\n%s\nwant:\n%s", strings.Join(logged, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func TestStartupWarnings(t *testing.T) {
+	none, some := fakeUsers{}, fakeUsers{"ian": "x"}
+	cases := []struct {
+		name string
+		c    Config
+		u    UserStore
+		want int
+	}{
+		{"all off", Config{}, none, 0},
+		{"x3270 only, no users", Config{X3270: true}, none, 1},
+		{"web without x3270", Config{Web: true}, some, 1},
+		{"web and x3270", Config{Web: true, X3270: true}, some, 0},
+		{"web, no users, no x3270", Config{Web: true}, none, 2},
+	}
+	for _, c := range cases {
+		if got := startupWarnings(c.c, c.u); len(got) != c.want {
+			t.Errorf("%s: %d warnings %q, want %d", c.name, len(got), got, c.want)
+		}
+	}
+}
+
+func TestReadConfigX3270(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(f, []byte("auth:\n  web: false\n  x3270: true\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if c := readConfig(f); !c.X3270 || c.Web || c.SessionTimeout != defaultSessionTimeout {
+		t.Errorf("readConfig = %+v", c)
+	}
+}

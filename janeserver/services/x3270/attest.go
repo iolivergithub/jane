@@ -241,7 +241,7 @@ func attestConfirm(s store, c attestChoice, back, home go3270.Tx) go3270.Tx {
 		)
 		message = ""
 
-		resp, err := go3270.ShowScreenOpts(screen, nil, conn, go3270.ScreenOpts{CursorRow: 8, CursorCol: 17, Codepage: dev.Codepage()})
+		resp, err := send(conn, dev, screen, go3270.ScreenOpts{CursorRow: 8, CursorCol: 17, Codepage: dev.Codepage()})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -307,7 +307,7 @@ func attestRun(s store, req attestRequest, c attestChoice, home go3270.Tx) go327
 		wait = append(wait,
 			go3270.Field{Row: 4, Col: 0, Intense: true, Content: cut(what+" "+c.summary(), lineWidth)},
 			go3270.Field{Row: 6, Col: 0, Content: "This can take a while; the result will be shown when it is done."})
-		if _, err := go3270.ShowScreenOpts(wait, nil, conn, go3270.ScreenOpts{NoResponse: true, CursorRow: cmdRow, CursorCol: cmdCol + 1, Codepage: dev.Codepage()}); err != nil {
+		if _, err := send(conn, dev, wait, go3270.ScreenOpts{NoResponse: true, CursorRow: cmdRow, CursorCol: cmdCol + 1, Codepage: dev.Codepage()}); err != nil {
 			return nil, nil, err
 		}
 

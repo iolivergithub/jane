@@ -6,6 +6,7 @@ package x3270
 //	row 1      Command ===> input
 //	row 3      column headings (lists)
 //	rows 4-20  list rows, or rows 3-20 of text (detail screens)
+//	row 21     status line: user, logon time, terminal (added by send)
 //	row 22     message line
 //	row 23     function key legend
 //
@@ -28,13 +29,14 @@ const (
 	screenRows = 24
 	lineWidth  = 79 // characters available to a field starting at column 0
 
-	cmdRow   = 1
-	cmdCol   = 13 // attribute byte of the command input field
-	headRow  = 3
-	firstRow = 4  // first list row
-	lastRow  = 20 // last list / text row
-	msgRow   = 22
-	keysRow  = 23
+	cmdRow    = 1
+	cmdCol    = 13 // attribute byte of the command input field
+	headRow   = 3
+	firstRow  = 4  // first list row
+	lastRow   = 20 // last list / text row
+	statusRow = 21
+	msgRow    = 22
+	keysRow   = 23
 
 	listRows = lastRow - firstRow + 1 // rows per list page
 	textRows = lastRow - headRow + 1  // rows per detail page

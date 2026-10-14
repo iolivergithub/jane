@@ -8,6 +8,7 @@
 //	services/webui/initwebapi.go      auth.RegisterEndpoints(router); router.Use(auth.WebUIMiddleware())
 //	services/restapi/initrestapi.go   router.Use(auth.RESTMiddleware())
 //	services/webui/templates.go       "authEnabled": auth.WebEnabled   (shows the logout button)
+//	services/x3270/session.go         auth.X3270Enabled, auth.Authenticate, auth.LogLogoff
 //
 // Configuration is read from an optional `auth:` section of the normal config.yaml.
 // If that section is missing, authentication is disabled and Jane behaves exactly as before.
@@ -15,7 +16,8 @@
 //	auth:
 //	  web: true            # protect the Web UI
 //	  rest: false          # protect the REST API with HTTP Basic auth
-//	  sessiontimeout: 8h   # sliding expiry of a Web UI login
+//	  x3270: false         # require a logon on the x3270 (tn3270) interface
+//	  sessiontimeout: 8h   # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 package auth
 
 import (
@@ -33,6 +35,7 @@ import (
 type Config struct {
 	Web            bool          `yaml:"web"`
 	Rest           bool          `yaml:"rest"`
+	X3270          bool          `yaml:"x3270"`
 	SessionTimeout time.Duration `yaml:"sessiontimeout"`
 }
 
@@ -60,17 +63,28 @@ func Initialise(configFile string) {
 	users = newMongoUserStore()
 	sessions = newMemorySessionStore(cfg.SessionTimeout)
 
-	msg := fmt.Sprintf("Authentication: web %v, rest %v, session timeout %v", cfg.Web, cfg.Rest, cfg.SessionTimeout)
+	msg := fmt.Sprintf("Authentication: web %v, rest %v, x3270 %v, session timeout %v", cfg.Web, cfg.Rest, cfg.X3270, cfg.SessionTimeout)
 	fmt.Println("JANE: " + msg)
 	logEntry("SYS", "startup/AUTH", configuration.ConfigData.System.Name, "auth", msg)
 
-	if cfg.Web || cfg.Rest {
-		if n, err := users.Count(); err != nil || n == 0 {
-			warn := fmt.Sprintf("Authentication is enabled but the %q collection has no users (err=%v); nobody will be able to log in", usersCollection, err)
-			fmt.Println("JANE: WARNING: " + warn)
-			logEntry("SYS", "startup/AUTH", configuration.ConfigData.System.Name, "auth", warn)
+	for _, warn := range startupWarnings(cfg, users) {
+		fmt.Println("JANE: WARNING: " + warn)
+		logEntry("SYS", "startup/AUTH", configuration.ConfigData.System.Name, "auth", warn)
+	}
+}
+
+// startupWarnings lists configurations that are probably mistakes.
+func startupWarnings(c Config, u UserStore) []string {
+	var warns []string
+	if c.Web || c.Rest || c.X3270 {
+		if n, err := u.Count(); err != nil || n == 0 {
+			warns = append(warns, fmt.Sprintf("Authentication is enabled but the %q collection has no users (err=%v); nobody will be able to log in", usersCollection, err))
 		}
 	}
+	if c.Web && !c.X3270 {
+		warns = append(warns, "The Web UI requires a login but the x3270 interface does not (auth: x3270: false); anyone who can reach its port can use it")
+	}
+	return warns
 }
 
 // readConfig reads only the `auth:` section of the configuration file; the rest of the file
@@ -107,3 +121,27 @@ func RESTEnabled() bool { return cfg.Rest }
 
 // SetAuthoriser replaces the authorisation policy. The default allows any authenticated user to do anything.
 func SetAuthoriser(a Authoriser) { authoriser = a }
+
+// X3270Enabled reports whether the x3270 interface requires a logon.
+func X3270Enabled() bool { return cfg.X3270 }
+
+// SessionTimeout is how long a login may go unused before it expires.
+func SessionTimeout() time.Duration { return cfg.SessionTimeout }
+
+// Authenticate checks a username and password for an interface other than the
+// Web UI (which has its own handlers), and logs the attempt as the Web UI does.
+// via names the interface ("x3270") and remote the client's address.
+func Authenticate(username, password, via, remote string) bool {
+	if users == nil || !users.Authenticate(username, password) {
+		logEntry("AUTH", "login/FAIL", username, "user", fmt.Sprintf("failed %s login from %s", via, remote))
+		return false
+	}
+	logEntry("AUTH", "login/OK", username, "user", fmt.Sprintf("%s login from %s", via, remote))
+	return true
+}
+
+// LogLogoff records the end of a login made through Authenticate. reason is
+// e.g. "logoff", "exit", "disconnected" or "timed out".
+func LogLogoff(username, via, remote, reason string) {
+	logEntry("AUTH", "logout", username, "user", fmt.Sprintf("%s %s from %s", via, reason, remote))
+}

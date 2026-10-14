@@ -12,7 +12,7 @@ import (
 // show sends a screen and waits for the user, keeping the cursor in the
 // command field.
 func show(conn net.Conn, dev go3270.DevInfo, screen go3270.Screen) (go3270.Response, error) {
-	return go3270.ShowScreenOpts(screen, nil, conn, go3270.ScreenOpts{
+	return send(conn, dev, screen, go3270.ScreenOpts{
 		CursorRow: cmdRow, CursorCol: cmdCol + 1, Codepage: dev.Codepage(),
 	})
 }
@@ -38,21 +38,74 @@ var menuItems = []menuItem{
 	{"9", "Configuration     this attestation server's settings and record counts", configScreen},
 }
 
-// menuTx is the primary option menu; F3 or X leaves Jane.
+// menuAction is what a command typed on the primary option menu does.
+type menuAction int
+
+const (
+	menuStay   menuAction = iota // redisplay the menu (with a message)
+	menuOpen                     // open the menu item with that key
+	menuLogoff                   // end the logon, back to the logon screen
+	menuExit                     // disconnect
+)
+
+// menuCommand decides what the menu does with a key and command (#45).
+// F3 and F12 go back everywhere else, so here they do nothing: leaving Jane
+// takes a deliberate L (log off, only when logons are required) or X (exit).
+func menuCommand(aid go3270.AID, cmd string, logons bool) (menuAction, string) {
+	if isBack(aid) {
+		if logons {
+			return menuStay, "This is the top menu: type L to log off or X to exit"
+		}
+		return menuStay, "This is the top menu: type X to exit"
+	}
+	if aid != go3270.AIDEnter {
+		return menuStay, ""
+	}
+	switch strings.ToUpper(strings.TrimSpace(cmd)) {
+	case "":
+		return menuStay, ""
+	case "X", "=X", "EXIT":
+		return menuExit, ""
+	case "L", "=L", "LOGOFF", "LOGOUT":
+		if logons {
+			return menuLogoff, ""
+		}
+	}
+	return menuOpen, ""
+}
+
+// menuTx is the primary option menu. L logs off (when logons are required),
+// X exits; F3 and F12 do not leave it.
 func menuTx(s store) go3270.Tx {
 	var self go3270.Tx
 	message := ""
 	self = func(conn net.Conn, dev go3270.DevInfo, _ any) (go3270.Tx, any, error) {
-		screen := frame("Primary Option Menu", "", message, "F3=Exit")
+		if !loggedOn(conn) {
+			return logonTx(s), nil, nil
+		}
+		sess := sessionOf(conn)
+		logons := sess != nil && sess.auth.Enabled()
+
+		keys := "X=Exit"
+		if logons {
+			keys = "L=Logoff  X=Exit"
+		}
+		screen := frame("Primary Option Menu", "", message, "Enter=Select  "+keys)
 		row := 4
 		for _, m := range menuItems {
 			screen = append(screen, go3270.Field{Row: row, Col: 2, Intense: true, Content: m.Key},
 				go3270.Field{Row: row, Col: 5, Content: cut(m.Label, 74)})
 			row++
 		}
-		screen = append(screen, go3270.Field{Row: row + 1, Col: 2, Intense: true, Content: "X"},
-			go3270.Field{Row: row + 1, Col: 5, Content: "Exit"},
-			go3270.Field{Row: 18, Col: 2, Color: go3270.Blue, Content: "Type an option number on the command line and press Enter."},
+		row++
+		if logons {
+			screen = append(screen, go3270.Field{Row: row, Col: 2, Intense: true, Content: "L"},
+				go3270.Field{Row: row, Col: 5, Content: "Logoff            end this logon and return to the logon screen"})
+			row++
+		}
+		screen = append(screen, go3270.Field{Row: row, Col: 2, Intense: true, Content: "X"},
+			go3270.Field{Row: row, Col: 5, Content: "Exit              disconnect from Jane"},
+			go3270.Field{Row: 18, Col: 2, Color: go3270.Blue, Content: "Type an option on the command line and press Enter. F3 goes back to here."},
 			go3270.Field{Row: 19, Col: 2, Color: go3270.Blue, Content: "In lists, type S beside a row (or its number on the command line) to open it."})
 		message = ""
 
@@ -60,15 +113,19 @@ func menuTx(s store) go3270.Tx {
 		if err != nil {
 			return nil, nil, err
 		}
-		if isBack(resp.AID) {
-			return nil, nil, nil
-		}
+		action, msg := menuCommand(resp.AID, resp.Values["cmd"], logons)
 		cmd := strings.ToUpper(strings.TrimSpace(resp.Values["cmd"]))
-		switch cmd {
-		case "":
+		switch action {
+		case menuStay:
+			message = msg
 			return self, nil, nil
-		case "X", "=X", "EXIT":
+		case menuExit:
+			if sess != nil {
+				sess.ending = "exit"
+			}
 			return nil, nil, nil
+		case menuLogoff:
+			return logoff(conn, s), nil, nil
 		}
 		for _, m := range menuItems {
 			if cmd == m.Key {
@@ -294,7 +351,7 @@ func textTx(d detail, back go3270.Tx) go3270.Tx {
 		}
 		message = ""
 
-		resp, err := go3270.ShowScreenOpts(screen, nil, conn, go3270.ScreenOpts{
+		resp, err := send(conn, dev, screen, go3270.ScreenOpts{
 			CursorRow: curRow, CursorCol: curCol, Codepage: dev.Codepage(),
 		})
 		curRow, curCol = cmdRow, cmdCol+1
