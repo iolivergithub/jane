@@ -195,7 +195,6 @@
                   {{ end }}
                   <tr><td>Users</td><td>{{ if lt .Auth.Users 0 }}<span class="badge bg-danger">users collection unreadable</span>{{ else }}<b>{{ .Auth.Users }}</b>{{ if and (eq .Auth.Users 0) (or .Auth.Web .Auth.Rest .Auth.X3270) }} <span class="badge bg-danger">nobody can log in</span>{{ end }}{{ end }}</td></tr>
                   <tr><td>Password storage</td><td><b>{{ .Auth.PasswordHash }}</b> hashes</td></tr>
-                  <tr><td>Add user / reset password</td><td class="font-monospace small">{{ .Auth.UserTool }}</td></tr>
                </tbody>
             </table>
          </div>
