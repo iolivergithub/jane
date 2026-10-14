@@ -4,6 +4,12 @@ All notable changes to Jane are listed here, newest first. Days with several
 commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
+## [1.5.2] – unreleased
+- New `tpm2/activatecredential` intent function (`std::intent::tpm2::activatecredential`) and tarzan endpoint: Jane makes a credential for the element's AK and EK and the TPM must recover it, showing the AK is in the same TPM as the EK (#49). Keys come from the element and can be overridden.
+- New rules `tpm2_credentialActivated` and `tpm2_akAttributes`.
+- Provisioning skeletons and the deb example include the new intent.
+- A10HTTPRESTv2 error claims show the trust agent's error text instead of a byte list.
+
 ## [1.5.1] – unreleased
 - x3270 logon (`auth: x3270`), with an ASCII-art logon screen, a status line on every screen, L (logoff) and X (exit) on the menu, and F3/F12 no longer disconnecting from the menu.
 - `listenon` is now honoured for REST, Web UI and the new `x3270: listenon`; REST no longer reads the Web UI's value.

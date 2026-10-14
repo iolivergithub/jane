@@ -32,6 +32,30 @@ Note, some parameters may be set in the element defintion or overridden by any e
 
 On Windows machines the tpm2/device parameter has no effect as the operating system decides which device to use.
 
+## tpm2\activatecredential
+
+Checks that the attestation key (AK) is held in the same TPM as the endorsement key (EK), using TPM2_MakeCredential and TPM2_ActivateCredential.
+
+Jane makes a credential in software: a fresh random 32-byte secret, encrypted to the EK and bound to the AK's name. The trust agent asks its TPM to recover the secret. The TPM only does so if it holds the EK's private key and the object at the AK handle has exactly that name. The secret is never stored or sent: Jane keeps only its SHA-256, and the `tpm2_credentialActivated` rule compares that with the hash of the secret the trust agent returned. `tpm2_akAttributes` checks the AK is a restricted signing key that cannot leave its TPM, which activation itself does not check.
+
+| Field | Compulsory | Type | Description |
+| --- | --- | --- | --- |
+| tpm2/device | Y | String | The TPM device to use, from the element's `tpm2.device` |
+| tpm2/akhandle | Y | String | Handle of the AK, from the element's `tpm2.ak.handle` |
+| tpm2/ekhandle | Y | String | Handle of the EK, from the element's `tpm2.ek.handle` |
+| tpm2/akpublic | Y | String | The AK's public area (base64 TPM2B_PUBLIC), from the element's `tpm2.ak.public`; the credential is made for this key's name |
+| tpm2/ekpublic | Y | String | The EK's public area (base64 TPM2B_PUBLIC), from the element's `tpm2.ek.public`; the credential is encrypted to this key |
+| tpm2/credentialblob | | String | Set by Jane: the credential (TPM2B_ID_OBJECT contents, base64) |
+| tpm2/encryptedsecret | | String | Set by Jane: the encrypted seed (TPM2B_ENCRYPTED_SECRET contents, base64) |
+| tpm2/credentialsecrethash | | String | Set by Jane: SHA-256 of the secret, hex |
+
+Normally all of these come from the element, as written by the provisioner (`jp create` / `jp update`); an element without `tpm2.ak.public` and `tpm2.ek.public` gives an error claim. Any of them can be overridden by the intent or the caller, and the credential is made after the overrides are applied. Overriding only a handle checks whether the key at that handle is the element's AK or EK.
+
+The EK must use the standard EK policy (PolicySecret on the endorsement hierarchy with the empty endorsement password), as the provisioner creates it.
+
+The claim body contains `certinfo` (the recovered secret, base64) and `akname`, `ekname` (the names of the keys the trust agent used, hex).
+
+Activation shows the AK and EK are in the same TPM. It does not show the EK belongs to a genuine TPM; that needs the EK certificate checked against the manufacturer (#63).
 
 ## uefi\eventlog
 This returns the UEFI Eventlog.
