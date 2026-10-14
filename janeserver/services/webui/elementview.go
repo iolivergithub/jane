@@ -1,7 +1,9 @@
 package webui
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"a10/structures"
@@ -90,8 +92,9 @@ type elementPage struct {
 	Timeline []elementSession // history matrix columns: oldest first, at most elementTimelineSessions
 	Latest   *elementSession
 
-	RuleRows  []matrixRow
-	ClaimRows []matrixRow
+	RuleRows   []matrixRow
+	RuleGroups []ruleGroup // RuleRows grouped by rule type, for the collapsible history matrix
+	ClaimRows  []matrixRow
 
 	NPass, NFail, NOther, NClaimErrors int
 
@@ -247,6 +250,7 @@ func buildElementPage(e structures.Element, cs []structures.Claim, rs []structur
 			add(label, resultOutcome(r.Result), "/result/"+r.ItemID, title)
 		}
 	})
+	p.RuleGroups = groupRuleRows(p.RuleRows, p.Timeline)
 	p.ClaimRows = buildMatrix(p.Timeline, func(s elementSession, add func(label, outcome, link, title string)) {
 		for _, c := range s.Claims {
 			status := "collected"
@@ -310,6 +314,79 @@ func buildMatrix(timeline []elementSession,
 	out := make([]matrixRow, 0, len(labels))
 	for _, l := range labels {
 		out = append(out, matrixRow{Label: l, Cells: rows[l]})
+	}
+	return out
+}
+
+// ruleGroup is one type of rule in the history matrix (#59): the rows whose
+// rule name shares a prefix (tpm2_, sys_, UEFI_, ...), shown collapsed as a
+// single summary row holding the worst outcome per session.
+type ruleGroup struct {
+	Name    string // the prefix as written in the first rule name seen, e.g. "tpm2", "UEFI"
+	ID      string // HTML id fragment, unique within the page
+	Summary []matrixCell
+	Rows    []matrixRow
+}
+
+// ruleType returns the prefix of a rule name: the part before the first "_",
+// or "other" when there is none. A row label may carry " · intent" after the
+// rule name; that does not affect the prefix.
+func ruleType(label string) string {
+	if i := strings.Index(label, "_"); i > 0 {
+		return label[:i]
+	}
+	return "other"
+}
+
+// groupRuleRows groups rows by rule type, case-insensitively, groups in
+// alphabetical order and rows keeping their order. Each summary cell is the
+// worst outcome of the group in that session (fail, then other, then pass) and
+// links to the session.
+func groupRuleRows(rows []matrixRow, timeline []elementSession) []ruleGroup {
+	byKey := map[string]*ruleGroup{}
+	var keys []string
+	for _, r := range rows {
+		name := ruleType(r.Label)
+		key := strings.ToLower(name)
+		g, ok := byKey[key]
+		if !ok {
+			g = &ruleGroup{Name: name}
+			byKey[key] = g
+			keys = append(keys, key)
+		}
+		g.Rows = append(g.Rows, r)
+	}
+	sort.Strings(keys)
+
+	out := make([]ruleGroup, 0, len(keys))
+	for i, key := range keys {
+		g := byKey[key]
+		g.ID = fmt.Sprintf("rg%d", i)
+		g.Summary = make([]matrixCell, len(timeline))
+		for col, s := range timeline {
+			counts := map[string]int{}
+			worst := ""
+			for _, r := range g.Rows {
+				o := r.Cells[col].Outcome
+				if o == "" {
+					continue
+				}
+				counts[o]++
+				if worst == "" || severity[o] > severity[worst] {
+					worst = o
+				}
+			}
+			if worst == "" {
+				continue
+			}
+			g.Summary[col] = matrixCell{
+				Outcome: worst,
+				Link:    "/session/" + s.ID,
+				Title: fmt.Sprintf("%s · %s · %d pass, %d fail, %d other",
+					g.Name, s.Label, counts[outcomePass], counts[outcomeFail], counts[outcomeOther]),
+			}
+		}
+		out = append(out, *g)
 	}
 	return out
 }
