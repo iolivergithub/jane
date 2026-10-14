@@ -338,8 +338,9 @@ func ruleType(label string) string {
 	return "other"
 }
 
-// groupRuleRows groups rows by rule type, case-insensitively, groups in
-// alphabetical order and rows keeping their order. Each summary cell is the
+// groupRuleRows groups rows by rule type, case-insensitively, with groups and
+// the rows within them in case-insensitive alphabetical order (as on the
+// attest page, so UEFI_db comes before UEFI_PK). Each summary cell is the
 // worst outcome of the group in that session (fail, then other, then pass) and
 // links to the session.
 func groupRuleRows(rows []matrixRow, timeline []elementSession) []ruleGroup {
@@ -362,6 +363,9 @@ func groupRuleRows(rows []matrixRow, timeline []elementSession) []ruleGroup {
 	for i, key := range keys {
 		g := byKey[key]
 		g.ID = fmt.Sprintf("rg%d", i)
+		sort.SliceStable(g.Rows, func(a, b int) bool {
+			return strings.ToLower(g.Rows[a].Label) < strings.ToLower(g.Rows[b].Label)
+		})
 		g.Summary = make([]matrixCell, len(timeline))
 		for col, s := range timeline {
 			counts := map[string]int{}

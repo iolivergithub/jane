@@ -66,6 +66,7 @@ func TestGroupRuleRows(t *testing.T) {
 	}
 	rows := []matrixRow{
 		row("UEFI_PK", outcomePass, outcomePass, ""),
+		row("UEFI_db", outcomePass, outcomePass, ""),
 		row("sys_machineID_Agent · std::intent::sys::info", outcomePass, outcomeOther, ""),
 		row("tpm2_firmware", outcomePass, outcomeOther, ""),
 		row("tpm2_safe", outcomeFail, outcomePass, ""),
@@ -98,8 +99,15 @@ func TestGroupRuleRows(t *testing.T) {
 	}
 
 	uefi := gs[3]
-	if len(uefi.Rows) != 2 || uefi.Summary[1].Outcome != outcomeFail {
-		t.Errorf("UEFI group = %d rows, session 2 %q; want 2 rows (UEFI_ and uefi_ together), fail", len(uefi.Rows), uefi.Summary[1].Outcome)
+	order := []string{}
+	for _, r := range uefi.Rows {
+		order = append(order, r.Label)
+	}
+	if got, want := strings.Join(order, ","), "UEFI_db,uefi_lowercase,UEFI_PK"; got != want {
+		t.Errorf("UEFI rows = %s, want %s (UEFI_ and uefi_ together, case-insensitive order)", got, want)
+	}
+	if uefi.Summary[1].Outcome != outcomeFail {
+		t.Errorf("UEFI session 2 summary = %q, want fail", uefi.Summary[1].Outcome)
 	}
 	if gs[0].ID == gs[1].ID {
 		t.Errorf("group ids are not unique: %q", gs[0].ID)
