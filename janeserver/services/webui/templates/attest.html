@@ -18,6 +18,7 @@
    <div class="row">
       <div class="col-md-4">
          <label for="elementid"><b>Elements</b> <i>select one</i></label>
+         <input type="search" class="form-control form-control-sm mb-1 list-filter" data-for="elementid" placeholder="Filter elements" aria-label="Filter elements">
          <select class="form-select" size="15"  id="elementid" name="eid">
             {{ range $i,$e := .ES }}
                 {{ range $j,$ep := $e.Endpoints }}
@@ -29,8 +30,8 @@
 
       <div class="col-md-4">
          <label for="intentid"><b>Intents</b> <i>select one</i></label>
-
-           <select class="form-select" size="15" id="intentid" name="pid">
+         <input type="search" class="form-control form-control-sm mb-1 list-filter" data-for="intentid" placeholder="Filter intents" aria-label="Filter intents">
+         <select class="form-select" size="15" id="intentid" name="pid">
             {{ range .IS }}
                <option value="{{ .ItemID }}">{{ .Name }} &nbsp;:&nbsp; {{ .Function }}</option>
             {{ end }}
@@ -39,12 +40,13 @@
 
       <div class="col-md-4">
          <label for="rulename"><b>Rules</b> <i>ignored if attest only, multiple selection allowed</i></label>
-
+         <input type="search" class="form-control form-control-sm mb-1 list-filter" data-for="rulename" placeholder="Filter rules" aria-label="Filter rules">
          <select class="form-select" multiple size="15" id="rulename" name="rn">
             {{ range .RS }}
                <option value="{{ .Name }}">{{ .Name }}</option>
             {{ end }}
          </select>
+         <div class="small text-body-secondary mt-1"><span id="rulecount">0</span> selected · <a href="#" id="ruleclear">clear</a></div>
       </div>
    </div>
    
@@ -72,12 +74,12 @@
 
       <div class="col-md-4">
          <label for="intentparameters"><b>Intent Parameters (JSON)</b> <a href="#ref-intents" class="small">reference</a></label>
-         <textarea class="form-control font-monospace" rows="4" id="intentparameters" name="pps" placeholder='{"pcrSelection": "0,1,2,3", "bank": "sha256"}'></textarea>
+         <textarea class="form-control font-monospace" rows="4" id="intentparameters" name="pps" placeholder="insert parameters in JSON form here (See instructions below)"></textarea>
       </div>
 
       <div class="col-md-4">
          <label for="ruleparameters"><b>Rule Parameters (JSON)</b> <a href="#ref-rules" class="small">reference</a></label>
-         <textarea class="form-control font-monospace" rows="4" id="ruleparameters" name="rps" placeholder='{"hash_alg": "sha256", "pcrscid": "..."}'></textarea>
+         <textarea class="form-control font-monospace" rows="4" id="ruleparameters" name="rps" placeholder="insert parameters in JSON form here (See instructions below)"></textarea>
       </div>
    </div>
 </div>
@@ -347,5 +349,71 @@
 </div>
 
 </div>
+
+<script>
+// Attest form lists (#55). Display only: values posted to /attest are unchanged.
+// The server already sends each list sorted, but case-sensitively (uppercase first);
+// here they are re-sorted case-insensitively, rules are grouped by their prefix
+// (the part before the first "_", e.g. tpm2, UEFI, sys) and each list gets a filter box.
+(function () {
+   const byText = (a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: "base", numeric: true });
+
+   function sortOptions(select) {
+      Array.from(select.options).sort(byText).forEach(o => select.appendChild(o));
+   }
+
+   function groupRules(select) {
+      const groups = new Map();
+      Array.from(select.options).forEach(o => {
+         const i = o.value.indexOf("_");
+         const prefix = i > 0 ? o.value.slice(0, i) : "other";
+         const key = prefix.toLowerCase();
+         if (!groups.has(key)) {
+            const g = document.createElement("optgroup");
+            g.label = prefix;
+            groups.set(key, g);
+         }
+         groups.get(key).appendChild(o);
+      });
+      Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).forEach(k => select.appendChild(groups.get(k)));
+   }
+
+   // Hide options not matching the filter; selected options always stay visible.
+   function applyFilter(select, text) {
+      const q = text.trim().toLowerCase();
+      Array.from(select.options).forEach(o => {
+         o.hidden = q !== "" && !o.selected && !o.text.toLowerCase().includes(q);
+      });
+      select.querySelectorAll("optgroup").forEach(g => {
+         g.hidden = Array.from(g.children).every(o => o.hidden);
+      });
+   }
+
+   const elements = document.getElementById("elementid");
+   const intents = document.getElementById("intentid");
+   const rules = document.getElementById("rulename");
+   sortOptions(elements);
+   sortOptions(intents);
+   sortOptions(rules);
+   groupRules(rules);
+
+   document.querySelectorAll(".list-filter").forEach(input => {
+      const select = document.getElementById(input.dataset.for);
+      input.addEventListener("input", () => applyFilter(select, input.value));
+      // Enter in a filter box must not submit the form
+      input.addEventListener("keydown", e => { if (e.key === "Enter") e.preventDefault(); });
+   });
+
+   const count = document.getElementById("rulecount");
+   const updateCount = () => { count.textContent = rules.selectedOptions.length; };
+   rules.addEventListener("change", updateCount);
+   document.getElementById("ruleclear").addEventListener("click", e => {
+      e.preventDefault();
+      Array.from(rules.options).forEach(o => { o.selected = false; });
+      updateCount();
+   });
+   updateCount();
+})();
+</script>
 
 {{end}}
