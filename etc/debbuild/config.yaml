@@ -1,3 +1,6 @@
+#Jane configuration, as installed by the deb package to /etc/opt/jane/config.yaml
+#Every option Jane reads is listed here; optional sections are commented out.
+
 #Some general naming
 system:
   name: ASVR_GO_1_DEBBUILD
@@ -13,16 +16,18 @@ database:
 messaging:
   broker: 127.0.0.1
   port: 1883
-  portws: 8081  
+  portws: 8081
   clientid: asvrgo1debbuild
 
 
 #REST Interface Configuration
+#listenon is the address to bind to: 0.0.0.0 for all interfaces, 127.0.0.1 for this machine only (empty = all)
 rest:
   port: 8520
   crt: /etc/opt/jane/REPLACE_ME.crt
   key: /etc/opt/jane/REPLACE_ME.key
   usehttp: true
+  listenon: 0.0.0.0
 
 
 #Web Interface Configuration
@@ -30,13 +35,16 @@ web:
   port: 8540
   crt: /etc/opt/jane/REPLACE_ME.crt
   key: /etc/opt/jane/REPLACE_ME.key
-  usehttp: true  
+  usehttp: true
+  listenon: 0.0.0.0
 
 
-#Web Interface Configuration
+#X3270 (tn3270 terminal) Interface Configuration
+#tn3270 is unencrypted, including passwords when auth: x3270: true. Prefer 127.0.0.1 and an SSH tunnel.
 x3270:
   port: 3270
-    
+  listenon: 0.0.0.0
+
 
 #Log file
 logging:
@@ -44,18 +52,25 @@ logging:
   sessionupdatelogging: false
 
 
+#Keylime (optional - only needed for the keylime rules)
+#keylime:
+#  apiurl: http://127.0.0.1:8881
+
+
 #Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
 #and footers on claims, results and sessions cannot be verified once Jane stops)
 #The key is a PEM private key: PKCS#8, PKCS#1 or SEC1; RSA (PS256), ECDSA P-256/384/521 (ES256/384/512) or Ed25519 (EdDSA)
-#e.g. openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out signing.key
+#e.g. openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out /etc/opt/jane/signing.key
+#     chown root:jane /etc/opt/jane/signing.key; chmod 640 /etc/opt/jane/signing.key
 #signing:
 #  keyfile: /etc/opt/jane/signing.key
+
 
 #Authentication (optional - if this section is missing, no login is required)
 #Users are held in the "users" collection; add them or reset passwords with /opt/jane/addjaneuser, e.g.
 #  /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
 #(needs python3-argon2 and python3-pymongo; see /usr/share/doc/janeattestationengine/addjaneuser.md)
 auth:
-  web: false            # require a login for the Web UI
+  web: false           # require a login for the Web UI
   rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
   sessiontimeout: 8h   # Web UI login expires after this long without use

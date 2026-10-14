@@ -7,7 +7,22 @@ NC='\033[0m'
 
 echo "${PURPLE}Running post installation scripts${NC}"
 
-echo "${PURPLE}Enabling Jane with systemd${NC}"
+# Jane runs as the unprivileged system user "jane" (see jane.service).
+# It writes its log to /var/log/jane and reads its configuration and keys.
+echo "${PURPLE}Creating the jane system user if needed${NC}"
+if ! getent passwd jane >/dev/null; then
+    adduser --system --group --no-create-home --home /nonexistent --quiet jane
+fi
+chown -R jane:jane /var/log/jane
+for f in /etc/opt/jane/config.yaml /etc/opt/jane/REPLACE_ME.key; do
+    if [ -f "$f" ]; then
+        chown root:jane "$f"
+        chmod 640 "$f"
+    fi
+done
+
+echo "${PURPLE}Reloading systemd and enabling Jane${NC}"
+systemctl daemon-reload
 systemctl enable jane.service
 
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
@@ -15,6 +30,7 @@ echo "${RED}   *** CHECK!!!!! **** ${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} Edit the /etc/opt/jane/config.yaml ${NC}"
 echo "${RED} Replace keys in /etc/opt/jane${NC}"
+echo "${RED} (Jane runs as user jane: keys must be readable by group jane)${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} NOTE: janeserver HAS NOT been started${NC}"
 echo "${RED} use: ${YELLOW}systemctl start jane.service${RED} once the${NC}"

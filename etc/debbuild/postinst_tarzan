@@ -1,5 +1,6 @@
 #!/bin/sh
 
+RED='\033[0;31m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
@@ -16,7 +17,8 @@ echo "${RED}   *** CHECK!!!!! **** ${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} Edit the /etc/systemd/system/tarzan.service ${NC}"
 echo "${RED} Ensure Tarzan is running the correct services${NC}"
-echo "${RED} Ensure the provisioner file is correct too!${NC}"
+echo "${RED} For the provisioner (jp), copy and edit${NC}"
+echo "${RED} /etc/opt/jane/provisioning.yaml.example${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 
 echo "${PURPLE}Post installation scripts complete${NC}"

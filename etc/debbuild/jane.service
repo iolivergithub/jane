@@ -7,7 +7,8 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=ian
+User=jane
+Group=jane
 ExecStart=/opt/jane/janeserver --config=/etc/opt/jane/config.yaml
 
 [Install]

@@ -1,7 +1,0 @@
-Package: janeattestationengine
-Maintainer: Ian Oliver <ian.oliver@oulu.fi>
-Architecture: amd64
-Priority: optional
-Section: admin
-Description: Jane Attestation Engine
-Version: 1.2

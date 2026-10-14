@@ -15,7 +15,7 @@ fmt:
 	go fmt ./...
 
 libs:
-	go get -u
+#	go get -u   # not part of a build: upgrade dependencies deliberately, test, then commit go.mod/go.sum
 	go mod tidy -v
 
 vet:
