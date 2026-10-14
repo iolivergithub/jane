@@ -72,3 +72,8 @@ evs:
         - tpm2_validNonce
   - std::intent::tpm::pcrs :
       protocol: tarzan  
+  - std::intent::tpm2::activatecredential :
+      protocol: tarzan
+      rules:
+        - tpm2_credentialActivated
+        - tpm2_akAttributes
