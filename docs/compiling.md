@@ -1,6 +1,6 @@
 # Compiling
 
-Ensure that Go is installed and correctly configured. You will also need the Intel SGX SDK and Edgeless libraries.
+Ensure that Go is installed and correctly configured: janeserver, tarzan and the provisioner need Go 1.26 or later (see the `go` line in each `go.mod`). The Intel SGX SDK and Edgeless libraries are only needed for MarbleRun support (see below).
 
 The instructions presented here have been tested in Ubuntu 22.04 om AMD64.
 

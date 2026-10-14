@@ -1,6 +1,6 @@
 # auth
 
-Authentication and authorisation for Jane's Web UI and REST API.
+Authentication and authorisation for Jane's Web UI, REST API and x3270 interface. User documentation: [docs/authentication.md](../../docs/authentication.md).
 
 All user, password, session and cookie handling lives here. The rest of Jane touches it in these places:
 
@@ -11,6 +11,7 @@ All user, password, session and cookie handling lives here. The rest of Jane tou
 | `services/restapi/initrestapi.go` | `router.Use(auth.RESTMiddleware())` |
 | `services/webui/templates.go` | adds `auth.TemplateFuncs()` (`authEnabled`, `currentUser`) to the template functions |
 | `services/webui/initwebapi.go` `Render` | binds `auth.RequestTemplateFuncs(c)` to a clone of the page, so `currentUser` is the request's user |
+| `services/x3270/session.go` | `auth.X3270Enabled()`, `auth.Authenticate(...)`, `auth.LogLogoff(...)`, `auth.SessionTimeout()` |
 
 ## Enabling
 
@@ -20,7 +21,8 @@ Add to `config.yaml` (no `auth:` section means no login, exactly as before):
 auth:
   web: true            # require a login for the Web UI
   rest: false          # require HTTP Basic auth for the REST API
-  sessiontimeout: 8h   # sliding expiry of a Web UI login
+  x3270: false         # require a logon on the x3270 interface
+  sessiontimeout: 8h   # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 ```
 
 Create users, or reset a password, with `etc/addjaneuser/addjaneuser` (installed as `/opt/jane/addjaneuser` by the deb package). It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
@@ -44,6 +46,12 @@ Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t
 - `OPTIONS` (CORS preflight) and `/health` stay open.
 - The provisioner and any scripts must send credentials once this is on.
 
+**x3270.** With `x3270: true` a terminal starts at a logon screen and needs a user ID and password from the same users collection.
+- `auth.Authenticate` checks them and logs the attempt; after 3 failures the connection is closed.
+- A logged-on terminal idle for `sessiontimeout` is disconnected. Logoff, exit, disconnection and timeout are logged with `auth.LogLogoff`.
+- tn3270 is not encrypted, so the password crosses the network in clear.
+- `auth.Initialise` warns when `web: true` but `x3270: false`.
+
 **Logging.** Logins, failed logins and logouts go to Jane's normal log under channel `AUTH`.
 
 **Authorisation.** The `Authoriser` interface decides whether an authenticated user may make a request; the decision is made on the method and the Echo route pattern. The default allows everything. Install a different policy with `auth.SetAuthoriser(...)`.
@@ -51,5 +59,6 @@ Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t
 ## Not covered
 
 - The `/live` page talks directly to the MQTT broker over WebSockets, so that stream is protected only by broker credentials.
-- The x3270 interface is not Echo-based and is not protected.
+- The x3270 interface is unencrypted; bind it to `127.0.0.1` (`x3270: listenon:`) and reach it through an SSH tunnel if passwords matter.
+- The provisioner (`jp`) does not send REST credentials yet, so it cannot be used with `rest: true`.
 - There is no CSRF token. SameSite=Lax cookies stop cross-site POSTs in current browsers.

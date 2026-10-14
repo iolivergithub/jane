@@ -7,3 +7,5 @@ This software is used as the remote attestation engine as part of a trusted and/
 The software here is provided as-is - there is no security (http for the win!) and the error checking in places is completely missing. The point of this was to explore more interesting mechanisms for remote attestation and to implement ideas from the IEFT RATS specification. *READ* the security section!!!
 
 Refer to the [contents](docs/contents.md) in the `docs` directory.
+
+Logins for the Web UI, REST API and x3270 interface are optional and off by default; see [Authentication](docs/authentication.md). Changes by release are in the [changelog](CHANGELOG.md).

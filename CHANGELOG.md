@@ -4,6 +4,16 @@ All notable changes to Jane are listed here, newest first. Days with several
 commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
+## [1.5.1] – unreleased
+- x3270 logon (`auth: x3270`), with an ASCII-art logon screen, a status line on every screen, L (logoff) and X (exit) on the menu, and F3/F12 no longer disconnecting from the menu.
+- `listenon` is now honoured for REST, Web UI and the new `x3270: listenon`; REST no longer reads the Web UI's value.
+- Attest page lists sorted case-insensitively, with filter boxes, rules grouped by type and a selected-rule count.
+- Element page history matrix tighter, with collapsible rule groups showing the worst result per session.
+- Elements page result summaries are thin bars instead of squares.
+- deb packages: Jane runs as a `jane` system user; `addjaneuser` installed as `/opt/jane/addjaneuser`; complete example `config.yaml`; up-to-date `provisioning.yaml.example`.
+- Builds no longer run `go get -u`; the `jp` binary is no longer in the repository.
+- New authentication guide; security, running, deb and compiling docs updated.
+
 ## [1.5] – 2026-10-13
 - Footer signing with key id, algorithm, canonical hash and a configurable key.
 - UEFI variables in `uefi/efivars` claims now render correctly.

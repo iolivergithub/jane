@@ -77,8 +77,12 @@ Note the lines with "CHANGE ME" - review these for your system.
    * Choose any name you want for your attestation database
    * crt and key files should have the full path to the keys generated earlier
    * usehttp -- set this to true if you want less#CHANGE ME security
-   * X3270 -- don't worry about this, but if you have an X3270 terminal, the TUI might be useful (when we finish it)
+   * listenon -- the address each service binds to: 0.0.0.0 (or left out) for all interfaces, 127.0.0.1 for this machine only
+   * X3270 -- a tn3270 terminal interface to Jane (lists, details, attest, log, configuration). It is unencrypted
    * Logging goes to a default place in /var/log or somewhere suitable on Windows
+   * signing (optional) -- the key used to sign claim, result and session footers; see [Security](security.md)
+   * auth (optional) -- logins for the Web UI, REST API and x3270; see [Authentication](authentication.md)
+   * keylime (optional) -- only needed for the keylime rules; see below
 
 The lines with "DEFAULT VALUE" most likely do not need to change, but review for your system just in case.
 
@@ -98,6 +102,7 @@ database:
 messaging:
   broker: 192.168.1.203                             #CHANGE ME
   port: 1883                                        #DEFAULT VALUE
+  portws: 8081                                      #DEFAULT VALUE (MQTT over WebSockets, used by the Live page)
   clientid: attestationMQTTclient                   #CHANGE ME
 
 #REST Interface Configuration
@@ -106,6 +111,7 @@ rest:
   crt: temporary.crt                                #CHANGE ME
   key: temporary.key                                #CHANGE ME
   usehttp: false                                    #DEFAULT VALUE
+  listenon: 0.0.0.0                                 #DEFAULT VALUE
 
 #Web Interface Configuration
 web:
@@ -113,16 +119,35 @@ web:
   crt: temporary.crt                                #CHANGE ME
   key: temporary.key                                #CHANGE ME
   usehttp: false                                    #DEFAULT VALUE
+  listenon: 0.0.0.0                                 #DEFAULT VALUE
 
 #X3270
 x3270:
   port: 3270                                        #DEFAULT VALUE
-  
+  listenon: 0.0.0.0                                 #DEFAULT VALUE
+
 #Log file
 logging:
   logfilelocation: /var/log/jane.log                #DEFAULT VALUE
   sessionupdatelogging: false                       #DEFAULT VALUE
+
+#Keylime (optional)
+#keylime:
+#  apiurl: http://127.0.0.1:8881
+
+#Footer signing (optional; without it a new random key is used at each start)
+#signing:
+#  keyfile: /etc/opt/jane/signing.key
+
+#Authentication (optional; without it nothing asks for a login)
+#auth:
+#  web: false
+#  rest: false
+#  x3270: false
+#  sessiontimeout: 8h
 ```
+
+The complete, commented example is `etc/debbuild/config.yaml`, which the deb package installs.
 
 ## Using Keylime for Measured Boot evaluation
 You probably don't need this...

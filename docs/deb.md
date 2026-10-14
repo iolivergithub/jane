@@ -1,40 +1,64 @@
-# Building and Installaing with DEB and RPM files
+# Building and Installing with DEB and RPM files
 
-First ensure you know how to build things manually...or not. 
+First ensure you know how to build things manually...or not.
 
 ## Generating the DEB and RPM files
 
-Change to the `etc\debbuild` director, then run the build script:
+Change to the `etc/debbuild` directory, check that the last line of `versions.txt` is the version you want, then run the build script:
 
 ```bash
-./debbuild.sh 
+./debbuild.sh
 ```
 
-This will generate the gzipped deb and rpm files for jane and tarzan. It will compile both, build the deb, lint it and convert them to rpms.
+This compiles janeserver, tarzan and the provisioner (`jp`), builds two deb packages, lints them and converts them to rpms.
 
-NB: linting will only work with `lintian` is installed, and the rpm generation only if `alien` is installed. Otherwise you'll get errors. At minimum you'll get gzipped deb files.
+NB: linting only works if `lintian` is installed, and rpm generation only if `alien` is installed. Otherwise you'll get errors from those steps, but you will still get the deb files.
 
-The installer creates a directory in `/tmp` where the deb and rpm files will be found, eg:
+The packages are built in `/tmp/janedebbuild`, named by version and architecture, e.g. `jane_1.5.1_amd64.deb.gz` and `tarzan_1.5.1_amd64.deb.gz`.
+
+## What is in the packages
+
+**jane** (package `janeattestationengine`)
+
+| File | |
+|---|---|
+| `/opt/jane/janeserver` | the attestation engine |
+| `/opt/jane/addjaneuser` | adds Jane users or resets passwords, see [Authentication](authentication.md) |
+| `/etc/opt/jane/config.yaml` | configuration: every option, optional ones commented out, all logins off |
+| `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate - replace them |
+| `/etc/systemd/system/jane.service` | runs Jane as the `jane` user |
+| `/var/log/jane/` | Jane's log file |
+| `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
+
+It depends on `adduser` and recommends `python3`, `python3-argon2` and `python3-pymongo` (for `addjaneuser`). MongoDB and an MQTT broker (e.g. Mosquitto) are needed but not installed by the package.
+
+**tarzan** (package `tarzantrustagent`)
+
+| File | |
+|---|---|
+| `/opt/jane/tarzan` | the trust agent |
+| `/opt/jane/jp` | the provisioner |
+| `/etc/opt/jane/provisioning.yaml.example` | an example provisioning file for `jp` - copy it and edit the copy |
+| `/etc/systemd/system/tarzan.service` | runs tarzan as root |
+
+The configuration files are dpkg conffiles: an upgrade will not overwrite your changes to them without asking.
+
+## The jane user
+
+Jane runs as the unprivileged system user `jane`, created when the package is installed. It owns `/var/log/jane`, and `config.yaml` and `REPLACE_ME.key` are readable by group `jane` (mode 640). Any keys you add, such as a TLS key or a signing key, must be readable by group `jane` too:
 
 ```bash
-ian@Debian:/tmp/janedebbuild$ ls -l
-total 20216
-drwxr-xr-x 5 ian ian    4096 Dec  2 19:40 jane
--rw-r--r-- 1 ian ian 5859658 Dec  2 19:41 janeattestationengine-1.0-2.x86_64.rpm.gz
--rw-r--r-- 1 ian ian 4420056 Dec  2 19:41 jane.deb.gz
-drwxr-xr-x 5 ian ian    4096 Dec  2 19:40 tarzan
--rw-r--r-- 1 ian ian 4866350 Dec  2 19:41 tarzan.deb.gz
--rw-r--r-- 1 ian ian 5535737 Dec  2 19:41 tarzantrustagent-1.0-2.x86_64.rpm.gz
+chown root:jane /etc/opt/jane/mykey.key
+chmod 640 /etc/opt/jane/mykey.key
 ```
-
 
 ## Installation with DEB
 
-As root run `dpkg -i ./jane.deb` and/or `dpkg -i ./tarzan.deb`
+As root, unzip the packages and run `dpkg -i ./jane_1.5.1_amd64.deb` and/or `dpkg -i ./tarzan_1.5.1_amd64.deb` (or `apt install ./jane_1.5.1_amd64.deb`, which also installs the recommended Python packages).
 
-In both cases the jane and tarzan services will the enabled with systemd. Tarzan will also run - check with journalctl.
+In both cases the jane and tarzan services will be enabled with systemd. Tarzan will also be started - check with journalctl. Jane is not started: edit `/etc/opt/jane/config.yaml` and replace the keys first, then `systemctl start jane.service`.
 
-Example output is below:
+Example output from an older version is below (file names, paths and messages have since changed slightly):
 
 ```bash
 $ su -
@@ -53,8 +77,8 @@ Enabling Jane with systemd
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    *** CHECK!!!!! **** 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- Edit the /opt/etc/jane/config.yaml 
- Regenerate keys in /opt/etc/jane
+ Edit the /etc/opt/jane/config.yaml
+ Replace keys in /etc/opt/jane
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Post installation scripts complete
 root@Debian:/tmp/janedebbuild# dpkg -i ./tarzan.deb 
@@ -127,6 +151,6 @@ Removing tarzantrustagent (1.0) ...
 Purging configuration files for tarzantrustagent (1.0) ...
 ```
 
-## Installation and RPM with RPM
+## Installation with RPM
 
 Probably similar to DEB, you can figure this out.
