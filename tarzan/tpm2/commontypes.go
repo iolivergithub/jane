@@ -39,6 +39,14 @@ type tpm2quoteReturn struct {
 	Signature interface{}    `json:"signature"`
 }
 
+// tpm2activateCredentialReturn is the result of tpm2/activatecredential: the
+// recovered secret (base64) and the names of the keys used (hex).
+type tpm2activateCredentialReturn struct {
+	CertInfo string `json:"certinfo"`
+	AKName   string `json:"akname"`
+	EKName   string `json:"ekname"`
+}
+
 var npcrbanks = []tpm2.TPMIAlgHash{tpm2.TPMAlgSHA1, tpm2.TPMAlgSHA256, tpm2.TPMAlgSHA384, tpm2.TPMAlgSHA512}
 
 type pcrValue map[int]string
