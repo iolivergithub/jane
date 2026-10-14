@@ -9,8 +9,10 @@
    /* results sit above the card's stretched link so they stay clickable */
    .results-strip { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 3px; }
    .results-when { font-size: .75rem; flex: 0 0 auto; }
-   .result-cell { display: block; width: 11px; height: 11px; border-radius: 2px; }
-   .result-cell:hover { outline: 2px solid var(--bs-body-color); }
+   /* one thin bar per result, so long result lists still fit narrow cards (#60) */
+   .result-cells { display: flex; flex-wrap: wrap; gap: 2px; }
+   .result-cell { display: block; width: 4px; height: 11px; border-radius: 1px; }
+   .result-cell:hover { outline: 2px solid var(--bs-body-color); outline-offset: 1px; }
 </style>
 
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
