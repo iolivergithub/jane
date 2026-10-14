@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-// Reference hashes produced by etc/addjaneuser (Python argon2-cffi), so these tests
+// Reference hashes produced by etc/addjaneuser/addjaneuser (Python argon2-cffi), so these tests
 // also check that users created by the script can log in to Jane.
 const (
 	pw = "correct horse battery staple"
 
-	// etc/addjaneuser's own parameters
+	// etc/addjaneuser/addjaneuser's own parameters
 	scriptHash = "$argon2id$v=19$m=19456,t=2,p=1$fbQdSmwVfYYtQMqjwAvS8Q$yJPQH24sqdG1/Gy6XsNWC1DQHo+z1XEZUxweuXFEL5k"
 	// different parameters, which must be read from the string
 	otherParamsHash = "$argon2id$v=19$m=65536,t=3,p=4$Qz0qF6TGQM524edhGkl5TQ$1YSV58EQH9DjEdwpNCg9c4YwGwduSfwxiiPD/LOtYyo"

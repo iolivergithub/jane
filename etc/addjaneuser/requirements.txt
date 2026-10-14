@@ -1,0 +1,2 @@
+argon2-cffi>=21.1
+pymongo>=4.0

@@ -15,7 +15,7 @@ import (
 //	$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>
 //
 // with the salt and hash in unpadded standard base64. This is the format produced by the
-// usual Argon2 libraries (e.g. Python's argon2-cffi, used by etc/addjaneuser), so users can
+// usual Argon2 libraries (e.g. Python's argon2-cffi, used by etc/addjaneuser/addjaneuser), so users can
 // be created outside Jane. The parameters are read from each stored hash, so they can be
 // raised later without invalidating existing passwords.
 //
