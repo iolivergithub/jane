@@ -23,7 +23,7 @@ auth:
   sessiontimeout: 8h   # sliding expiry of a Web UI login
 ```
 
-Create users, or reset a password, with `etc/addjaneuser/addjaneuser`. It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
+Create users, or reset a password, with `etc/addjaneuser/addjaneuser` (installed as `/opt/jane/addjaneuser` by the deb package). It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:
 
 ```
 etc/addjaneuser/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal

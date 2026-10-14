@@ -35,6 +35,7 @@ mkdir -p $JANEBASE/opt/jane
 mkdir -p $JANEBASE/var/log/jane
 mkdir -p $JANEBASE/etc/opt/jane
 mkdir -p $JANEBASE/etc/systemd/system
+mkdir -p $JANEBASE/usr/share/doc/janeattestationengine
 
 mkdir -p $TARZANBASE
 mkdir -p $TARZANBASE/DEBIAN
@@ -76,6 +77,9 @@ cd $DEBBUILDDIR
 echo "${BLUE}Copying binaries"
 pwd
 cp ../../janeserver/janeserver $JANEBASE/opt/jane
+cp ../addjaneuser/addjaneuser $JANEBASE/opt/jane/addjaneuser
+chmod 755 $JANEBASE/opt/jane/addjaneuser
+cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
 cp ../../tarzan/tarzan $TARZANBASE/opt/jane
 cp ../../provisioner/jp $TARZANBASE/opt/jane
 

@@ -52,8 +52,9 @@ logging:
 #  keyfile: /etc/opt/jane/signing.key
 
 #Authentication (optional - if this section is missing, no login is required)
-#Users are held in the "users" collection; add them or reset passwords with etc/addjaneuser/addjaneuser, e.g.
-#  etc/addjaneuser/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+#Users are held in the "users" collection; add them or reset passwords with /opt/jane/addjaneuser, e.g.
+#  /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
+#(needs python3-argon2 and python3-pymongo; see /usr/share/doc/janeattestationengine/addjaneuser.md)
 auth:
   web: false            # require a login for the Web UI
   rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)

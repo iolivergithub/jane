@@ -24,7 +24,7 @@ func CurrentStatus() Status {
 		SessionTimeout: shortDuration(cfg.SessionTimeout),
 		Users:          -1,
 		PasswordHash:   "Argon2id",
-		UserTool:       "etc/addjaneuser/addjaneuser",
+		UserTool:       "/opt/jane/addjaneuser (deb package) or etc/addjaneuser/addjaneuser (source)",
 	}
 	if users != nil {
 		if n, err := users.Count(); err == nil {

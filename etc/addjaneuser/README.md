@@ -2,6 +2,8 @@
 
 Adds a user to Jane, or sets a new password for an existing one. Users are needed when the Web UI login (`auth: web: true`) or REST basic auth (`auth: rest: true`) is enabled in `config.yaml`; see [janeserver/auth/README.md](../../janeserver/auth/README.md).
 
+The Jane deb package installs it as `/opt/jane/addjaneuser`, with this README at `/usr/share/doc/janeattestationengine/addjaneuser.md`. The package only *recommends* the Python packages below, so install them if they were skipped. The packaged `config.yaml` uses the database name `asvr`.
+
 ## Requirements
 
 - Python 3
