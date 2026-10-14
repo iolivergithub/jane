@@ -163,6 +163,25 @@
             <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>TPM device on the target, from the element's <code>tpm2.device</code>, e.g. <code>"/dev/tpmrm0"</code>.</td></tr>
 
+            <tr class="fn-row"><th colspan="4">tpm2/activatecredential <span class="fn-note">&mdash; checks the AK is in the same TPM as the EK (make/activate credential)</span></th></tr>
+            <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Handle of the attestation key, from the element's <code>tpm2.ak.handle</code>.</td></tr>
+            <tr><td><code>tpm2/ekhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Handle of the endorsement key, from the element's <code>tpm2.ek.handle</code>, e.g. <code>"0x810100EE"</code>.</td></tr>
+            <tr><td><code>tpm2/akpublic</code></td><td>string, base64</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>The AK's public area (TPM2B_PUBLIC), from the element's <code>tpm2.ak.public</code>. The credential is made for this key's name.</td></tr>
+            <tr><td><code>tpm2/ekpublic</code></td><td>string, base64</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>The EK's public area (TPM2B_PUBLIC), from the element's <code>tpm2.ek.public</code>. The credential is encrypted to this key.</td></tr>
+            <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>TPM device, as above.</td></tr>
+            <tr><td><code>tpm2/credentialblob</code><br/><code>tpm2/encryptedsecret</code></td><td>string, base64</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>The credential, made after any overrides are applied: a fresh random secret encrypted to the EK and bound to the AK's name.</td></tr>
+            <tr><td><code>tpm2/credentialsecrethash</code></td><td>string, hex</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>SHA-256 of the secret. The secret itself is never stored or sent; <code>tpm2_credentialActivated</code> compares this with the secret the TPM recovered.</td></tr>
+            <tr><td colspan="4" class="text-body-secondary">Normally everything comes from the element as written by <code>jp</code>; an element without <code>tpm2.ak.public</code> and
+                <code>tpm2.ek.public</code> gives an error claim. Override a handle alone to check whether the key at that handle is the element's AK or EK;
+                override a handle and its public key together to check a different key.</td></tr>
+
             <tr class="fn-row"><th colspan="4">tpm2/pcrs <span class="fn-note">&mdash; unsigned read of PCRs 0&ndash;23 in every bank the TPM has</span></th></tr>
             <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>TPM device, as above. There is no bank or PCR selection: everything is read.</td></tr>
@@ -195,6 +214,10 @@
          <div class="col-md-6">
             <div class="small text-body-secondary mb-1">Use a different TPM device for this one call:</div>
 <pre class="ref-ex">{"tpm2/device": "/dev/tpm0"}</pre>
+         </div>
+         <div class="col-md-6">
+            <div class="small text-body-secondary mb-1">Activate a credential for the AK at another handle (<code>tpm2/activatecredential</code>):</div>
+<pre class="ref-ex">{"tpm2/akhandle": "0x810100AB"}</pre>
          </div>
       </div>
    </div>
@@ -283,6 +306,10 @@
                 <td>The TPM clock's <i>safe</i> flag is set, i.e. no uncommanded shutdown.</td></tr>
             <tr><td><code>tpm2_validNonce</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
                 <td>The quote's qualifying data equals the <code>tpm2/nonce</code> recorded in the claim's call parameters.</td></tr>
+            <tr><td><code>tpm2_credentialActivated</code></td><td><code>tpm2/activatecredential</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The SHA-256 of the secret the TPM recovered equals <code>tpm2/credentialsecrethash</code> in the call parameters, i.e. the AK and EK are in the same TPM.</td></tr>
+            <tr><td><code>tpm2_akAttributes</code></td><td><code>tpm2/activatecredential</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The AK the credential was made for (<code>tpm2/akpublic</code>) is a restricted signing key that cannot decrypt and is <i>fixedTPM</i>, <i>fixedParent</i> and <i>sensitiveDataOrigin</i>.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">System</th></tr>
             <tr><td><code>sys_taRunningSafely</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>

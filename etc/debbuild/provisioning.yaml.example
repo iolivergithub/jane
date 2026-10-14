@@ -93,6 +93,11 @@ evs:
       protocol: tarzan
   - std::intent::tpm::pcrs :
       protocol: tarzan  
+  - std::intent::tpm2::activatecredential :
+      protocol: tarzan
+      rules:
+        - tpm2_credentialActivated
+        - tpm2_akAttributes
   - std::intent::uefi::efivars :
       protocol: tarzan
       type: uefiefivars

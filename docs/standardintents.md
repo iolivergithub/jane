@@ -11,3 +11,4 @@ The standard intents are a set of intents which are common across all installati
    * x86 Intel TXT
    * x86 Grub Full
    * Linux IMA with PCR 0
+   * TPM 2.0 Credential Activation (`std::intent::tpm2::activatecredential`), checked with the rules `tpm2_credentialActivated` and `tpm2_akAttributes`

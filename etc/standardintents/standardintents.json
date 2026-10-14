@@ -153,5 +153,12 @@
             "pcrSelection": "0,10",
             "bank": "sha256"
         }
+    },
+    {
+        "itemid": "std::intent::tpm2::activatecredential",
+        "name": "TPM 2.0 Credential Activation",
+        "description": "Checks the AK is held in the same TPM as the EK using TPM2_MakeCredential/TPM2_ActivateCredential. The AK and EK are taken from the element's tpm2 section unless overridden by parameters",
+        "function": "tpm2/activatecredential",
+        "parameters": {}
     }
 ]
