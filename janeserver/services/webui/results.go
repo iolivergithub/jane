@@ -22,9 +22,11 @@ func showResult(c echo.Context) error {
 	r, _ := operations.GetResultByItemID(c.Param("itemid"))
 
 	siblings := []structures.Result{}
+	claim := structures.Claim{}
 	if r.ClaimID != "" {
 		siblings, _ = operations.GetResultsByClaimID(r.ClaimID)
+		claim, _ = operations.GetClaimByItemID(r.ClaimID)
 	}
 
-	return c.Render(http.StatusOK, "result.html", buildResultPage(r, siblings, dbLookups()))
+	return c.Render(http.StatusOK, "result.html", buildResultPage(r, siblings, claim, dbLookups()))
 }

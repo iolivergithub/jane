@@ -65,50 +65,45 @@ func getEV(claim structures.Claim, rule structures.Rule) (structures.ExpectedVal
 	return structures.ExpectedValue{}, nil
 }
 
-func Verify(claim structures.Claim, rule structures.Rule, session structures.Session, rps map[string]interface{}) (string, structures.ResultValue, error) {
+// evaluateRule checks the claim, fetches the expected value the rule needs
+// (via getev) and runs the rule. It returns the expected value that was used,
+// so it can be stored in the result, together with the outcome and message.
+func evaluateRule(claim structures.Claim, rule structures.Rule, session structures.Session, rps map[string]interface{},
+	getev func(structures.Claim, structures.Rule) (structures.ExpectedValue, error)) (structures.ExpectedValue, structures.ResultValue, string) {
 
-	// these are default values and shouldn't occur in reality...
-	var returnedRV structures.ResultValue = structures.UnsetResultValue
-	var returnedMSG string = "Verify not processed"
-
-	// required variables
 	var ev structures.ExpectedValue
-	var eid string
 
-	// Start ******************************************************
-	// 0
-	returnedRV, returnedMSG = checkClaimError(claim)
-
-	eid = claim.Header.Element.ItemID
-	//fmt.Printf("Verify eid %v\n", eid)
+	returnedRV, returnedMSG := checkClaimError(claim)
 
 	// if we are still unset then we proceed with the verification
 	if returnedRV == structures.UnsetResultValue {
-		//fmt.Println("dealing with the ev")
-		ev, err := getEV(claim, rule)
+		// Assign (not :=) so the expected value is returned and stored in the
+		// result. Declaring a new ev here would hide the outer one and every
+		// result would be saved with an empty expected value (issues #33, #51).
+		var err error
+		ev, err = getev(claim, rule)
 		if err != nil {
-			//fmt.Println("dealing with the ev")
-
 			returnedRV = structures.MissingExpectedValue
 			returnedMSG = fmt.Sprintf("Rule %v requires an expected value for e,p pair %v and %v and one was not found: %v", rule.Name, claim.Header.Element.ItemID, claim.Header.Intent.ItemID, err)
 		} else {
-
-			// Now
-			//fmt.Printf("Calling %v with %v %v %v \n", rule.Name, ev, session, rps)
-			//fmt.Printf("Calling %v with %v %v %v \n", reflect.TypeOf(rule.Name), reflect.TypeOf(ev), reflect.TypeOf(session), reflect.TypeOf(rps))
-
 			aCALL := rule.CallFunction
 			returnedRV, returnedMSG, err = aCALL(claim, rule.Name, ev, session, rps)
 			if err != nil {
-
-				//fmt.Println("Step 3 -err")
-
 				returnedRV = structures.VerifyCallFailure
 				returnedMSG = fmt.Sprintf("Rule %v call failed with message %v and error %v", rule.Name, returnedMSG, err) // this should be the returnedMSG form the line above
 			}
 		}
-
 	}
+
+	return ev, returnedRV, returnedMSG
+}
+
+func Verify(claim structures.Claim, rule structures.Rule, session structures.Session, rps map[string]interface{}) (string, structures.ResultValue, error) {
+
+	eid := claim.Header.Element.ItemID
+
+	// Steps 0-3: check the claim, fetch the expected value and run the rule
+	ev, returnedRV, returnedMSG := evaluateRule(claim, rule, session, rps, getEV)
 
 	// Step 4 ******************************************************
 	//fmt.Println("Step 4")

@@ -392,11 +392,30 @@ type resultPage struct {
 	Siblings []structures.Result // other results from the same claim
 }
 
-func buildResultPage(r structures.Result, siblings []structures.Result, lk *lookups) resultPage {
+// buildResultPage resolves a single result. claim is the claim the result was
+// produced from (empty if unknown); it supplies the intent and element when
+// the result itself does not, e.g. results stored without an expected value.
+func buildResultPage(r structures.Result, siblings []structures.Result, claim structures.Claim, lk *lookups) resultPage {
 	page := resultPage{resultRow: resolveResult(r, lk)}
 	page.EV = lk.expectedValue(r.ExpectedValue.ItemID)
 	if page.EV.ItemID == "" {
 		page.EV = r.ExpectedValue
+	}
+	if page.Intent.ID == "" && claim.Header.Intent.ItemID != "" {
+		i := claim.Header.Intent
+		name := lk.intent(i.ItemID).Name
+		if name == "" {
+			name = i.Name // the copy stored with the claim
+		}
+		page.Intent = ref{i.ItemID, name}
+	}
+	if page.Element.ID == "" && claim.Header.Element.ItemID != "" {
+		e := claim.Header.Element
+		name := lk.element(e.ItemID).Name
+		if name == "" {
+			name = e.Name
+		}
+		page.Element = ref{e.ItemID, name}
 	}
 	for _, s := range siblings {
 		if s.ItemID != r.ItemID {
