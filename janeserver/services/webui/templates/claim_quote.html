@@ -23,7 +23,7 @@
    		    <tr><td>Reset</td><td>{{ .quote.clockinfo.resetcount }}</td></tr>
    		    <tr><td>Restart</td><td>{{ .quote.clockinfo.restartcount }}</td></tr>
    		    <tr><td>Safe</td><td>
-   		       {{ if .quote.clockinfo.safe }}
+   		       {{ if eq (printf "%v" .quote.clockinfo.safe) "true" }}
             <span class="badge bg-success">Safe ({{ .quote.clockinfo.safe }})</span>
         {{ else }}
             <span class="badge bg-danger">Unsafe ({{ .quote.clockinfo.safe }})</span>        
