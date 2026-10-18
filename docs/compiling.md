@@ -1,12 +1,11 @@
 # Compiling
 
-Ensure that Go is installed and correctly configured: janeserver, tarzan and the provisioner need Go 1.26 or later (see the `go` line in each `go.mod`). The Intel SGX SDK and Edgeless libraries are only needed for MarbleRun support (see below).
+Ensure that Go is installed and correctly configured: janeserver, tarzan and the provisioner need Go 1.26 or later (see the `go` line in each `go.mod`).
 
 The instructions presented here have been tested in Ubuntu 22.04 om AMD64.
 
 - [Compiling](#compiling)
    * [Compiling JANESERVER](#compiling-janeserver)
-      + [Install SGX SDK and Edgeless libraries](#install-sgx-sdk-and-edgeless-libraries)
       + [Building ](#building)
       + [Optional BUILD flag](#optional-build-flag)
    * [Compiling tarzan](#compiling-tarzan)
@@ -17,30 +16,12 @@ The instructions presented here have been tested in Ubuntu 22.04 om AMD64.
 
 <!-- TOC --><a name="compiling-janeserver"></a>
 ## Compiling JANESERVER
-The default compilation Makefile for Jane is generic for all architectures and does not require additional librares. Skip straight to "Building".
-
-<!-- TOC --><a name="install-sgx-sdk-and-edgeless-libraries"></a>
-### Install SGX SDK and Edgeless libraries
-Skip this and move to "Building" if you are not interested in using MarbleRun. Using these additions requires changes to a few files to uncomment code and further downloads (see below). You will ONLY be able to run on Ubuntu/Debian for amd64 if you do this.
-
-Compilation requires an up-to-date mod file and the Edgeless environment variables - this is explained in the two parts below. Fortunately, unless Intel or Edgeless update their stuff you only have to install these once. The biggest issue is that these libraries are amd64 instruction set specific.
-
-Intel and Edgeless supply releases for Ubuntu and other operating systems. Here we should for Ubuntu Jammy (22.04). These commands might need to be run as `sudo`. Modify as appropriate for your operating system.
-
-```bash
-mkdir -p /etc/apt/keyrings 
-wget -q https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key -O /etc/apt/keyrings/intel-sgx-keyring.asc 
-echo "deb [signed-by=/etc/apt/keyrings/intel-sgx-keyring.asc arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main" > /etc/apt/sources.list.d/intel-sgx.list 
-apt update  
-wget https://github.com/edgelesssys/edgelessrt/releases/download/v0.4.1/edgelessrt_0.4.1_amd64_ubuntu-22.04.deb 
-apt-get install -y build-essential cmake libssl-dev libsgx-dcap-default-qpl libsgx-dcap-ql libsgx-dcap-quote-verify
-dpkg -i ./edgelessrt_0.4.1_amd64_ubuntu-22.04.deb
-```
+The Makefile for Jane is generic for all architectures and needs no additional libraries.
 
 <!-- TOC --><a name="building"></a>
 ### Building 
 
-Once SGX and Edgeless have been installed then you can just run this part every time you need to recompile. *MAKE SURE* you are in the `janeserver` directory when you run these commands:
+*MAKE SURE* you are in the `janeserver` directory when you run this command:
 
 ```bash
 make build
@@ -58,12 +39,6 @@ If you wish to set build and version flag, then specify  as part of the `ldflags
 
 ```bash
 . GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
-```
-
-or
-
-```bash
-. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
 ```
 
 <!-- TOC --><a name="compiling-tarzan"></a>

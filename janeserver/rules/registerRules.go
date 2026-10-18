@@ -5,8 +5,6 @@ import (
 	"a10/structures"
 
 	"a10/rules/chares"
-	"a10/rules/keylime"
-	//	"a10/rules/marblerun"
 	"a10/rules/nullrule"
 	"a10/rules/sysrules"
 	"a10/rules/tpm2rules"
@@ -20,10 +18,8 @@ func RegisterRules() {
 	registerListOfRules(nullrule.Registration())
 	registerListOfRules(tpm2rules.Registration())
 	registerListOfRules(uefirules.Registration())
-	//	registerListOfRules(marblerun.Registration())
 	registerListOfRules(testcontainerrules.Registration())
 	registerListOfRules(sysrules.Registration())
-	registerListOfRules(keylime.Registration())
 	registerListOfRules(veraison.Registration())
 	registerListOfRules(chares.Registration())
 

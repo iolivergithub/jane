@@ -24,7 +24,6 @@ require (
 )
 
 require (
-	github.com/edgelesssys/ego v1.8.0
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/go-tpm v0.9.8
 	github.com/gorilla/websocket v1.5.3 // indirect

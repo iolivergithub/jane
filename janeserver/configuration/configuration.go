@@ -76,9 +76,6 @@ type ConfigurationStruct struct {
 		LogFileLocation      string
 		SessionUpdateLogging bool
 	}
-	Keylime struct {
-		ApiUrl string
-	}
 	Signing struct {
 		KeyFile string // PEM private key for claim/result/session footers; empty = ephemeral key
 	}

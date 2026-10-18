@@ -33,10 +33,6 @@ The functions are provided by the protocols, a list of specific protocols and fu
 | ima/asciilog | | ima/ASCIIlog| 
 | txt/log | | |
 | sys/info | | |
-| marblerun/quote | | | 
-| marblerun/manifest | | |
-| marblerun/updatelogs | | |
-| marblerun/null | | |
 
 Specifics about intent functions are described here (functions.md)[functions])
 

@@ -37,7 +37,7 @@
    var rows = Array.prototype.slice.call(body.querySelectorAll('tr.rule-row'));
 
    // Rules are named <family>_<rule> and arrive sorted, so insert a heading row
-   // whenever the family changes (tpm2, sys, keylime, marblerun, ...).
+   // whenever the family changes (tpm2, sys, uefi, chares, ...).
    var groups = [], current = null;
    rows.forEach(function (row) {
       var name = row.getAttribute('data-name');

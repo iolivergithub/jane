@@ -2,7 +2,6 @@
 
 - [Running JANESERVER](#running-janeserver)
   - [JANESERVER Configuration File](#janeserver-configuration-file)
-  - [Using Keylime for Measured Boot evaluation](#using-keylime-for-measured-boot-evaluation)
 - [Running TARZAN](#running-tarzan)
   - [Command line options](#command-line-options)
   - [Unsafe operation - Here be a good way to open your system to every hacker ever](#unsafe-operation---here-be-a-good-way-to-open-your-system-to-every-hacker-ever)
@@ -82,7 +81,6 @@ Note the lines with "CHANGE ME" - review these for your system.
    * Logging goes to a default place in /var/log or somewhere suitable on Windows
    * signing (optional) -- the key used to sign claim, result and session footers; see [Security](security.md)
    * auth (optional) -- logins for the Web UI, REST API and x3270; see [Authentication](authentication.md)
-   * keylime (optional) -- only needed for the keylime rules; see below
 
 The lines with "DEFAULT VALUE" most likely do not need to change, but review for your system just in case.
 
@@ -131,10 +129,6 @@ logging:
   logfilelocation: /var/log/jane.log                #DEFAULT VALUE
   sessionupdatelogging: false                       #DEFAULT VALUE
 
-#Keylime (optional)
-#keylime:
-#  apiurl: http://127.0.0.1:8881
-
 #Footer signing (optional; without it a new random key is used at each start)
 #signing:
 #  keyfile: /etc/opt/jane/signing.key
@@ -148,33 +142,6 @@ logging:
 ```
 
 The complete, commented example is `etc/debbuild/config.yaml`, which the deb package installs.
-
-## Using Keylime for Measured Boot evaluation
-You probably don't need this...
-
-JANESERVER supports calling Keylime to validate a Measured Boot log.  For this currently it requires a special version found here: https://github.com/THS-on/keylime/tree/api/standalone-validation
-
-The simplest way using it is to build a local Keylime Docker container:
-```
-git clone https://github.com/THS-on/keylime.git
-cd keylime
-git checkout standalone-validation 
-cd docker/release
-./build_locally.sh
-```
-Jane's own `docker-compose.yml` was removed in 1.5.3 (Docker support returns in a future release); run the Keylime container alongside a natively installed Jane.
-
-To include Keylime access add the following section to the `config.yaml` file:
-
-```yaml
-#Keylime
-keylime:
-  apiurl: https://127.0.0.1:30000/keylime                   #CHANGE ME
-```
-
-
-
-
 
 # Running TARZAN
 

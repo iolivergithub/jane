@@ -88,21 +88,6 @@ The *TPMKey* structure is defined:
 | handle | String | The handle of the key in the TPM` |
 | public | String | The public part of the key - typically in PEM format |
 
-### MarbleRun
-In following fields are part of the *mrcoordinator* entry
-
-| Field | Type | Description |
-| --- | --- | --- |
-| certs | String List | The MarbleRun coordinator certificates |
-
-In following fields are part of the *mrmarbleinstance* entry
-
-| Field | Type | Description |
-| --- | --- | --- |
-| expectednonce | String  | TBD |
-| requestdata | String  | TBD |
-| requestsignature | String  | TBD |
-
 ## Go Definition
 
 The definition of the element structure can be found at https://github.com/iolivergithub/jane/blob/main/janeserver/structures/elements.go
