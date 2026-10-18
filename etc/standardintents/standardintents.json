@@ -1,14 +1,14 @@
 [
     {
         "itemid": "std::intent::ratsd::subattesters",
-        "name": "RATSD Sub-attesters",
+        "name": "RATSD Subattesters",
         "description": "Lists the leaf attesters available in the RATSD daemon and the options each accepts",
         "function": "ratsd/subattesters",
         "parameters": {}
     },
     {
         "itemid": "std::intent::ratsd::chares",
-        "name": "RATSD Conceptual Message Collection",
+        "name": "RATSD CMC",
         "description": "Retrieves a CMW collection of evidence from the RATSD daemon's leaf attesters (all of them unless attester-selection is given)",
         "function": "ratsd/chares",
         "parameters": {}
