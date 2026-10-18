@@ -160,5 +160,19 @@
         "description": "Checks the AK is held in the same TPM as the EK using TPM2_MakeCredential/TPM2_ActivateCredential. The AK and EK are taken from the element's tpm2 section unless overridden by parameters",
         "function": "tpm2/activatecredential",
         "parameters": {}
+    },
+    {
+        "itemid": "std::intent::tpm2::gettime",
+        "name": "TPM 2.0 Time",
+        "description": "The TPM's clock, reset and restart counters and firmware version, signed by the AK (TPM2_GetTime). No PCRs, so cheap to run often",
+        "function": "tpm2/gettime",
+        "parameters": {}
+    },
+    {
+        "itemid": "std::intent::tpm2::capabilities",
+        "name": "TPM 2.0 Capabilities",
+        "description": "The TPM's identity and configuration: manufacturer, firmware, properties, PCR banks, algorithms, curves and persistent handles (TPM2_GetCapability). Unsigned",
+        "function": "tpm2/capabilities",
+        "parameters": {}
     }
 ]
