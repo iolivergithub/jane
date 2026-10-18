@@ -18,10 +18,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 )
 
-require (
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
-)
+require google.golang.org/protobuf v1.34.2 // indirect
 
 require (
 	github.com/golang/snappy v1.0.0 // indirect
