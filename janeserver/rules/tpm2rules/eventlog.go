@@ -113,7 +113,7 @@ func extendedPCRs(el *tcg.EventLog) []int {
 	seen := map[int]bool{}
 	for _, alg := range el.Algs {
 		for _, e := range el.Events(alg) {
-			if e.Type.String() != "EV_NO_ACTION" {
+			if e.Type.TCGString() != "EV_NO_ACTION" {
 				seen[e.Index] = true
 			}
 		}

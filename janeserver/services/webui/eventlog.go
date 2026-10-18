@@ -57,8 +57,10 @@ func EventLogBody(body map[string]interface{}) EventLogView {
 	for name, alg := range utilities.EventLogBanks(el) {
 		bank := EventLogBankView{Name: name}
 		for i, e := range el.Events(alg) {
-			typ := e.Type // not UntrustedType(): in go-eventlog v0.0.2 it panics on unknown types
-			if typ.String() != "EV_NO_ACTION" {
+			// TCG names (EV_...); not UntrustedType(), which in go-eventlog
+			// v0.0.2 panics on unknown types
+			typ := e.Type.TCGString()
+			if typ != "EV_NO_ACTION" {
 				pcrs[e.Index] = true
 			}
 			digest := hex.EncodeToString(e.ReplayedDigest())
@@ -69,10 +71,10 @@ func EventLogBody(body map[string]interface{}) EventLogView {
 			bank.Events = append(bank.Events, EventLogEntry{
 				Num:         i + 1, // Events does not number the events
 				PCR:         e.Index,
-				Type:        typ.String(),
+				Type:        typ,
 				Digest:      digest,
 				ShortDigest: short,
-				Description: describeEvent(typ.String(), e.RawData()),
+				Description: describeEvent(typ, e.RawData()),
 			})
 		}
 		view.Count = len(bank.Events)

@@ -35,7 +35,7 @@ func TestEventLogBody(t *testing.T) {
 			t.Errorf("bank %s has %d events, want %d", b.Name, len(b.Events), v.Count)
 		}
 	}
-	if got := strings.Join(names, ","); got != "sha1,sha256" {
+	if got := strings.Join(names, ","); got != "sha1,sha256,sha384" {
 		t.Errorf("banks %s", got)
 	}
 	if v.DefaultBank != "sha256" {
