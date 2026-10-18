@@ -43,7 +43,7 @@ func WebUIMiddleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 			p := c.Request().URL.Path
-			if p == loginPath || p == logoutPath {
+			if p == loginPath || p == logoutPath || isPublicStatic(p) {
 				return next(c)
 			}
 
@@ -145,4 +145,10 @@ func safeNext(next string) string {
 		return "/"
 	}
 	return next
+}
+
+// isPublicStatic reports whether a path is a static file the web UI serves without login:
+// the favicon (also needed on the login page) and everything under /static/.
+func isPublicStatic(p string) bool {
+	return p == "/favicon.ico" || strings.HasPrefix(p, "/static/")
 }

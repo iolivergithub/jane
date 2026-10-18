@@ -386,3 +386,19 @@ func TestReadConfigX3270(t *testing.T) {
 		t.Errorf("readConfig = %+v", c)
 	}
 }
+
+func TestWebStaticFilesNeedNoLogin(t *testing.T) {
+	web, _ := setup(t, true, false)
+	ok := func(c echo.Context) error { return c.String(http.StatusOK, "file") }
+	web.GET("/favicon.ico", ok)
+	web.GET("/static/*", ok)
+
+	for _, p := range []string{"/favicon.ico", "/static/favicon-32.png"} {
+		if rec := do(web, httptest.NewRequest(http.MethodGet, p, nil)); rec.Code != http.StatusOK {
+			t.Fatalf("%s: got %d, want 200 without login", p, rec.Code)
+		}
+	}
+	if rec := do(web, httptest.NewRequest(http.MethodGet, "/staticx", nil)); rec.Code != http.StatusSeeOther {
+		t.Fatalf("/staticx: got %d, want redirect to login", rec.Code)
+	}
+}

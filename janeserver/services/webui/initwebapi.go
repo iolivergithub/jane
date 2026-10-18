@@ -23,6 +23,11 @@ import (
 //go:embed templates/*.html
 var WPFS embed.FS
 
+// favicon and other static files, served without login (see auth.WebUIMiddleware)
+//
+//go:embed static/*
+var staticFS embed.FS
+
 const PREFIX = ""
 const T = "templates/"
 
@@ -69,6 +74,7 @@ func StartWebUI(ctx context.Context) {
 	//router.Use(middleware.GzipWithConfig(middleware.GzipConfig{Level: 5}))
 
 	//setup endpoints
+	setupStaticEndpoints(router)
 	setupHomeEndpoints(router)
 	setUpDisplayEndpoints(router)
 	setUpAttestationEndpoints(router)
@@ -127,6 +133,11 @@ func setupEditEndpoints(router *echo.Echo) {
 
 	router.GET(PREFIX+"/new/opaqueobject", newOpaqueObject)
 	router.POST(PREFIX+"/new/opaqueobject", processOpaqueObject)
+}
+
+func setupStaticEndpoints(router *echo.Echo) {
+	router.StaticFS(PREFIX+"/static", echo.MustSubFS(staticFS, "static"))
+	router.FileFS(PREFIX+"/favicon.ico", "static/favicon.ico", staticFS)
 }
 
 func setupHomeEndpoints(router *echo.Echo) {
