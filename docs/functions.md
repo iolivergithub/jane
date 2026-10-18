@@ -57,8 +57,30 @@ The claim body contains `certinfo` (the recovered secret, base64) and `akname`, 
 
 Activation shows the AK and EK are in the same TPM. It does not show the EK belongs to a genuine TPM; that needs the EK certificate checked against the manufacturer (#63).
 
+## tpm2\gettime
+
+Runs TPM2_GetTime: the TPM's clock, reset and restart counters, `safe` flag, time and firmware version, signed by the AK (RSASSA/SHA-256) and qualified by a fresh nonce, like a quote. No PCRs are involved, so it is cheap to run often; across claims it shows reboots (reset count), resumes (restart count) and whether the TPM clock runs forwards.
+
+| Field | Compulsory | Type | Description |
+| --- | --- | --- | --- |
+| tpm2/device | Y | String | The TPM device to use, from the element's `tpm2.device` |
+| tpm2/akhandle | Y | String | Handle of the AK, from the element's `tpm2.ak.handle` |
+| tpm2/nonce | | String | Set by Jane: a fresh nonce, base64 |
+
+The endorsement hierarchy is authorised with the empty password (#76). The claim body has `time` (magic, type `8019`, qualifiedsigner, extradata, firmwareVersion, clockinfo, time), `signature`, and the raw `attest` (TPMS_ATTEST) and `rawsignature` (TPMT_SIGNATURE), base64, for verifying the signature (#62). Quotes now carry `attest` and `rawsignature` too.
+
+## tpm2\capabilities
+
+Runs TPM2_GetCapability and reports which TPM the element has and how it is configured. Nothing is signed, so it describes rather than proves.
+
+| Field | Compulsory | Type | Description |
+| --- | --- | --- | --- |
+| tpm2/device | Y | String | The TPM device to use, from the element's `tpm2.device` |
+
+The claim body has `summary` (manufacturer, vendorstring, firmwareversion, family, level, revision, fips140_2), `properties` (every fixed and variable TPM property by its TCG name, e.g. `TPM_PT_MANUFACTURER`), `pcrbanks` (bank: number of PCRs allocated), `algorithms`, `ecccurves` and `persistenthandles`.
+
 ## uefi\eventlog
-This returns the UEFI Eventlog.
+This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; the `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim.
 
 | Field | Compulsory | Type | Description |
 | --- | --- | --- | --- |
