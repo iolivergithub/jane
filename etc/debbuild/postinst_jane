@@ -13,13 +13,45 @@ echo "${PURPLE}Creating the jane system user if needed${NC}"
 if ! getent passwd jane >/dev/null; then
     adduser --system --group --no-create-home --home /nonexistent --quiet jane
 fi
-chown -R jane:jane /var/log/jane
-for f in /etc/opt/jane/config.yaml /etc/opt/jane/REPLACE_ME.key; do
+
+# Ownership and permissions (#78), applied on every install and upgrade.
+# Binaries and configuration are owned by root so that the jane user cannot
+# change them; jane can read its configuration and keys through its group,
+# and owns only its log. /opt/jane and /etc/opt/jane are shared with the
+# tarzan package, so only Jane's own files are changed.
+echo "${PURPLE}Setting ownership and permissions${NC}"
+chown root:root /opt/jane
+chmod 755 /opt/jane
+for f in /opt/jane/janeserver /opt/jane/addjaneuser; do
+    if [ -f "$f" ]; then
+        chown root:root "$f"
+        chmod 755 "$f"
+    fi
+done
+
+chown root:jane /etc/opt/jane
+chmod 750 /etc/opt/jane
+for f in /etc/opt/jane/config.yaml /etc/opt/jane/*.key; do
     if [ -f "$f" ]; then
         chown root:jane "$f"
         chmod 640 "$f"
     fi
 done
+for f in /etc/opt/jane/*.crt /etc/opt/jane/standardintents.json; do
+    if [ -f "$f" ]; then
+        chown root:jane "$f"
+        chmod 644 "$f"
+    fi
+done
+
+chown -R jane:jane /var/log/jane
+chmod 750 /var/log/jane
+find /var/log/jane -type f -exec chmod 640 {} +
+
+if [ -f /etc/systemd/system/jane.service ]; then
+    chown root:root /etc/systemd/system/jane.service
+    chmod 644 /etc/systemd/system/jane.service
+fi
 
 echo "${PURPLE}Reloading systemd and enabling Jane${NC}"
 systemctl daemon-reload
@@ -30,7 +62,7 @@ echo "${RED}   *** CHECK!!!!! **** ${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} Edit the /etc/opt/jane/config.yaml ${NC}"
 echo "${RED} Replace keys in /etc/opt/jane${NC}"
-echo "${RED} (Jane runs as user jane: keys must be readable by group jane)${NC}"
+echo "${RED} (Jane runs as user jane: replaced keys must be root:jane, mode 640)${NC}"
 echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
 echo "${RED} NOTE: janeserver HAS NOT been started${NC}"
 echo "${RED} use: ${YELLOW}systemctl start jane.service${RED} once the${NC}"

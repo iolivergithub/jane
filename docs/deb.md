@@ -26,6 +26,7 @@ The packages are built in `/tmp/janedebbuild`, named by version and architecture
 | `/opt/jane/addjaneuser` | adds Jane users or resets passwords, see [Authentication](authentication.md) |
 | `/etc/opt/jane/config.yaml` | configuration: every option, optional ones commented out, all logins off |
 | `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate - replace them |
+| `/etc/opt/jane/standardintents.json` | a copy of the standard intents matching this version, for loading by hand if downloading them fails |
 | `/etc/systemd/system/jane.service` | runs Jane as the `jane` user |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
@@ -43,14 +44,32 @@ It depends on `adduser` and recommends `python3`, `python3-argon2` and `python3-
 
 The configuration files are dpkg conffiles: an upgrade will not overwrite your changes to them without asking.
 
-## The jane user
+## The jane user and permissions
 
-Jane runs as the unprivileged system user `jane`, created when the package is installed. It owns `/var/log/jane`, and `config.yaml` and `REPLACE_ME.key` are readable by group `jane` (mode 640). Any keys you add, such as a TLS key or a signing key, must be readable by group `jane` too:
+Jane runs as the unprivileged system user `jane`, created when the package is installed. Every install and upgrade sets the ownership and permissions of Jane's files as below: binaries and configuration belong to root so the `jane` user cannot change them, `jane` reads its configuration and keys through its group, and it owns only its log.
+
+| Path | Owner | Mode |
+|---|---|---|
+| `/opt/jane` (directory) | `root:root` | 755 |
+| `/opt/jane/janeserver`, `/opt/jane/addjaneuser` | `root:root` | 755 |
+| `/etc/opt/jane` (directory) | `root:jane` | 750 |
+| `/etc/opt/jane/config.yaml`, `/etc/opt/jane/*.key` | `root:jane` | 640 |
+| `/etc/opt/jane/*.crt`, `/etc/opt/jane/standardintents.json` | `root:jane` | 644 |
+| `/var/log/jane` (directory) | `jane:jane` | 750 |
+| files in `/var/log/jane` | `jane:jane` | 640 |
+| `/etc/systemd/system/jane.service` | `root:root` | 644 |
+
+Any keys you add or replace, such as a TLS key or a signing key, must be readable by group `jane` too:
 
 ```bash
 chown root:jane /etc/opt/jane/mykey.key
 chmod 640 /etc/opt/jane/mykey.key
 ```
+
+Notes:
+- `/opt/jane` and `/etc/opt/jane` are shared with the tarzan package; only Jane's own files are changed. Installing or upgrading tarzan after Jane may set `/etc/opt/jane` back to 755; the files inside stay protected, and the next Jane install or upgrade sets 750 again. `jp` runs as root and is not affected.
+- To read Jane's log as a user other than root, add that user to group `jane`.
+- The `jane` user is not added to the `tss` group: janeserver does not use the TPM.
 
 ## Installation with DEB
 
