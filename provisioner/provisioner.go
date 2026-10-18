@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,7 +68,11 @@ type Provisioner struct {
 	Recreate bool
 
 	IDFile string // where the element's itemid is stored
-	KeyDir string // where tpmprovision writes ek.pub, ak.pub and ak.name
+
+	// LegacyIDFile is the pre-1.5.3 location of the element ID file, which
+	// update and attest migrate to IDFile; "" if there is none (#81).
+	LegacyIDFile string
+	KeyDir       string // where tpmprovision writes ek.pub, ak.pub and ak.name
 
 	In       *bufio.Reader
 	Out      io.Writer
@@ -81,17 +86,18 @@ type Provisioner struct {
 
 func NewProvisioner(p *ProvisioningFile, op string, unsafe bool) *Provisioner {
 	return &Provisioner{
-		P:        p,
-		Client:   NewClient(p.AttestationServer),
-		Op:       op,
-		Unsafe:   unsafe,
-		IDFile:   defaultIDFile(),
-		KeyDir:   os.TempDir(),
-		In:       bufio.NewReader(os.Stdin),
-		Out:      os.Stdout,
-		Now:      time.Now,
-		HostInfo: collectHostInfo,
-		OpenTPM:  openTPMDevice,
+		P:            p,
+		Client:       NewClient(p.AttestationServer),
+		Op:           op,
+		Unsafe:       unsafe,
+		IDFile:       defaultIDFile(),
+		LegacyIDFile: defaultLegacyIDFile(),
+		KeyDir:       os.TempDir(),
+		In:           bufio.NewReader(os.Stdin),
+		Out:          os.Stdout,
+		Now:          time.Now,
+		HostInfo:     collectHostInfo,
+		OpenTPM:      openTPMDevice,
 	}
 }
 
@@ -527,29 +533,119 @@ func (pv *Provisioner) collectTPM2() *TPM2 {
 // Element ID file
 //
 
+// writeID stores the element's itemid, read-only (0444). It writes nothing
+// if the file already holds this ID, so update leaves it alone; otherwise
+// (create, or create --recreate) it replaces it. An existing legacy file is
+// kept in step (#81).
 func (pv *Provisioner) writeID(id string) error {
-	if err := os.MkdirAll(filepath.Dir(pv.IDFile), 0o755); err != nil {
+	if err := writeIDFile(pv.IDFile, id); err != nil {
 		return err
 	}
-	return os.WriteFile(pv.IDFile, []byte(id), 0o644)
+	if pv.LegacyIDFile != "" {
+		if _, err := os.Stat(pv.LegacyIDFile); err == nil {
+			return writeIDFile(pv.LegacyIDFile, id)
+		}
+	}
+	return nil
+}
+
+func writeIDFile(path, id string) error {
+	if b, err := os.ReadFile(path); err == nil {
+		if cur, err := parseID(path, b); err == nil && cur == id {
+			return nil
+		}
+		// read-only: make it writable first (on Windows the read-only
+		// attribute blocks writes even for Administrator)
+		if err := os.Chmod(path, 0o644); err != nil {
+			return err
+		}
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, []byte(id), 0o644); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o444)
+}
+
+// existingIDFile is the element ID file in use: IDFile, or else the legacy
+// one if only that exists, or "" if neither does.
+func (pv *Provisioner) existingIDFile() string {
+	for _, f := range []string{pv.IDFile, pv.LegacyIDFile} {
+		if f == "" {
+			continue
+		}
+		if fi, err := os.Stat(f); err == nil && fi.Mode().IsRegular() {
+			return f
+		}
+	}
+	return ""
 }
 
 func (pv *Provisioner) readID() (string, error) {
-	b, err := os.ReadFile(pv.IDFile)
+	f := pv.existingIDFile()
+	if f == "" {
+		f = pv.IDFile
+	}
+	b, err := os.ReadFile(f)
 	if err != nil {
 		return "", err
 	}
+	return parseID(f, b)
+}
+
+func parseID(path string, b []byte) (string, error) {
 	id, _, _ := strings.Cut(string(b), "\n")
 	id = strings.TrimRight(id, "\r")
 	if id == "" {
-		return "", fmt.Errorf("%s is empty", pv.IDFile)
+		return "", fmt.Errorf("%s is empty", path)
 	}
 	return id, nil
 }
 
 func (pv *Provisioner) idFileExists() bool {
-	fi, err := os.Stat(pv.IDFile)
-	return err == nil && fi.Mode().IsRegular()
+	return pv.existingIDFile() != ""
+}
+
+// migrateIDFile, run by update and attest, copies a legacy element ID file
+// to IDFile if IDFile does not exist yet, and stops if both exist and hold
+// different IDs. The legacy file is not changed (#81).
+func (pv *Provisioner) migrateIDFile() error {
+	if pv.LegacyIDFile == "" {
+		return nil
+	}
+	lb, err := os.ReadFile(pv.LegacyIDFile)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	legacy, err := parseID(pv.LegacyIDFile, lb)
+	if err != nil {
+		return err
+	}
+
+	cb, err := os.ReadFile(pv.IDFile)
+	if errors.Is(err, fs.ErrNotExist) {
+		if err := writeIDFile(pv.IDFile, legacy); err != nil {
+			return err
+		}
+		fmt.Fprintf(pv.Out, "element ID file copied from %s to %s\n", pv.LegacyIDFile, pv.IDFile)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	cur, err := parseID(pv.IDFile, cb)
+	if err != nil {
+		return err
+	}
+	if cur != legacy {
+		return fmt.Errorf("element ID files differ: %s has %s but %s has %s; remove the wrong one", pv.IDFile, cur, pv.LegacyIDFile, legacy)
+	}
+	return nil
 }
 
 //

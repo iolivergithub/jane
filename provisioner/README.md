@@ -24,9 +24,17 @@ the machine ID.
 | | Unix-likes | Windows |
 |---|---|---|
 | TPM | `tpm2.device`, default `/dev/tpmrm0` then `/dev/tpm0` | TPM Base Services |
-| Element ID file | `/etc/janeelementid` | `%ProgramData%\jane\janeelementid` |
+| Element ID file | `/etc/opt/jane/janeelementid` (before 1.5.3: `/etc/janeelementid`, see below) | `%ProgramData%\jane\janeelementid` |
 | Machine ID | `/etc/machine-id`, `/var/lib/dbus/machine-id`, `/etc/hostid`; on BSD/macOS then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
 | Key files | `$TMPDIR` or `/tmp` | `%TEMP%` |
+
+The element ID file is written read-only (`-r--r--r--`) by `create`, and is
+not rewritten by `update` unless the ID changed (only `create --recreate`
+replaces it). Before 1.5.3 it was `/etc/janeelementid`: `update` and `attest`
+copy that file to `/etc/opt/jane/janeelementid` if the new one does not exist
+yet, and stop (exit 1) if both exist with different IDs; the old file is left
+in place. `create` refuses if either exists. This migration will be removed
+in a future release.
 
 ## Operations
 

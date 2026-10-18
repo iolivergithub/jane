@@ -109,6 +109,12 @@ func run(argv []string) int {
 // Run performs the pre-flight checks on the element ID file and then the
 // worklist, or the attestation, returning the process exit code.
 func (pv *Provisioner) Run() int {
+	if pv.Op == "update" || pv.Op == "attest" {
+		if err := pv.migrateIDFile(); err != nil {
+			fmt.Println("Error:", err)
+			return exitError
+		}
+	}
 	exists := pv.idFileExists()
 
 	if (pv.Op == "update" || pv.Op == "attest") && !exists {

@@ -22,7 +22,7 @@ func (pv *Provisioner) createPreflight(idFileExists bool) (code int, stop bool) 
 	var reasons []string
 	if idFileExists {
 		id, _ := pv.readID()
-		reasons = append(reasons, fmt.Sprintf("element ID file %s exists (element %s)", pv.IDFile, orUnknown(id)))
+		reasons = append(reasons, fmt.Sprintf("element ID file %s exists (element %s)", pv.existingIDFile(), orUnknown(id)))
 	}
 
 	regs, err := pv.findRegistrations()

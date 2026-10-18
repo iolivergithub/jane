@@ -192,6 +192,7 @@ func newHarness(t *testing.T, op string) *harness {
 
 	pv := NewProvisioner(p, op, true)
 	pv.IDFile = filepath.Join(t.TempDir(), "janeelementid")
+	pv.LegacyIDFile = filepath.Join(t.TempDir(), "legacy-janeelementid") // never the real /etc
 	pv.Out = io.Discard
 	pv.Now = func() time.Time { return time.Date(2026, 9, 29, 19, 53, 12, 123456000, time.UTC) }
 	pv.KeyDir = t.TempDir()
