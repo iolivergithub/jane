@@ -54,7 +54,8 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 
 	page("claims.html", "pager.html")
 	page("claim.html", "claim_ERROR.html", "claim_ima.html", "claim_quote.html", "claim_tpm2pcrs.html",
-		"claim_efivars.html", "claim_uefieventlog.html", "genericList.html", "resultvalue.html")
+		"claim_efivars.html", "claim_uefieventlog.html", "claim_gettime.html", "claim_tpm2capabilities.html",
+		"genericList.html", "resultvalue.html")
 
 	page("results.html", "resultvalue.html", "pager.html")
 	page("result.html", "resultvalue.html", "genericList.html")

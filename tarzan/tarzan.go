@@ -141,6 +141,8 @@ func setupTPM2endpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/tpm2/quote", tpm2.NewQuote)
 
 	router.POST(PREFIX+"/tpm2/activatecredential", tpm2.ActivateCredential)
+	router.POST(PREFIX+"/tpm2/gettime", tpm2.GetTime)
+	router.POST(PREFIX+"/tpm2/capabilities", tpm2.Capabilities)
 
 	//router.POST(PREFIX+"/tpm2/pcrs", tpm2.PCRs)
 	//router.POST(PREFIX+"/tpm2/quote", tpm2.Quote)

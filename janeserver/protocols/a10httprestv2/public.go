@@ -16,7 +16,7 @@ import (
 const nonceSize int = 24
 
 func Registration() structures.Protocol {
-	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/activatecredential", "uefi/eventlog", "ima/asciilog", "txt/log", "sys/info"}
+	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/gettime", "tpm2/capabilities", "tpm2/activatecredential", "uefi/eventlog", "ima/asciilog", "txt/log", "sys/info"}
 
 	return structures.Protocol{"A10HTTPRESTv2", "HTTP protcol for Go based trust agents", Call, intents}
 }
@@ -68,7 +68,7 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	// always supply which device to use
 
 	// for specific intents for the a10httprestv2
-	if p.Function == "tpm2/pcrs" {
+	if p.Function == "tpm2/pcrs" || p.Function == "tpm2/capabilities" {
 		ips["tpm2/device"] = (e.TPM2).Device
 	}
 
@@ -76,7 +76,7 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		ips["tpm2/device"] = (e.TPM2).Device
 	}
 
-	if p.Function == "tpm2/quote" {
+	if p.Function == "tpm2/quote" || p.Function == "tpm2/gettime" {
 		ips["tpm2/device"] = (e.TPM2).Device
 		ips["tpm2/akhandle"] = (e.TPM2).AK.Handle
 		nce := make([]byte, nonceSize)

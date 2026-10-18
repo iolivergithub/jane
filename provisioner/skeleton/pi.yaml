@@ -86,3 +86,9 @@ evs:
       rules:
         - tpm2_credentialActivated
         - tpm2_akAttributes
+  # TPM clock, reset and restart counters (signed) and the TPM's identity and
+  # configuration (unsigned); no rules yet
+  - std::intent::tpm2::gettime :
+      protocol: tarzan
+  - std::intent::tpm2::capabilities :
+      protocol: tarzan

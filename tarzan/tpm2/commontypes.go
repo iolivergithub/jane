@@ -34,9 +34,34 @@ type quoteStructure struct {
 	Attested        attested  `json:"attested"`
 }
 
+// tpm2quoteReturn is the result of tpm2/quote. Attest (the raw TPMS_ATTEST)
+// and RawSignature (the raw TPMT_SIGNATURE), both base64, are what the
+// signature is verified over (#62).
 type tpm2quoteReturn struct {
-	Quote     quoteStructure `json:"quote"`
-	Signature interface{}    `json:"signature"`
+	Quote        quoteStructure `json:"quote"`
+	Signature    interface{}    `json:"signature"`
+	Attest       string         `json:"attest"`
+	RawSignature string         `json:"rawsignature"`
+}
+
+// timeStructure is the decoded TPMS_ATTEST of TPM2_GetTime (#68); Time is
+// the TPM's time in milliseconds since its time circuit was last reset.
+type timeStructure struct {
+	Magic           string    `json:"magic"`
+	Type            string    `json:"type"`
+	QualifiedSigner string    `json:"qualifiedsigner"`
+	ExtraData       string    `json:"extradata"`
+	ClockInfo       clockInfo `json:"clockinfo"`
+	FirmwareVersion string    `json:"firmwareVersion"`
+	Time            string    `json:"time"`
+}
+
+// tpm2gettimeReturn is the result of tpm2/gettime, shaped like a quote's.
+type tpm2gettimeReturn struct {
+	Time         timeStructure `json:"time"`
+	Signature    interface{}   `json:"signature"`
+	Attest       string        `json:"attest"`
+	RawSignature string        `json:"rawsignature"`
 }
 
 // tpm2activateCredentialReturn is the result of tpm2/activatecredential: the

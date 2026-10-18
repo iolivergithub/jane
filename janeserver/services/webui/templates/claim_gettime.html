@@ -1,0 +1,32 @@
+{{define "claim_gettime.html"}}
+<h5>TPM time</h5>
+<table class="table table-sm table-striped">
+   <tbody>
+      <tr><th>Field</th><th>Reported value</th></tr>
+      <tr><td>Time</td><td>{{ .time.time }} ms since the TPM's time circuit was last reset</td></tr>
+      <tr><td>Clock</td><td>{{ .time.clockinfo.clock }} ms the TPM has been powered (survives reboots)</td></tr>
+      <tr><td>Reset count</td><td>{{ .time.clockinfo.resetcount }}</td></tr>
+      <tr><td>Restart count</td><td>{{ .time.clockinfo.restartcount }}</td></tr>
+      <tr><td>Safe</td><td>
+         {{ if eq (printf "%v" .time.clockinfo.safe) "true" }}<span class="badge bg-success">Safe</span>
+         {{ else }}<span class="badge bg-danger">Unsafe ({{ .time.clockinfo.safe }})</span>{{ end }}
+      </td></tr>
+      <tr><td>Firmware</td><td class="font-monospace">{{ .time.firmwareVersion }}</td></tr>
+      <tr><td>Magic</td><td class="font-monospace">{{ .time.magic }} (default value is <i>ff544347</i>)</td></tr>
+      <tr><td>Type</td><td class="font-monospace">{{ .time.type }} (a time attestation is <i>8019</i>)</td></tr>
+      <tr><td>Qualifying data (nonce)</td><td class="font-monospace j-wrap">{{ .time.extradata }}</td></tr>
+      <tr><td>Qualified signer</td><td class="font-monospace j-wrap">{{ .time.qualifiedsigner }}</td></tr>
+   </tbody>
+</table>
+
+<details>
+   <summary class="small text-body-secondary">Signature and raw attestation</summary>
+   <table class="table table-sm mb-0">
+      <tbody>
+         <tr><td>Attestation (TPMS_ATTEST, base64)</td><td class="font-monospace small j-wrap">{{ .attest }}</td></tr>
+         <tr><td>Signature (TPMT_SIGNATURE, base64)</td><td class="font-monospace small j-wrap">{{ .rawsignature }}</td></tr>
+         <tr><td>Signature</td><td>{{ template "genericList.html" .signature }}</td></tr>
+      </tbody>
+   </table>
+</details>
+{{end}}
