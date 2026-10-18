@@ -1,11 +1,11 @@
 package webui
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -28,7 +28,6 @@ func newOpaqueObject(c echo.Context) error {
 }
 
 func processOpaqueObject(c echo.Context) error {
-	fmt.Println("\nProcessing New Opaque Object")
 	value := c.FormValue("value")
 	otype := c.FormValue("type")
 	shortdescription := c.FormValue("shortdescription")
@@ -36,8 +35,9 @@ func processOpaqueObject(c echo.Context) error {
 
 	var newoo = structures.OpaqueObject{value, otype, shortdescription, longdescription}
 
-	eid, err := operations.AddOpaqueObject(newoo)
-	fmt.Printf("  eid=%v,err=%v\n", eid, err)
+	if _, err := operations.AddOpaqueObject(newoo); err != nil {
+		logging.MakeLogEntry("UI", "add", value, "object", "adding the opaque object failed: "+err.Error())
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/opaqueobjects")
 }

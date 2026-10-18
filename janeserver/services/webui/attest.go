@@ -2,12 +2,12 @@ package webui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -49,19 +49,15 @@ type multipleresultsummary struct {
 func processAttest(c echo.Context) error {
 	var attreq attestrequest
 
-	//fmt.Printf("\n processAttest\n")
-
 	err := c.Bind(&attreq)
 	if err != nil {
-		fmt.Printf("Error in binding %v", err.Error())
+		logging.MakeLogEntry("UI", "attest", "", "form", "attest form could not be read: "+err.Error())
 	}
 
 	// split the EidEpn into its constituent parts
 
 	eid := strings.Split(attreq.EidEpn, ",")[0]
 	epn := strings.Split(attreq.EidEpn, ",")[1]
-
-	//fmt.Printf(" eid, epn: %v %v \n ", eid, epn)
 
 	// Get the objects
 	e, _ := operations.GetElementByItemID(eid)
@@ -76,7 +72,7 @@ func processAttest(c echo.Context) error {
 	aps := make(map[string]interface{})
 	if strings.TrimSpace(attreq.Pps) != "" {
 		if err := json.Unmarshal([]byte(attreq.Pps), &aps); err != nil {
-			fmt.Printf("Intent parameters are not a JSON object: %v\n", err.Error())
+			logging.MakeLogEntry("UI", "attest", "", "form", "intent parameters are not a JSON object: "+err.Error())
 			_ = operations.CloseSession(sid)
 			return c.Redirect(http.StatusSeeOther, "/attest")
 		}
@@ -84,7 +80,7 @@ func processAttest(c echo.Context) error {
 	rps := make(map[string]interface{})
 	if attreq.Av != "AO" && strings.TrimSpace(attreq.Rps) != "" {
 		if err := json.Unmarshal([]byte(attreq.Rps), &rps); err != nil {
-			fmt.Printf("Rule parameters are not a JSON object: %v\n", err.Error())
+			logging.MakeLogEntry("UI", "attest", "", "form", "rule parameters are not a JSON object: "+err.Error())
 			_ = operations.CloseSession(sid)
 			return c.Redirect(http.StatusSeeOther, "/attest")
 		}
@@ -101,8 +97,6 @@ func processAttest(c echo.Context) error {
 	}
 
 	//
-
-	//fmt.Printf("return after attests %v %v\n", err, cid)
 
 	//Check if we are attesting only
 	// if so, close the session and redirect to the claim page
@@ -123,10 +117,8 @@ func processAttest(c echo.Context) error {
 
 	for _, rn := range attreq.Rn {
 		r, _ := operations.GetRule(rn)
-		//fmt.Printf("** verify %v\n", r)
 
 		operations.Verify(cl, r, s, rps)
-		//fmt.Printf("results of verify %v - %v - %v\n", err, rv, rid)
 
 	}
 	// end of parallelism

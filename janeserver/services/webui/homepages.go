@@ -1,7 +1,6 @@
 package webui
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -73,8 +72,6 @@ func homepage(c echo.Context) error {
 	hps.Info = sysInfo
 	hps.Auth = auth.CurrentStatus()
 	hps.Signing = signing.CurrentStatus()
-
-	fmt.Printf("hps is %v\n", hps)
 
 	return c.Render(http.StatusOK, "home.html", hps)
 }

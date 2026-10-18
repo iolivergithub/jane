@@ -2,11 +2,11 @@ package webui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -45,13 +45,13 @@ func processNewIntent(c echo.Context) error {
 	err := json.Unmarshal([]byte(elemdata), &newIntent)
 
 	if err != nil {
-		fmt.Printf("error is %v\n", err.Error())
+		logging.MakeLogEntry("UI", "add", "", "intent", "new intent is not valid JSON: "+err.Error())
 		return c.Redirect(http.StatusSeeOther, "/new/intent")
 	}
 
-	fmt.Printf("  fv%v\n", newIntent)
-	eid, err := operations.AddIntent(newIntent)
-	fmt.Printf("  eid=%v,err=%v\n", eid, err)
+	if _, err := operations.AddIntent(newIntent); err != nil {
+		logging.MakeLogEntry("UI", "add", "", "intent", "adding the intent failed: "+err.Error())
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/intents")
 }
