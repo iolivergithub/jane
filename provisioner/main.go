@@ -94,6 +94,10 @@ func run(argv []string) int {
 	p, err := loadProvisioningFile(pfile)
 	if err != nil {
 		fmt.Println("Error processing", pfile+":", err)
+		var verr *VarError
+		if errors.As(err, &verr) {
+			return exitUsage
+		}
 		return exitError
 	}
 

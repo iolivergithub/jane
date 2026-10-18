@@ -19,8 +19,7 @@ provisionworklist:
   - collectima
   - makebetterdescription
   - processelement
-#  - processevs
-  - processevs_withrules
+  - processevs
 
 evs:
   - std::intent::sys::info :

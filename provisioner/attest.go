@@ -10,7 +10,7 @@ import (
 const (
 	exitOK       = 0 // done; for attest, every rule passed
 	exitError    = 1 // setup, server or TPM error
-	exitUsage    = 2 // bad command line
+	exitUsage    = 2 // bad command line, or a mistake in the provisioning file's variables
 	exitNotTrust = 3 // attest: a rule did not pass or an intent could not be attested
 )
 
@@ -24,13 +24,54 @@ type IntentOutcome struct {
 
 type RuleOutcome struct {
 	Rule   string
-	Result *VerifyResult
+	Result *VerifyResult // nil if the rule was not run
+	NotRun string        // why the rule was not run
+}
+
+// Passed reports whether the rule ran and succeeded.
+func (ro RuleOutcome) Passed() bool { return ro.Result != nil && ro.Result.Passed() }
+
+// Var is a variable set during an attest run (#72): Kind is cid, rid or resvar.
+type Var struct {
+	Name, Kind, Value string
 }
 
 // AttestReport is the outcome of an attest run.
 type AttestReport struct {
 	ElementID, SessionID string
 	Intents              []IntentOutcome
+	Vars                 []Var // in the order they were set
+}
+
+// setVar records a variable, ignoring an empty name (not requested).
+func (r *AttestReport) setVar(vars map[string]string, name, kind, value string) {
+	if name == "" {
+		return
+	}
+	vars[name] = value
+	r.Vars = append(r.Vars, Var{name, kind, value})
+}
+
+// substitute returns params with every value that is exactly "$name"
+// replaced by that variable, or the name of a variable that has no value
+// because the step that sets it failed.
+func substitute(params map[string]any, vars map[string]string) (map[string]any, string) {
+	if len(params) == 0 {
+		return nil, ""
+	}
+	out := make(map[string]any, len(params))
+	for k, v := range params {
+		if name, ok := varRef(v); ok {
+			val, set := vars[name]
+			if !set || val == "" {
+				return nil, name
+			}
+			out[k] = val
+			continue
+		}
+		out[k] = v
+	}
+	return out, ""
 }
 
 // Counts returns the number of rules passed and failed, and the number of
@@ -41,7 +82,7 @@ func (r *AttestReport) Counts() (passed, failed, intentErrors int) {
 			intentErrors++
 		}
 		for _, ro := range in.Rules {
-			if ro.Result.Passed() {
+			if ro.Passed() {
 				passed++
 			} else {
 				failed++
@@ -86,6 +127,7 @@ func (pv *Provisioner) Attest() (report *AttestReport, err error) {
 	}()
 
 	var srvErr *ServerError
+	vars := map[string]string{}
 	for _, ev := range pv.P.EVS {
 		in := IntentOutcome{IntentID: ev.IntentID, Endpoint: ev.Spec.Protocol}
 		fmt.Fprintln(pv.Out, "attesting", ev.IntentID, "on", ev.Spec.Protocol)
@@ -93,6 +135,7 @@ func (pv *Provisioner) Attest() (report *AttestReport, err error) {
 		cid, err := pv.Client.Attest(eid, in.IntentID, in.Endpoint, sid)
 		if err == nil {
 			in.ClaimID = cid
+			report.setVar(vars, ev.Spec.CID, "cid", cid)
 			// The claim is fetched to check the attestation produced one;
 			// its content is judged by the rules.
 			_, err = pv.Client.GetClaim(cid)
@@ -107,11 +150,22 @@ func (pv *Provisioner) Attest() (report *AttestReport, err error) {
 		}
 
 		for _, rule := range ev.Spec.Rules {
-			v, err := pv.Client.Verify(cid, sid, rule)
-			if err != nil {
-				return report, fmt.Errorf("rule %s: %w", rule, err)
+			params, unset := substitute(rule.Parameters, vars)
+			if unset != "" {
+				in.Rules = append(in.Rules, RuleOutcome{Rule: rule.Name, NotRun: "$" + unset + " has no value (its step failed)"})
+				continue
 			}
-			in.Rules = append(in.Rules, RuleOutcome{Rule: rule, Result: v})
+			v, err := pv.Client.Verify(cid, sid, rule.Name, params)
+			if err != nil {
+				return report, fmt.Errorf("rule %s: %w", rule.Name, err)
+			}
+			in.Rules = append(in.Rules, RuleOutcome{Rule: rule.Name, Result: v})
+			report.setVar(vars, rule.RID, "rid", v.ResultID)
+			code := v.Describe()
+			if v.Result != nil {
+				code = ResultName(*v.Result)
+			}
+			report.setVar(vars, rule.ResVar, "resvar", code)
 		}
 		report.Intents = append(report.Intents, in)
 	}
@@ -138,11 +192,20 @@ func (r *AttestReport) Print(pv *Provisioner) {
 			fmt.Fprintln(w, "    -      no rules listed; claim collected only")
 		}
 		for _, ro := range in.Rules {
-			if ro.Result.Passed() {
+			if ro.NotRun != "" {
+				fmt.Fprintf(w, "    NOTRUN %s: %s\n", ro.Rule, ro.NotRun)
+			} else if ro.Passed() {
 				fmt.Fprintf(w, "    PASS   %s\n", ro.Rule)
 			} else {
 				fmt.Fprintf(w, "    FAIL   %s: %s\n", ro.Rule, ro.Result.Describe())
 			}
+		}
+	}
+	if len(r.Vars) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "  %-20s | %-6s | %s\n", "var", "kind", "value")
+		for _, v := range r.Vars {
+			fmt.Fprintf(w, "  %-20s | %-6s | %s\n", v.Name, v.Kind, v.Value)
 		}
 	}
 	passed, failed, errs := r.Counts()

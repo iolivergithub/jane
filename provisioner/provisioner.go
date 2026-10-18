@@ -167,10 +167,15 @@ func (pv *Provisioner) ProcessWorklist() (*Element, error) {
 				return e, err
 			}
 		case "processevs", "processevs_withrules":
+			// Rules are only run by jp attest (#72); processevs_withrules is a
+			// deprecated alias, to be removed (#81).
+			if w == "processevs_withrules" {
+				fmt.Fprintln(pv.Out, "processevs_withrules: deprecated, using processevs")
+			}
 			if eid == "" {
 				return e, fmt.Errorf("%s needs an element ID: put processelement before it in the worklist", w)
 			}
-			if err := pv.processEVs(eid, w == "processevs_withrules"); err != nil {
+			if err := pv.processEVs(eid); err != nil {
 				return e, fmt.Errorf("%s: %w", w, err)
 			}
 		default:
@@ -205,10 +210,13 @@ func (pv *Provisioner) processElement(e *Element) (string, error) {
 }
 
 //
-// Expected values and rules
+// Expected values
 //
 
-func (pv *Provisioner) processEVs(eid string, runRules bool) (err error) {
+// processEVs attests every intent in the evs list, in one session, and
+// records an expected value for each entry with a type. It runs no rules:
+// that is jp attest's job.
+func (pv *Provisioner) processEVs(eid string) (err error) {
 	sid, err := pv.Client.OpenSession("Provisioning Session")
 	if err != nil {
 		return err
@@ -238,15 +246,6 @@ func (pv *Provisioner) processEVs(eid string, runRules bool) (err error) {
 			}
 		}
 
-		if runRules {
-			for _, r := range ev.Spec.Rules {
-				v, err := pv.Client.Verify(cid, sid, r)
-				if err != nil {
-					return fmt.Errorf("rule %s: %w", r, err)
-				}
-				fmt.Fprintln(pv.Out, "  ... ... ", r, "...", v.Describe())
-			}
-		}
 	}
 	return nil
 }
