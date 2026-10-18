@@ -15,7 +15,7 @@ endpoints:
       endpoint: http://debianwork.local:8530
       protocol: A10HTTPRESTv2
   ratds:
-      endpoint: http://debianwork.local:8531
+      endpoint: http://debianwork.local:8895
       protocol: RATSD      
 tpm2:
   device:   /dev/tpmrm0   
