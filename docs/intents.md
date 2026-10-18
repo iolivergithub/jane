@@ -50,8 +50,6 @@ The file https://github.com/iolivergithub/jane/blob/main/etc/standardintents/sta
 
 Jane contains a function in the UI to reload these on demand, hence the use of the standard itemid. The file is loaded from the above source.
 
-The file https://github.com/iolivergithub/jane/blob/main/etc/standardintents/standardintents.sha256 contains the hash of the standard intents. The value in this file should be `e02bb3a7f75e9fd4bdc826a089d23f6d1aaadda38640a409256d0c1459231582`
-
 This file might be loaded into mongodb like so, replace `DB` with the name of the attestation database in use (see: https://www.mongodb.com/docs/database-tools/installation/installation-linux/)
 
 ```bash
