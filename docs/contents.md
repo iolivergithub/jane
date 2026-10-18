@@ -12,7 +12,6 @@ How to do things manually...
 
 How to do things with Docker and other things...
 
-   * [Building and Running with Docker](docker.md)
    * [Building and Installing with DEB and RPM](deb.md)
 
 How do I get started?

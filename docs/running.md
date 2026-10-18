@@ -11,7 +11,7 @@
 
 Janeserver requires a configuration file and optionally keys for the https certs. We've supplied a temporary key in the dist folder...don't use these unless you're crazy. We also like triggering github to give us private key warnings because we've stored them there. Browsers will complain unless your certs a signed by a suitable authority, eg: LetsTrust.
 
-NOTE: this document only deals with running things natively, if you want [docker.md](docker) instructions please go to that section.
+NOTE: this document only deals with running things natively. Docker support has been removed for now (1.5.3) and will return in a future release.
 
 An example configuration file with explanation is given below. Store this in some known place, eg: /etc
 
@@ -162,7 +162,7 @@ git checkout standalone-validation
 cd docker/release
 ./build_locally.sh
 ```
-After this JANE can be used with the included docker-compose.yml file. See [docker.md](docker) for more information on this.
+Jane's own `docker-compose.yml` was removed in 1.5.3 (Docker support returns in a future release); run the Keylime container alongside a natively installed Jane.
 
 To include Keylime access add the following section to the `config.yaml` file:
 
