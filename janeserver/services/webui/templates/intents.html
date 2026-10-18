@@ -7,6 +7,10 @@
    <a href="/loadstandardintents" class="btn btn-sm btn-outline-primary"><i class="fa fa-refresh me-1"></i>Load standard intents</a>
 </div>
 
+<div id="stdIntentsFailed" class="alert alert-danger d-none" role="alert">
+   <i class="fa fa-exclamation-triangle me-1"></i>Loading the standard intents failed, see log.
+</div>
+
 {{ if . }}
 <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-4 g-2">
    {{ range . }}
@@ -21,6 +25,11 @@
 {{ end }}
 
 <script>
+(function () {
+   if (new URLSearchParams(window.location.search).get('stdintents') === 'failed') {
+      document.getElementById('stdIntentsFailed').classList.remove('d-none');
+   }
+})();
 (function () {
    var input = document.getElementById('cardFilter');
    var items = Array.prototype.slice.call(document.querySelectorAll('.j-filterable'));
