@@ -27,6 +27,8 @@ The functions are provided by the protocols, a list of specific protocols and fu
 | tpm2/pcrs | Requests the list of PCRs from a TPM 2.0 device | tpm2/device |
 | tpm2/quote | Requets a quote from a TPM 2.0 | tpm2/device, pcrSelection, bank |
 | tpm2/activatecredential | Checks the AK is in the same TPM as the EK (make/activate credential) | tpm2/device, tpm2/akhandle, tpm2/ekhandle, tpm2/akpublic, tpm2/ekpublic |
+| tpm2/gettime | The TPM's clock, reset and restart counters, signed by the AK (TPM2_GetTime) | tpm2/device, tpm2/akhandle, tpm2/nonce |
+| tpm2/capabilities | The TPM's identity and configuration (TPM2_GetCapability), unsigned | tpm2/device |
 | uefi/eventlog | | uefi/eventlog |
 | ima/asciilog | | ima/ASCIIlog| 
 | txt/log | | |

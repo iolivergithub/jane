@@ -2,12 +2,12 @@ package webui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sort"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -61,7 +61,6 @@ func latestSessions(rs []structures.Result, n int) []sessionResults {
 
 func showElements(c echo.Context) error {
 	es, _ := operations.GetElementsAll()
-	fmt.Printf("remdering element %v\n", len(es))
 
 	cards := make([]elementCard, len(es))
 	for i, e := range es {
@@ -75,12 +74,8 @@ func showElements(c echo.Context) error {
 func showElement(c echo.Context) error {
 	e, _ := operations.GetElementByItemID(c.Param("itemid"))
 
-	fmt.Printf(" cparam is %v and e.ItemId is %v\n", c.Param("itemid"), e.ItemID)
-
 	cs, _ := operations.GetClaimsByElementID(e.ItemID, elementClaimsFetched)
 	rs, _ := operations.GetResultsByElementID(e.ItemID, elementResultsFetched)
-
-	fmt.Printf("showElement %v\n", c.Param("itemid"))
 
 	page := buildElementPage(e, cs, rs, func(id string) (structures.Session, bool) {
 		s, err := operations.GetSessionByItemID(id)
@@ -91,28 +86,24 @@ func showElement(c echo.Context) error {
 }
 
 func newElement(c echo.Context) error {
-	fmt.Println("ELEMTEMPLATE is ", elementtemplate())
-
 	return c.Render(http.StatusOK, "editelement.html", elementtemplate())
 }
 
 func processNewElement(c echo.Context) error {
-	fmt.Println("\nProcessing New Element")
 	elemdata := c.FormValue("elementdata")
-	fmt.Println("ELEMDATA is ", elemdata)
 
 	var newelem structures.Element
 
 	err := json.Unmarshal([]byte(elemdata), &newelem)
 
 	if err != nil {
-		fmt.Printf("error is %v\n", err.Error())
+		logging.MakeLogEntry("UI", "add", "", "element", "new element is not valid JSON: "+err.Error())
 		return c.Redirect(http.StatusSeeOther, "/new/element")
 	}
 
-	fmt.Printf("  fv%v\n", newelem)
-	eid, err := operations.AddElement(newelem)
-	fmt.Printf("  eid=%v,err=%v\n", eid, err)
+	if _, err := operations.AddElement(newelem); err != nil {
+		logging.MakeLogEntry("UI", "add", "", "element", "adding the element failed: "+err.Error())
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/elements")
 }

@@ -2,13 +2,13 @@ package webui
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -72,7 +72,6 @@ func newExpectedValue(c echo.Context) error {
 }
 
 func processNewExpectedValue(c echo.Context) error {
-	fmt.Println("\nProcessing New Element")
 	itemid := c.FormValue("itemid")
 	name := c.FormValue("name")
 	description := c.FormValue("description")
@@ -87,15 +86,15 @@ func processNewExpectedValue(c echo.Context) error {
 	var evsparams map[string]interface{}
 	err := json.Unmarshal([]byte(evsparameters), &evsparams)
 	if err != nil {
-		fmt.Printf("error is %v\n", err.Error())
+		logging.MakeLogEntry("UI", "add", "", "expectedvalue", "expected value parameters are not valid JSON: "+err.Error())
 		return c.Redirect(http.StatusSeeOther, "/new/expectedvalue")
 	}
 
 	var newev = structures.ExpectedValue{itemid, name, description, theelement, endpointname, intentselect, evsparams, structures.RecordHistory{}}
 
-	fmt.Printf("  fv%v\n", newev)
-	eid, err := operations.AddExpectedValue(newev)
-	fmt.Printf("  eid=%v,err=%v\n", eid, err)
+	if _, err := operations.AddExpectedValue(newev); err != nil {
+		logging.MakeLogEntry("UI", "add", "", "expectedvalue", "adding the expected value failed: "+err.Error())
+	}
 
 	return c.Redirect(http.StatusSeeOther, "/expectedvalues")
 }

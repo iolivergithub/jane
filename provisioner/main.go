@@ -94,6 +94,10 @@ func run(argv []string) int {
 	p, err := loadProvisioningFile(pfile)
 	if err != nil {
 		fmt.Println("Error processing", pfile+":", err)
+		var verr *VarError
+		if errors.As(err, &verr) {
+			return exitUsage
+		}
 		return exitError
 	}
 
@@ -105,6 +109,12 @@ func run(argv []string) int {
 // Run performs the pre-flight checks on the element ID file and then the
 // worklist, or the attestation, returning the process exit code.
 func (pv *Provisioner) Run() int {
+	if pv.Op == "update" || pv.Op == "attest" {
+		if err := pv.migrateIDFile(); err != nil {
+			fmt.Println("Error:", err)
+			return exitError
+		}
+	}
 	exists := pv.idFileExists()
 
 	if (pv.Op == "update" || pv.Op == "attest") && !exists {

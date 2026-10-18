@@ -1,81 +1,66 @@
 package webui
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-
-	//"crypto/sha256"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
 
 const STDINTENTSURL = "https://raw.githubusercontent.com/iolivergithub/jane/refs/heads/main/etc/standardintents/standardintents.json"
-const STDINTENTSSHA256 = "https://raw.githubusercontent.com/iolivergithub/jane/refs/heads/main/etc/standardintents/standardintents.sha256"
 
+// stdIntentsTimeout bounds the download so the button cannot hang.
+const stdIntentsTimeout = 15 * time.Second
+
+// loadstandardintents downloads the standard intents and adds or updates
+// them. A failure (network or TLS error, HTTP status, bad JSON, empty list)
+// is written to Jane's log and reported on the intents page. A copy matching
+// the installed version is in /etc/opt/jane/standardintents.json for loading
+// by hand (#67).
 func loadstandardintents(c echo.Context) error {
 	var intentfilestruct []structures.Intent
 
-	stdintents, errints := getfile(STDINTENTSURL)
-	//stdsha256, err256  := getfile( STDINTENTSSHA256 )
-
-	if errints != nil {
-		fmt.Printf("Loading error: I=%v  \n", errints.Error())
-		return c.Redirect(http.StatusSeeOther, "/intents")
+	stdintents, err := getfile(STDINTENTSURL)
+	if err == nil {
+		err = json.Unmarshal(stdintents, &intentfilestruct)
+		if err != nil {
+			err = fmt.Errorf("parsing JSON: %w", err)
+		} else if len(intentfilestruct) == 0 {
+			err = fmt.Errorf("the file contains no intents")
+		}
 	}
-
-	// now parse the JSON string of the intents into a struct
-
-	errjson := json.Unmarshal(stdintents, &intentfilestruct)
-	if errjson != nil {
-		fmt.Printf("error unmarshalling JSON %v\n", errjson.Error())
+	if err != nil {
+		logging.MakeLogEntry("IM", "loadstd", "", "stdintent", "loading standard intents from "+STDINTENTSURL+" failed: "+err.Error())
+		return c.Redirect(http.StatusSeeOther, "/intents?stdintents=failed")
 	}
 
 	for _, e := range intentfilestruct {
 		operations.AddStandardIntent(e)
 	}
+	logging.MakeLogEntry("IM", "loadstd", "", "stdintent", fmt.Sprintf("loaded %d standard intents from %s", len(intentfilestruct), STDINTENTSURL))
 
 	return c.Redirect(http.StatusSeeOther, "/intents")
-
 }
 
+// getfile fetches url with normal TLS certificate verification and returns
+// the body of a 200 response.
 func getfile(url string) ([]byte, error) {
-
-	// The get to the https URL is broken due to x509 certs being old...maybe a Linux issue, maybe a Windows issue
-	// maybe a Github issue...anyway...maybe this solves it
-	// Yes, I know this is a security hole.
-	//
-	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
-
-	// this was the original line:
-	// resp, err := http.Get(url)
-	// now replaced with...
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Timeout: stdIntentsTimeout}
 	resp, err := client.Get(url)
-
-	// and back to the original code here
 	if err != nil {
-		fmt.Printf("getting std intents failed: %v \n ", err.Error())
-		return []byte{}, err
+		return nil, err
 	}
-
-	fmt.Println("Received a response")
-
-	respbody, err2 := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
-	if err2 != nil {
-		return []byte{}, err2
-	} else {
-		return respbody, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
 	}
+	return io.ReadAll(resp.Body)
 }

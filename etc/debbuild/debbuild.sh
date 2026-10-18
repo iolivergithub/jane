@@ -89,6 +89,9 @@ cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
 cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
 cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
 
+# Backup copy of the standard intents matching this version (#67)
+cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintents.json
+
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
 cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example

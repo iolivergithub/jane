@@ -1,4 +1,5 @@
 /etc/opt/jane/config.yaml
 /etc/opt/jane/REPLACE_ME.key
 /etc/opt/jane/REPLACE_ME.crt
+/etc/opt/jane/standardintents.json
 /etc/systemd/system/jane.service

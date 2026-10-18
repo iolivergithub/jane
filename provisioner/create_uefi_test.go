@@ -324,7 +324,7 @@ func TestSkeletonUEFIRulesMatchVariables(t *testing.T) {
 		var rules []string
 		for _, ev := range p.EVS {
 			if ev.Spec.Type == "uefiefivars" {
-				rules = ev.Spec.Rules
+				rules = ev.Spec.RuleNames()
 			}
 		}
 		if len(rules) != len(uefiRuleVariables) {

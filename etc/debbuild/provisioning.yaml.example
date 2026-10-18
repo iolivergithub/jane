@@ -51,8 +51,7 @@ provisionworklist:
   - collectima
   - makebetterdescription
   - processelement
-#  - processevs
-  - processevs_withrules
+  - processevs
 
 evs:
   - std::intent::sys::info :
@@ -62,6 +61,20 @@ evs:
         - sys_taRunningSafely  
         - sys_machineID_Agent 
         - sys_machineID_CrossRef 
+  # the event log and the PCRs, collected before the quotes, so that the
+  # rules can check event log -> PCRs -> quote (cid names a claim's itemid,
+  # $name passes it to a rule; see the provisioner README)
+  - std::intent::uefi::eventlog :
+      protocol: tarzan
+      cid: uefilog
+  - std::intent::tpm::pcrs :
+      protocol: tarzan
+      cid: pcrs
+      rules:
+        - tpm2_uefiLogReplay:
+            rid: r_uefilog
+            resvar: r_uefilog_code
+            parameters: { "uefilogcid": $uefilog }
   - std::intent::sha256::crtm::pcr0 :
       protocol: tarzan
       type: tpm2quote      
@@ -71,6 +84,8 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce 
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::firmware :
       protocol: tarzan
       type: tpm2quote
@@ -80,6 +95,8 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::bootloaderonly  :
       protocol: tarzan
       type: tpm2quote
@@ -89,15 +106,21 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::linux::ima::asciilog :
       protocol: tarzan
-  - std::intent::tpm::pcrs :
-      protocol: tarzan  
   - std::intent::tpm2::activatecredential :
       protocol: tarzan
       rules:
         - tpm2_credentialActivated
         - tpm2_akAttributes
+  # TPM clock, reset and restart counters (signed) and the TPM's identity and
+  # configuration (unsigned); no rules yet
+  - std::intent::tpm2::gettime :
+      protocol: tarzan
+  - std::intent::tpm2::capabilities :
+      protocol: tarzan
   - std::intent::uefi::efivars :
       protocol: tarzan
       type: uefiefivars

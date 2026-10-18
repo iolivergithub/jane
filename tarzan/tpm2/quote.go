@@ -170,5 +170,10 @@ func NewQuote(c echo.Context) error {
 	}
 	fmt.Printf("QSTR is %v\n", qstr)
 
-	return c.JSON(http.StatusOK, tpm2quoteReturn{qstr, signaturepart})
+	return c.JSON(http.StatusOK, tpm2quoteReturn{
+		Quote:        qstr,
+		Signature:    signaturepart,
+		Attest:       base64.StdEncoding.EncodeToString(quotepart.Bytes()),
+		RawSignature: base64.StdEncoding.EncodeToString(tpm2.Marshal(signaturepart)),
+	})
 }

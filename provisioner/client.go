@@ -205,9 +205,10 @@ func (c *Client) GetClaim(cid string) (*Claim, error) {
 }
 
 type verifyRequest struct {
-	CID  string `json:"cid"`
-	SID  string `json:"sid"`
-	Rule string `json:"rule"`
+	CID        string         `json:"cid"`
+	SID        string         `json:"sid"`
+	Rule       string         `json:"rule"`
+	Parameters map[string]any `json:"parameters,omitempty"`
 }
 
 // Result codes from janeserver's structures.ResultValue.
@@ -268,8 +269,8 @@ func (v *VerifyResult) Describe() string {
 // Verify runs rule against claim cid. A rule that fails, or that the server
 // could not run, is reported in the VerifyResult; an error is returned only if
 // the server could not be reached.
-func (c *Client) Verify(cid, sid, rule string) (*VerifyResult, error) {
-	status, rb, err := c.do(http.MethodPost, "/verify", verifyRequest{CID: cid, SID: sid, Rule: rule})
+func (c *Client) Verify(cid, sid, rule string, params map[string]any) (*VerifyResult, error) {
+	status, rb, err := c.do(http.MethodPost, "/verify", verifyRequest{CID: cid, SID: sid, Rule: rule, Parameters: params})
 	if err != nil {
 		return nil, err
 	}

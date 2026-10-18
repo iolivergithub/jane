@@ -163,6 +163,18 @@
             <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>TPM device on the target, from the element's <code>tpm2.device</code>, e.g. <code>"/dev/tpmrm0"</code>.</td></tr>
 
+            <tr class="fn-row"><th colspan="4">tpm2/gettime <span class="fn-note">&mdash; signed TPM clock, reset and restart counters (no PCRs)</span></th></tr>
+            <tr><td><code>tpm2/nonce</code></td><td>string, base64</td><td><span class="badge text-bg-secondary src">JANE</span></td>
+                <td>Fresh nonce, used as the qualifying data, as for a quote.</td></tr>
+            <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>Handle of the attestation key that signs the time, from the element's <code>tpm2.ak.handle</code>. The endorsement hierarchy is authorised with the empty password.</td></tr>
+            <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>TPM device, as above.</td></tr>
+
+            <tr class="fn-row"><th colspan="4">tpm2/capabilities <span class="fn-note">&mdash; the TPM's identity and configuration (unsigned)</span></th></tr>
+            <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
+                <td>TPM device, as above.</td></tr>
+
             <tr class="fn-row"><th colspan="4">tpm2/activatecredential <span class="fn-note">&mdash; checks the AK is in the same TPM as the EK (make/activate credential)</span></th></tr>
             <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>Handle of the attestation key, from the element's <code>tpm2.ak.handle</code>.</td></tr>
@@ -274,7 +286,8 @@
       <p class="mb-2">Each selected rule is run against the claim just collected, and the <i>Rule Parameters</i> object is given to every one of them.
       Rules are ignored when <i>Attest Only</i> is chosen.</p>
       <p class="mb-0">Most rules take <b>no</b> rule parameters: they read what they need from the claim, from the element, or from an
-      <a href="/expectedvalues">expected value</a>. Only the Keylime rules use rule parameters.</p>
+      <a href="/expectedvalues">expected value</a>. Rules that check one claim against another take that claim's itemid as a rule parameter,
+      e.g. <code>{ "pcrscid": "&lt;itemid of a tpm2/pcrs claim&gt;" }</code>.</p>
    </div>
    <div class="col-lg-5 small">
       <div class="mb-1"><b>Before you verify:</b></div>
@@ -310,6 +323,13 @@
                 <td>The SHA-256 of the secret the TPM recovered equals <code>tpm2/credentialsecrethash</code> in the call parameters, i.e. the AK and EK are in the same TPM.</td></tr>
             <tr><td><code>tpm2_akAttributes</code></td><td><code>tpm2/activatecredential</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
                 <td>The AK the credential was made for (<code>tpm2/akpublic</code>) is a restricted signing key that cannot decrypt and is <i>fixedTPM</i>, <i>fixedParent</i> and <i>sensitiveDataOrigin</i>.</td></tr>
+            <tr><td><code>tpm2_pcrDigest</code></td><td><code>tpm2/quote</code></td><td class="text-body-secondary">&ndash;</td><td><code>pcrscid</code></td>
+                <td>The PCR values in the <code>tpm2/pcrs</code> claim named by <code>pcrscid</code> (same element), concatenated in ascending index order for the
+                quote's bank and selection and hashed with SHA-256, equal the quote's attested value. Ties the unsigned PCRs claim to the signed quote. Collect both in
+                the same session: a PCR extended in between (e.g. PCR 10 with IMA) gives a mismatch.</td></tr>
+            <tr><td><code>tpm2_uefiLogReplay</code></td><td><code>tpm2/pcrs</code></td><td class="text-body-secondary">&ndash;</td><td><code>uefilogcid</code></td>
+                <td>Replaying the UEFI event log in the <code>uefi/eventlog</code> claim named by <code>uefilogcid</code> (same element) gives this claim's values for
+                every PCR the log extends, per bank; a bank in only one of the two is skipped. With <code>tpm2_pcrDigest</code> this gives the chain event log &rarr; PCRs &rarr; quote.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">System</th></tr>
             <tr><td><code>sys_taRunningSafely</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>

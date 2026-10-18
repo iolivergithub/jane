@@ -1,0 +1,49 @@
+{{define "claim_tpm2capabilities.html"}}
+<p class="small text-body-secondary mb-2">Reported by the TPM and not signed: this describes the TPM rather than proving anything about it.</p>
+
+<h5>Identity</h5>
+<table class="table table-sm table-striped">
+   <tbody>
+      <tr><td>Manufacturer</td><td class="font-monospace">{{ .summary.manufacturer }}</td></tr>
+      <tr><td>Vendor string</td><td class="font-monospace">{{ .summary.vendorstring }}</td></tr>
+      <tr><td>Firmware version</td><td class="font-monospace">{{ .summary.firmwareversion }}</td></tr>
+      <tr><td>Specification</td><td>family {{ .summary.family }}, level {{ .summary.level }}, revision {{ .summary.revision }}</td></tr>
+      <tr><td>FIPS 140-2 mode</td><td>{{ .summary.fips140_2 }}</td></tr>
+   </tbody>
+</table>
+
+<h5>PCR banks</h5>
+<table class="table table-sm table-striped">
+   <tbody>
+      {{ range $bank, $n := .pcrbanks }}
+      <tr><td class="font-monospace">{{ $bank }}</td><td>{{ $n }} PCRs allocated</td></tr>
+      {{ end }}
+   </tbody>
+</table>
+
+<div class="row">
+   <div class="col-md-4">
+      <h6>Algorithms</h6>
+      <ul class="list-unstyled font-monospace small">{{ range .algorithms }}<li>{{ . }}</li>{{ end }}</ul>
+   </div>
+   <div class="col-md-4">
+      <h6>ECC curves</h6>
+      <ul class="list-unstyled font-monospace small">{{ range .ecccurves }}<li>{{ . }}</li>{{ else }}<li class="text-body-secondary">none</li>{{ end }}</ul>
+   </div>
+   <div class="col-md-4">
+      <h6>Persistent handles</h6>
+      <ul class="list-unstyled font-monospace small">{{ range .persistenthandles }}<li>{{ . }}</li>{{ else }}<li class="text-body-secondary">none</li>{{ end }}</ul>
+   </div>
+</div>
+
+<details>
+   <summary class="small text-body-secondary">All properties</summary>
+   <table class="table table-sm table-striped mb-0">
+      <tbody>
+         {{ range $name, $value := .properties }}
+         <tr><td class="font-monospace small">{{ $name }}</td><td class="font-monospace small">{{ $value }}</td></tr>
+         {{ end }}
+      </tbody>
+   </table>
+</details>
+{{end}}

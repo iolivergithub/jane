@@ -4,13 +4,27 @@ All notable changes to Jane are listed here, newest first. Days with several
 commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
-## [1.5.2] – unreleased
+## [1.5.3] – 2026-10-18
+- UEFI event log claims are decoded and shown as a list of events (type, PCR, digest, light decoding of UEFI variables, image paths and text), one bank at a time with a PCR filter (#73). Parsing uses Google's go-eventlog.
+- New rule `tpm2_uefiLogReplay` (on a `tpm2/pcrs` claim, parameter `uefilogcid`): replays the UEFI event log against the PCR values, per bank (#71).
+- New rule `tpm2_pcrDigest` (on a `tpm2/quote` claim, parameter `pcrscid`): checks the PCR values in a `tpm2/pcrs` claim give the quote's attested value (#70). Together: event log → PCRs → quote.
+- New intent functions and tarzan endpoints `tpm2/gettime` (signed TPM clock, reset and restart counters, #68) and `tpm2/capabilities` (TPM identity and configuration, unsigned, #69), with standard intents `std::intent::tpm2::gettime` and `std::intent::tpm2::capabilities` and claim pages. Quotes also carry the raw attestation and signature (`attest`, `rawsignature`).
+- jp: variables in the provisioning file (`cid` on an intent, `rid` and `resvar` on a rule, `$name` in rule parameters) so `jp attest` can pass claim itemids to rules; a table of the variables is printed at the end; mistakes stop jp with exit code 2 before anything runs (#72).
+- jp: `create` and `update` no longer run rules - run `jp attest` afterwards. `processevs_withrules` is a deprecated alias of `processevs`.
+- jp: the element ID file moved to `/etc/opt/jane/janeelementid` and is read-only; `update` and `attest` copy an existing `/etc/janeelementid` there automatically.
+- Standard intents: the download verifies TLS certificates and times out; failures are logged and the intents page says "Loading the standard intents failed, see log." The deb installs a copy in `/etc/opt/jane/standardintents.json` (#67). **After upgrading, load the standard intents again** so the new intents are known.
+- deb: consistent ownership and permissions - binaries and configuration owned by root, configuration and keys readable by group `jane`, the log owned by `jane` (#78).
+- Quote claim page: the Safe badge now shows Unsafe when it should.
+- Web UI handlers no longer print debug output; errors they reported only on stdout are now logged.
+- Removed for now: Docker support (Dockerfile, compose files and docs; to return in a future release). `aijane` moved to `etc/experimental`. Removed committed binaries and unused files.
+
+## [1.5.2] – 2026-10-14
 - New `tpm2/activatecredential` intent function (`std::intent::tpm2::activatecredential`) and tarzan endpoint: Jane makes a credential for the element's AK and EK and the TPM must recover it, showing the AK is in the same TPM as the EK (#49). Keys come from the element and can be overridden.
 - New rules `tpm2_credentialActivated` and `tpm2_akAttributes`.
 - Provisioning skeletons and the deb example include the new intent.
 - A10HTTPRESTv2 error claims show the trust agent's error text instead of a byte list.
 
-## [1.5.1] – unreleased
+## [1.5.1] – 2026-10-14
 - x3270 logon (`auth: x3270`), with an ASCII-art logon screen, a status line on every screen, L (logoff) and X (exit) on the menu, and F3/F12 no longer disconnecting from the menu.
 - `listenon` is now honoured for REST, Web UI and the new `x3270: listenon`; REST no longer reads the Web UI's value.
 - Attest page lists sorted case-insensitively, with filter boxes, rules grouped by type and a selected-rule count.

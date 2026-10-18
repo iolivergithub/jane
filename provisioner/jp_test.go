@@ -192,6 +192,7 @@ func newHarness(t *testing.T, op string) *harness {
 
 	pv := NewProvisioner(p, op, true)
 	pv.IDFile = filepath.Join(t.TempDir(), "janeelementid")
+	pv.LegacyIDFile = filepath.Join(t.TempDir(), "legacy-janeelementid") // never the real /etc
 	pv.Out = io.Discard
 	pv.Now = func() time.Time { return time.Date(2026, 9, 29, 19, 53, 12, 123456000, time.UTC) }
 	pv.KeyDir = t.TempDir()
@@ -322,11 +323,11 @@ func TestCreateRunsWholeWorklist(t *testing.T) {
 		t.Errorf("element uefi = %v", el["uefi"])
 	}
 
-	// EVs: one session, 7 attestations, 3 typed EVs created, 18 rules run.
+	// EVs: one session, 7 attestations, 3 typed EVs created, no rules run (#72).
 	j := h.jane
 	for key, n := range map[string]int{
 		"POST /session": 1, "DELETE /session": 1, "POST /attest": 7, "GET /claim": 7,
-		"GET /expectedValue": 4, "POST /expectedValue": 4, "PUT /expectedValue": 0, "POST /verify": 18,
+		"GET /expectedValue": 4, "POST /expectedValue": 4, "PUT /expectedValue": 0, "POST /verify": 0,
 	} {
 		if got := j.count(key); got != n {
 			t.Errorf("%s called %d times, want %d", key, got, n)
@@ -361,11 +362,6 @@ func TestCreateRunsWholeWorklist(t *testing.T) {
 	}
 	if q["description"] != "Debian13VM---tpm2quote at 2026-09-29 19:53:12.123456+00:00 UTC" {
 		t.Errorf("quote description = %v", q["description"])
-	}
-
-	v := j.bodies["POST /verify"][0].(map[string]any)
-	if v["cid"] != "C1" || v["sid"] != "S1" || v["rule"] != "sys_taRunningSafely" {
-		t.Errorf("verify body = %v", v)
 	}
 }
 
@@ -645,16 +641,21 @@ func TestAttestNoIntents(t *testing.T) {
 	}
 }
 
-func TestProvisioningPrintsRuleResults(t *testing.T) {
+func TestDeprecatedWithRulesRunsNoRules(t *testing.T) {
 	h := newHarness(t, "create")
-	h.jane.ruleResults = map[string]int{"tpm2_firmware": ResultFail}
 	var out bytes.Buffer
 	h.pv.Out = &out
 	h.pv.P.ProvisionWorklist = []string{"processelement", "processevs_withrules"}
 	if _, err := h.pv.ProcessWorklist(); err != nil {
-		t.Fatal(err) // a failing rule does not stop provisioning
+		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), "tpm2_firmware ... 9001 Fail") {
+	if n := h.jane.count("POST /verify"); n != 0 {
+		t.Errorf("verify called %d times; create/update run no rules (#72)", n)
+	}
+	if h.jane.count("POST /expectedValue") == 0 {
+		t.Error("expected values should still be recorded")
+	}
+	if !strings.Contains(out.String(), "processevs_withrules: deprecated, using processevs") {
 		t.Errorf("output:\n%s", out.String())
 	}
 }

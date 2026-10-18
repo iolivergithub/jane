@@ -2,8 +2,9 @@
 
 Go port of `provisioner/jp.py`. It registers the machine as an element with a
 Jane attestation server, can clear and provision the TPM, and records
-expected values and runs rules for the intents listed in the provisioning
-file. It can then attest the registered element. The provisioning file format is unchanged; see
+expected values for the intents listed in the provisioning file. It can
+then attest the registered element, running the rules listed for each
+intent. The provisioning file format is unchanged; see
 `testdata/examplecreateprovisioningfile.yaml`.
 
 TPM operations use [go-tpm](https://github.com/google/go-tpm) directly
@@ -23,9 +24,17 @@ the machine ID.
 | | Unix-likes | Windows |
 |---|---|---|
 | TPM | `tpm2.device`, default `/dev/tpmrm0` then `/dev/tpm0` | TPM Base Services |
-| Element ID file | `/etc/janeelementid` | `%ProgramData%\jane\janeelementid` |
+| Element ID file | `/etc/opt/jane/janeelementid` (before 1.5.3: `/etc/janeelementid`, see below) | `%ProgramData%\jane\janeelementid` |
 | Machine ID | `/etc/machine-id`, `/var/lib/dbus/machine-id`, `/etc/hostid`; on BSD/macOS then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
 | Key files | `$TMPDIR` or `/tmp` | `%TEMP%` |
+
+The element ID file is written read-only (`-r--r--r--`) by `create`, and is
+not rewritten by `update` unless the ID changed (only `create --recreate`
+replaces it). Before 1.5.3 it was `/etc/janeelementid`: `update` and `attest`
+copy that file to `/etc/opt/jane/janeelementid` if the new one does not exist
+yet, and stop (exit 1) if both exist with different IDs; the old file is left
+in place. `create` refuses if either exists. This migration will be removed
+in a future release.
 
 ## Operations
 
@@ -43,6 +52,10 @@ the machine ID.
   element ID file, replacing its expected values. Run it after anything that
   changes what is measured, e.g. a firmware update (fwupd) or a shim, SBAT or
   kernel update (apt).
+- `create` and `update` do not run rules (since 1.5.3): run `jp attest`
+  afterwards to check the element. The worklist step `processevs_withrules`
+  is a deprecated alias of `processevs` (it prints
+  `processevs_withrules: deprecated, using processevs`) and will be removed.
 - `attest` attests the element whose ID is in the element ID file against
   every intent under `evs`, and verifies every rule listed for each, in one
   Jane session. It does not run `provisionworklist`, touch the TPM, or change
@@ -59,8 +72,61 @@ the machine ID.
 
 Exit status: 0 success (for `attest`, every rule passed); 1 error (bad
 provisioning file, missing element ID file, Jane server or TPM unreachable);
-2 bad command line; 3 `attest` completed but a rule did not pass or an intent
-could not be attested.
+2 bad command line, or a mistake in the provisioning file's variables (below);
+3 `attest` completed but a rule did not pass, a rule could not be run or an
+intent could not be attested.
+
+## Variables: passing claims to rules
+
+Some rules check one claim against another and take that claim's itemid as a
+rule parameter, e.g. `tpm2_pcrDigest` (`pcrscid`, a `tpm2/pcrs` claim) and
+`tpm2_uefiLogReplay` (`uefilogcid`, a `uefi/eventlog` claim). Variables let
+`jp attest` pass them automatically:
+
+```yaml
+evs:
+  - std::intent::uefi::eventlog :
+      protocol: tarzan
+      cid: uefilog                 # variable: this intent's claim itemid
+  - std::intent::tpm::pcrs :
+      protocol: tarzan
+      cid: pcrs
+      rules:
+        - tpm2_uefiLogReplay:
+            rid: r_uefilog         # variable: the result itemid
+            resvar: r_uefilog_code # variable: the result code, e.g. "0 Success"
+            parameters: { "uefilogcid": $uefilog }
+  - std::intent::sha256::crtm::pcr0 :
+      protocol: tarzan
+      rules:
+        - tpm2_attestedValue
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+```
+
+- `cid` (on an intent), `rid` and `resvar` (on a rule) are optional; a rule
+  without options is written as a plain name, as before.
+- `parameters` is a mapping, usually written as a JSON-style box. A value
+  that is exactly `$name` is replaced by that variable (quoted `"$pcrs"` is
+  the same); nothing is substituted inside longer strings, and there are no
+  type checks (Jane reports a wrong itemid).
+- Names are letters, digits and `_`, not starting with a digit. Before
+  anything runs, `jp` stops with exit code 2 if a name is defined twice
+  (`cid`, `rid` and `resvar` share one namespace), if `$name` refers to a
+  variable that is not defined earlier in the file (an intent's own `cid`
+  counts for its rules), or if `parameters` is text rather than a mapping.
+- If the step that sets a variable failed (e.g. its intent could not be
+  attested), a rule using it is reported `NOTRUN` and counts as failed.
+- Variables only exist in `jp attest`, for one run. At the end it prints them:
+
+      var                  | kind   | value
+      uefilog              | cid    | 6f1c…
+      r_uefilog            | rid    | 8a2e…
+      r_uefilog_code       | resvar | 0 Success
+
+Collect the event log, the PCRs and the quotes in the same run: a PCR
+extended in between (e.g. PCR 10 with IMA) makes `tpm2_pcrDigest` fail
+without any tampering.
 
 ## Expected value types
 
@@ -80,7 +146,7 @@ element, intent and endpoint (created by `create`, replaced by `update`):
   is refused rather than recorded. The variable list in `uefi.go` must be kept
   in step with janeserver's.
 
-An entry without a `type` is attested (and its rules run) but records nothing.
+An entry without a `type` is attested but records nothing.
 
 ## TPM device
 
@@ -139,7 +205,7 @@ that a quote from the new AK verifies with its exported PEM key.
   User-requested stops (`q`, or declining the `--recreate` check) exit 0
   as before.
 - The session opened for `processevs` is always closed, even on error.
-- `processevs` / `processevs_withrules` without an earlier `processelement`
+- `processevs` without an earlier `processelement`
   in the worklist is an error (the Python sent an empty element ID).
 - An `evs` entry with more than one intent key is rejected rather than
   silently using the first.
@@ -154,8 +220,8 @@ that a quote from the new AK verifies with its exported PEM key.
 - `create` refuses on an already registered machine (above) instead of
   asking, and `-u` no longer skips that check; `--recreate` is new.
 - New `uefiefivars` expected-value type.
-- New `attest` operation (above), and rule results are printed by name
-  (`9001 Fail`) during `processevs_withrules` rather than as HTTP statuses.
+- New `attest` operation (above), which prints rule results by name
+  (`9001 Fail`); `create`/`update` no longer run rules (1.5.3).
 - `-u` prints "unsafe mode" rather than the confusingly named
   "safe mode is True".
 - HTTP requests time out after 60 seconds.

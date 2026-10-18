@@ -32,8 +32,7 @@ provisionworklist:
   - collectima
   - makebetterdescription
   - processelement
-#  - processevs
-  - processevs_withrules
+  - processevs
 
 evs:
   - std::intent::sys::info :
@@ -43,6 +42,12 @@ evs:
         - sys_taRunningSafely  
         - sys_machineID_Agent 
         - sys_machineID_CrossRef 
+  # the PCRs, collected before the quotes, so that tpm2_pcrDigest can check
+  # them against each quote (cid names the claim's itemid, $pcrs passes it to
+  # the rule; see the provisioner README). No UEFI event log on the Pi.
+  - std::intent::tpm::pcrs :
+      protocol: tarzan
+      cid: pcrs
   - std::intent::sha256::crtm::pcr0 :
       protocol: tarzan
       type: tpm2quote      
@@ -52,6 +57,8 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce 
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::firmware :
       protocol: tarzan
       type: tpm2quote
@@ -61,6 +68,8 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::bootloaderonly  :
       protocol: tarzan
       type: tpm2quote
@@ -70,10 +79,16 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
-  - std::intent::tpm::pcrs :
-      protocol: tarzan  
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
   - std::intent::tpm2::activatecredential :
       protocol: tarzan
       rules:
         - tpm2_credentialActivated
         - tpm2_akAttributes
+  # TPM clock, reset and restart counters (signed) and the TPM's identity and
+  # configuration (unsigned); no rules yet
+  - std::intent::tpm2::gettime :
+      protocol: tarzan
+  - std::intent::tpm2::capabilities :
+      protocol: tarzan
