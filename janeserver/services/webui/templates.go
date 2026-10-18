@@ -12,7 +12,7 @@ func templateFunctions() template.FuncMap {
 		"defaultMessage": DefaultMessage, "epochToUTCdetailed": EpochToUTCdetailed, "epochToUTC": EpochToUTCsimple, "base64decode": Base64decode,
 		"encodeAsHexString": EncodeAsHexString, "tcgAlg": TCGAlg, "opaqueObjectInt64": GetOpaqueObjectByValueInt64,
 		"opaqueObject": GetOpaqueObjectByValue,
-		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription,
+		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription, "eventlog": EventLogBody,
 		"resultClass": ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
 	}
 	// authEnabled and currentUser, used by base.html for the username and logout button
@@ -54,7 +54,7 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 
 	page("claims.html", "pager.html")
 	page("claim.html", "claim_ERROR.html", "claim_ima.html", "claim_quote.html", "claim_tpm2pcrs.html",
-		"claim_efivars.html", "genericList.html", "resultvalue.html")
+		"claim_efivars.html", "claim_uefieventlog.html", "genericList.html", "resultvalue.html")
 
 	page("results.html", "resultvalue.html", "pager.html")
 	page("result.html", "resultvalue.html", "genericList.html")

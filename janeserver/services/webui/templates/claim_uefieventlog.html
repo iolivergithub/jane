@@ -1,0 +1,64 @@
+{{define "claim_uefieventlog.html"}}
+{{ $v := eventlog . }}
+{{ if $v.Error }}
+<div class="alert alert-warning py-1 px-2 small">
+   <i class="fa fa-exclamation-triangle me-1"></i>The event log could not be decoded: {{ $v.Error }}
+</div>
+{{ template "genericList.html" . }}
+{{ else }}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+   <span class="me-auto">
+      <b>{{ $v.Count }}</b> event{{ if ne $v.Count 1 }}s{{ end }},
+      bank{{ if ne (len $v.Banks) 1 }}s{{ end }} {{ range $i, $b := $v.Banks }}{{ if $i }}, {{ end }}<span class="font-monospace">{{ $b.Name }}</span>{{ end }};
+      PCRs extended: <span class="font-monospace">{{ range $i, $p := $v.PCRs }}{{ if $i }}, {{ end }}{{ $p }}{{ end }}</span>
+   </span>
+   <select id="elBank" class="form-select form-select-sm w-auto" aria-label="Bank">
+      {{ range $v.Banks }}<option value="{{ .Name }}" {{ if eq .Name $v.DefaultBank }}selected{{ end }}>{{ .Name }}</option>{{ end }}
+   </select>
+   <input id="elPCR" type="search" class="form-control form-control-sm" style="max-width: 12rem"
+          placeholder="PCRs, e.g. 0,4,7" aria-label="Filter by PCR">
+</div>
+<p class="small text-body-secondary mb-2">The event log is not verified here: use the <span class="font-monospace">tpm2_uefiLogReplay</span> rule to check it against a PCRs claim.</p>
+
+{{ range $v.Banks }}
+<div class="table-responsive j-elbank {{ if ne .Name $v.DefaultBank }}d-none{{ end }}" data-bank="{{ .Name }}">
+<table class="table table-sm table-striped align-top mb-0">
+   <thead>
+      <tr><th class="text-end">#</th><th class="text-end">PCR</th><th>Event type</th><th>Digest ({{ .Name }})</th><th class="w-100">Description</th></tr>
+   </thead>
+   <tbody>
+   {{ range .Events }}
+      <tr class="j-elrow" data-pcr="{{ .PCR }}">
+         <td class="text-end font-monospace small">{{ .Num }}</td>
+         <td class="text-end font-monospace">{{ .PCR }}</td>
+         <td class="font-monospace small text-nowrap">{{ .Type }}</td>
+         <td class="font-monospace small text-nowrap">{{ if .Digest }}<span title="{{ .Digest }}">{{ .ShortDigest }}</span>{{ else }}<i class="text-body-secondary">none</i>{{ end }}</td>
+         <td class="small j-wrap" style="max-width: 0;">{{ .Description }}</td>
+      </tr>
+   {{ end }}
+   </tbody>
+</table>
+</div>
+{{ end }}
+
+<script>
+(function () {
+   var bank = document.getElementById('elBank');
+   var pcr = document.getElementById('elPCR');
+   if (!bank || !pcr) return;
+   function update() {
+      document.querySelectorAll('.j-elbank').forEach(function (el) {
+         el.classList.toggle('d-none', el.getAttribute('data-bank') !== bank.value);
+      });
+      var wanted = pcr.value.split(/[\s,]+/).filter(function (s) { return s !== ''; });
+      document.querySelectorAll('.j-elrow').forEach(function (row) {
+         var show = !wanted.length || wanted.indexOf(row.getAttribute('data-pcr')) >= 0;
+         row.classList.toggle('d-none', !show);
+      });
+   }
+   bank.addEventListener('change', update);
+   pcr.addEventListener('input', update);
+})();
+</script>
+{{ end }}
+{{end}}

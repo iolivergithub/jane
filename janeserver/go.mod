@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
+	github.com/google/go-eventlog v0.0.2
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.16.0
 	github.com/racingmars/go3270 v0.9.13
