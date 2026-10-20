@@ -26,22 +26,41 @@ pip install -r requirements.txt
 ## Usage
 
 ```
-addjaneuser USERNAME MONGODB_URL DATABASE
+addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 ```
 
 `MONGODB_URL` and `DATABASE` are the `database: connection` and `database: name` values from Jane's `config.yaml`, for example:
 
 ```
-./addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+./addjaneuser ian mongodb://127.0.0.1:27017 asvr
 ```
 
 The password is asked for twice and never appears on the command line. To run it non-interactively, pipe the password in on standard input:
 
 ```
-echo 'secret' | ./addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+echo 'secret' | ./addjaneuser ian mongodb://127.0.0.1:27017 asvr
 ```
 
 `./addjaneuser -h` prints the full help.
+
+## When MongoDB requires a login
+
+If MongoDB has authorization enabled, addjaneuser needs a MongoDB account. It reads the same environment variables as Jane:
+
+| Variable | Meaning |
+|---|---|
+| `JANE_MONGODB_USERNAME` | MongoDB user; unset or empty means no account |
+| `JANE_MONGODB_PASSWORD` | its password |
+| `JANE_MONGODB_AUTHSOURCE` | the database the user was created in (default `admin`) |
+
+On a deb install they are in `/etc/opt/jane/jane.env`. As root, load them and run the script:
+
+```
+set -a; . /etc/opt/jane/jane.env; set +a
+/opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
+```
+
+`--dbuser NAME --dbpass PASSWORD` (both together) override the variables. A password on the command line is visible to other users (`ps`) and stays in your shell history; that is your choice to make, the variables are the safer way.
 
 ## Notes
 

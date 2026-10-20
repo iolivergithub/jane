@@ -2,29 +2,44 @@
 """Add a Jane user, or set a new password for an existing one.
 
 Usage:
-    addjaneuser USERNAME MONGODB_URL DATABASE
+    addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 
 Example:
-    addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+    addjaneuser ian mongodb://127.0.0.1:27017 asvr
 
 MONGODB_URL and DATABASE are the `database: connection` and `database: name`
-values from Jane's config.yaml.
+values from Jane's config.yaml (asvr in the packaged configuration).
 
-The password is asked for twice and never appears on the command line. To use
-the script non-interactively, pipe the password in on standard input:
+The password for USERNAME is asked for twice and never appears on the command
+line. To use the script non-interactively, pipe the password in on standard
+input:
 
-    echo 'secret' | addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
+    echo 'secret' | addjaneuser ian mongodb://127.0.0.1:27017 asvr
 
 If USERNAME does not exist it is created; if it does, its password is replaced
 (the old password is not needed). Passwords are stored as Argon2id hashes in
 PHC format, which is what Jane's login checks against.
+
+If MongoDB itself requires a login, addjaneuser uses the same environment
+variables as Jane: JANE_MONGODB_USERNAME, JANE_MONGODB_PASSWORD and
+JANE_MONGODB_AUTHSOURCE (an unset or empty username means no account). On a
+deb install they are in /etc/opt/jane/jane.env; as root:
+
+    set -a; . /etc/opt/jane/jane.env; set +a
+    /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
+
+--dbuser and --dbpass (both together) override the variables. A password on
+the command line is visible to other users (ps) and kept in your shell
+history; the variables are the safer way, and the choice is yours.
 
 Requires: argon2-cffi and pymongo
     Debian/Ubuntu:  apt install python3-argon2 python3-pymongo
     or:             pip install argon2-cffi pymongo
 """
 
+import argparse
 import getpass
+import os
 import sys
 
 try:
@@ -69,27 +84,62 @@ def set_user(collection, username, password):
     return result.upserted_id is not None
 
 
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="addjaneuser",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        usage="addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE",
+    )
+    parser.add_argument("username", metavar="USERNAME", help="the Jane user to create or update")
+    parser.add_argument("url", metavar="MONGODB_URL", help="database: connection from config.yaml")
+    parser.add_argument("database", metavar="DATABASE", help="database: name from config.yaml")
+    parser.add_argument("--dbuser", metavar="NAME",
+                        help="MongoDB account (overrides JANE_MONGODB_USERNAME; needs --dbpass)")
+    parser.add_argument("--dbpass", metavar="PASSWORD",
+                        help="MongoDB password (overrides JANE_MONGODB_PASSWORD; needs --dbuser)")
+    args = parser.parse_args(argv[1:])
+    if (args.dbuser is None) != (args.dbpass is None):
+        parser.error("--dbuser and --dbpass must be given together")
+    return args
+
+
+def db_credentials(args, environ):
+    """The MongoDB account to use, as keyword arguments for MongoClient.
+
+    --dbuser/--dbpass override the JANE_MONGODB_* variables; an unset or empty
+    username means no account (anything in the URL then applies).
+    """
+    if args.dbuser is not None:
+        user, password = args.dbuser, args.dbpass
+    else:
+        user = environ.get("JANE_MONGODB_USERNAME", "")
+        password = environ.get("JANE_MONGODB_PASSWORD", "")
+    if not user:
+        return {}
+    creds = {"username": user, "password": password}
+    source = environ.get("JANE_MONGODB_AUTHSOURCE", "")
+    if source:
+        creds["authSource"] = source
+    return creds
+
+
 def main(argv):
-    if len(argv) == 2 and argv[1] in ("-h", "--help"):
-        print(__doc__.strip())
-        return
-    if len(argv) != 4:
-        print("usage: addjaneuser USERNAME MONGODB_URL DATABASE   (-h for help)", file=sys.stderr)
-        sys.exit(2)
-    _, username, url, database = argv
-    username = username.strip()
+    args = parse_args(argv)
+    username = args.username.strip()
     if not username:
         sys.exit("addjaneuser: empty username")
 
     password = read_password()
 
     try:
-        client = MongoClient(url, serverSelectionTimeoutMS=5000)
-        created = set_user(client[database][USERS_COLLECTION], username, password)
+        client = MongoClient(args.url, serverSelectionTimeoutMS=5000,
+                             **db_credentials(args, os.environ))
+        created = set_user(client[args.database][USERS_COLLECTION], username, password)
     except PyMongoError as e:
         sys.exit(f"addjaneuser: database error: {e}")
 
-    print(f"{'Created user' if created else 'Updated password for'} {username!r} in {database}.{USERS_COLLECTION}")
+    print(f"{'Created user' if created else 'Updated password for'} {username!r} in {args.database}.{USERS_COLLECTION}")
 
 
 if __name__ == "__main__":

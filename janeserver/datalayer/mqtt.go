@@ -27,8 +27,14 @@ func initialiseMessaging() {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
 	opts.SetClientID(configuration.ConfigData.Messaging.ClientID)
-	//opts.SetUsername("me")
-	//opts.SetPassword("me2")
+	// Credentials from the environment (#80); none means an anonymous client,
+	// which the broker must allow (Mosquitto: allow_anonymous true).
+	if user, pass, ok := envCredential(envMQTTUser, envMQTTPassword); ok {
+		opts.SetUsername(user)
+		opts.SetPassword(pass)
+		mqttAuth = "user " + user
+	}
+	fmt.Println("JANE: MQTT authentication: " + mqttAuth)
 	//opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
