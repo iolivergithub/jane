@@ -22,7 +22,7 @@ auth:
   web: true            # require a login for the Web UI
   rest: false          # require HTTP Basic auth for the REST API
   x3270: false         # require a logon on the x3270 interface
-  sessiontimeout: 8h   # sliding expiry of a Web UI login; idle timeout of an x3270 logon
+  sessiontimeout: 30m  # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 ```
 
 Create users, or reset a password, with `etc/addjaneuser/addjaneuser` (installed as `/opt/jane/addjaneuser` by the deb package). It prompts for the password; the database URL and name are the `database:` values from `config.yaml`:

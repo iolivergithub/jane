@@ -56,4 +56,4 @@ logging:
 #  web: true            # require a login for the Web UI
 #  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
 #  x3270: false         # require a logon on the x3270 interface (passwords travel unencrypted)
-#  sessiontimeout: 8h   # Web UI login, or x3270 logon, expires after this long without use
+#  sessiontimeout: 30m  # Web UI login, or x3270 logon, expires after this long without use
