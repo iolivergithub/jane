@@ -21,6 +21,7 @@ retrospectively.
 - deb: `apt remove` stops and disables the service (it used to keep restarting a missing binary); upgrades restart tarzan and a running Jane; file modes are set inside the packages; `/etc/opt/jane` is 751; an existing ordinary user called `jane` stops the install; calm install messages with documentation links, and a hint when MongoDB or Mosquitto is missing; jane recommends `mosquitto`.
 - deb: `jane.service` is sandboxed (no capabilities, read-only file system except `/var/log/jane`, ...) and starts after MongoDB and Mosquitto; both units restart after 5 s.
 - deb: tarzan starts with `-sys -tpm2 -uefi -ima`, so the provisioning example works out of the box. The provisioning example's ratsd endpoint is commented out (spelling fixed) and `tpmclear` is explained.
+- Web UI: every script and stylesheet loaded from a CDN carries a Subresource Integrity hash (Font Awesome was missing one), and a test fails if a template adds an external resource without one (#92).
 - Documentation reorganised: Quick start → Getting started → Hardening, then reference pages (new: rules, claims, results, sessions, signing, protocols, trust agents). `automaticStartup.md` and `security.md` are folded in; screenshots are to be retaken. Help & About links to the Quick start and Hardening.
 
 ## [1.5.3] – 2026-10-18
