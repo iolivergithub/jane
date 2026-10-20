@@ -14,9 +14,11 @@ endpoints:
   tarzan:
       endpoint: http://debianwork.local:8530
       protocol: A10HTTPRESTv2
-  ratds:
-      endpoint: http://debianwork.local:8895
-      protocol: RATSD      
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the std::intent::ratsd::* intents.
+  #ratsd:
+  #    endpoint: http://debianwork.local:8895
+  #    protocol: RATSD
 tpm2:
   device:   /dev/tpmrm0   
   ekcerthandle: '0x1C000002'   
@@ -25,6 +27,12 @@ tpm2:
   ak:
     handle: '0x810100AA'
 provisionworklist:
+  # tpmclear runs TPM2_Clear: it deletes every key in the TPM's owner and endorsement
+  # hierarchies (including any existing EK and AK, and keys used by other software such
+  # as disk encryption or SSH) and resets the owner and endorsement passwords.
+  # WARNING: only for a TPM that nothing else on this machine depends on. jp asks before
+  # running it unless -u is given. tpmprovision creates the EK and AK afresh, so it needs
+  # free handles: to keep the existing keys, answer n to both TPM questions.
   - tpmclear
   - tpmprovision
   - collecthostinfo

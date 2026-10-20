@@ -1,25 +1,38 @@
 #!/bin/sh
+# postinst for the Jane package. $1 is "configure"; $2 is the previously
+# configured version, empty on a first install.
+set -e
 
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+DOCS=https://github.com/iolivergithub/jane/blob/main
 
-echo "${PURPLE}Running post installation scripts${NC}"
+[ "$1" = "configure" ] || exit 0
+PREVIOUS="$2"
 
 # Jane runs as the unprivileged system user "jane" (see jane.service).
-# It writes its log to /var/log/jane and reads its configuration and keys.
-echo "${PURPLE}Creating the jane system user if needed${NC}"
-if ! getent passwd jane >/dev/null; then
+if getent passwd jane >/dev/null; then
+    # An existing ordinary account called jane (a person) must not be reused.
+    JANE_UID=$(id -u jane)
+    FIRST_UID=1000
+    if [ -r /etc/adduser.conf ]; then
+        F=$(sed -n 's/^FIRST_UID=\([0-9]*\).*/\1/p' /etc/adduser.conf | tail -n 1)
+        [ -n "$F" ] && FIRST_UID=$F
+    fi
+    if [ "$JANE_UID" -ge "$FIRST_UID" ]; then
+        echo "jane: an ordinary user account called 'jane' (uid $JANE_UID) already exists."
+        echo "jane: Jane needs a system account of that name; rename or remove the existing account and reinstall."
+        exit 1
+    fi
+else
     adduser --system --group --no-create-home --home /nonexistent --quiet jane
 fi
 
 # Ownership and permissions (#78), applied on every install and upgrade.
 # Binaries and configuration are owned by root so that the jane user cannot
-# change them; jane can read its configuration and keys through its group,
-# and owns only its log. /opt/jane and /etc/opt/jane are shared with the
-# tarzan package, so only Jane's own files are changed.
-echo "${PURPLE}Setting ownership and permissions${NC}"
+# change them; jane reads its configuration and keys through its group and
+# owns only its log. /opt/jane and /etc/opt/jane are shared with the tarzan
+# package, so only Jane's own files are changed. /etc/opt/jane is 751: others
+# may open files they know the name of (e.g. jp reading the element ID file)
+# but cannot list the directory; secrets are protected by their own modes.
 chown root:root /opt/jane
 chmod 755 /opt/jane
 for f in /opt/jane/janeserver /opt/jane/addjaneuser; do
@@ -30,8 +43,8 @@ for f in /opt/jane/janeserver /opt/jane/addjaneuser; do
 done
 
 chown root:jane /etc/opt/jane
-chmod 750 /etc/opt/jane
-for f in /etc/opt/jane/config.yaml /etc/opt/jane/*.key; do
+chmod 751 /etc/opt/jane
+for f in /etc/opt/jane/config.yaml /etc/opt/jane/jane.env /etc/opt/jane/*.key /etc/opt/jane/*.pem; do
     if [ -f "$f" ]; then
         chown root:jane "$f"
         chmod 640 "$f"
@@ -44,6 +57,7 @@ for f in /etc/opt/jane/*.crt /etc/opt/jane/standardintents.json; do
     fi
 done
 
+mkdir -p /var/log/jane
 chown -R jane:jane /var/log/jane
 chmod 750 /var/log/jane
 find /var/log/jane -type f -exec chmod 640 {} +
@@ -53,23 +67,46 @@ if [ -f /etc/systemd/system/jane.service ]; then
     chmod 644 /etc/systemd/system/jane.service
 fi
 
-echo "${PURPLE}Reloading systemd and enabling Jane${NC}"
 systemctl daemon-reload
-systemctl enable jane.service
+systemctl enable jane.service >/dev/null 2>&1 || true
 
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-echo "${RED}   *** CHECK!!!!! **** ${NC}"
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-echo "${RED} Edit the /etc/opt/jane/config.yaml ${NC}"
-echo "${RED} Replace keys in /etc/opt/jane${NC}"
-echo "${RED} (Jane runs as user jane: replaced keys must be root:jane, mode 640)${NC}"
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-echo "${RED} NOTE: janeserver HAS NOT been started${NC}"
-echo "${RED} use: ${YELLOW}systemctl start jane.service${RED} once the${NC}"
-echo "${RED} above configiguration files hecked and ${NC}"
-echo "${RED} keys been replaced${NC}"
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+if [ -n "$PREVIOUS" ]; then
+    # Upgrade: restart Jane only if it was running.
+    systemctl try-restart jane.service || true
+    echo "Jane upgraded from $PREVIOUS (restarted if it was running). Changes: $DOCS/CHANGELOG.md"
+    exit 0
+fi
 
-echo "${PURPLE}Post installation scripts complete${NC}"
+# First install: say how to start Jane, and point out missing local services.
+# Only a local MongoDB/MQTT broker is checked; a remote one gets no message.
+CONF=/etc/opt/jane/config.yaml
+is_local() {
+    case "$1" in
+        *127.0.0.1*|*localhost*|*::1*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+has_unit() {
+    systemctl list-unit-files "$1" 2>/dev/null | grep -q "^$1"
+}
+DBCONN=$(sed -n 's/^[[:space:]]*connection:[[:space:]]*//p' "$CONF" 2>/dev/null | head -n 1)
+BROKER=$(sed -n 's/^[[:space:]]*broker:[[:space:]]*//p' "$CONF" 2>/dev/null | head -n 1)
 
-
+echo
+echo "Jane is installed and enabled, but not started."
+echo "Default configuration ($CONF): HTTP, no logins, local MongoDB and Mosquitto."
+if is_local "$DBCONN" && ! has_unit mongod.service; then
+    echo
+    echo "MongoDB is required but does not seem to be installed on this machine."
+    echo "It is not in Debian; install it from MongoDB's repository: $DOCS/docs/quickstart.md"
+fi
+if is_local "$BROKER" && ! has_unit mosquitto.service; then
+    echo
+    echo "An MQTT broker is required but Mosquitto does not seem to be installed: apt install mosquitto"
+fi
+echo
+echo "Start it:     systemctl start jane"
+echo "Quick start:  $DOCS/docs/quickstart.md"
+echo "Before exposing Jane to a network: $DOCS/docs/hardening.md"
+echo
+exit 0

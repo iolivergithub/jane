@@ -95,6 +95,21 @@ cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintent
 cp jane.service $JANEBASE/etc/systemd/system/jane.service
 cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
 cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+cp jane.env $JANEBASE/etc/opt/jane/jane.env
+cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
+
+# Modes in the package itself, so that secrets are never world-readable, not
+# even between unpacking and postinst (which then sets the jane group).
+echo "${BLUE}Setting file modes in the package trees${NC}"
+chmod 751 $JANEBASE/etc/opt/jane
+chmod 750 $JANEBASE/var/log/jane
+chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser
+chmod 755 $TARZANBASE/opt/jane/tarzan $TARZANBASE/opt/jane/jp
+chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
+chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json
+chmod 600 $TARZANBASE/etc/opt/jane/tarzan.env
+chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+chmod 644 $JANEBASE/etc/systemd/system/jane.service $TARZANBASE/etc/systemd/system/tarzan.service
 
 
 
@@ -105,6 +120,9 @@ cp control_tarzan $TARZANBASE/DEBIAN/control
 
 cp postinst_jane $JANEBASE/DEBIAN/postinst
 cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
+cp prerm_jane $JANEBASE/DEBIAN/prerm
+cp prerm_tarzan $TARZANBASE/DEBIAN/prerm
+chmod 755 $JANEBASE/DEBIAN/postinst $TARZANBASE/DEBIAN/postinst $JANEBASE/DEBIAN/prerm $TARZANBASE/DEBIAN/prerm
 
 cp conffiles_jane $JANEBASE/DEBIAN/conffiles
 cp conffiles_tarzan $TARZANBASE/DEBIAN/conffiles

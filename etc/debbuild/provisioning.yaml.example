@@ -8,14 +8,17 @@
 #   element            the name, description and tags this machine is registered under
 #   endpoints          where Jane reaches tarzan (default port 8530) and, if used, ratsd
 #   tpm2               the TPM device and the EK/AK handles to use
-#   provisionworklist  tpmclear and tpmprovision change the TPM; jp asks first unless -u is given
+#   provisionworklist  tpmclear wipes the TPM (read the warning below) and tpmprovision creates
+#                      the EK and AK; jp asks before each TPM step unless -u is given
 #
 #     sudo /opt/jane/jp create /etc/opt/jane/provisioning.yaml   # first provisioning only
 #     sudo /opt/jane/jp update /etc/opt/jane/provisioning.yaml   # after firmware (fwupd) or apt updates
-#     sudo /opt/jane/jp attest /etc/opt/jane/provisioning.yaml
+#     /opt/jane/jp attest /etc/opt/jane/provisioning.yaml        # no root needed
 #
-# Note: jp does not send credentials yet, so it cannot be used while Jane's REST API
-# requires a login (auth: rest: true in Jane's config.yaml).
+# If Jane's REST API requires a login (auth: rest: true), give jp a Jane user:
+#     export JANE_USERNAME=... JANE_PASSWORD=...   (sudo -E keeps them for create/update)
+# or --user NAME --pass PASSWORD on the command line (both together).
+# Quick start: https://github.com/iolivergithub/jane/blob/main/docs/quickstart.md
 # Kept in step with provisioner/skeleton/examplecreateprovisioningfile.yaml.
 
 attestationserver: http://127.0.0.1:8520
@@ -32,9 +35,11 @@ endpoints:
   tarzan:
       endpoint: http://127.0.0.1:8530
       protocol: A10HTTPRESTv2
-  ratds:
-      endpoint: http://127.0.0.1:8895
-      protocol: RATSD      
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the std::intent::ratsd::* intents.
+  #ratsd:
+  #    endpoint: http://127.0.0.1:8895
+  #    protocol: RATSD
 tpm2:
   device:   /dev/tpmrm0   
   ekcerthandle: '0x1C000002'   
@@ -43,6 +48,12 @@ tpm2:
   ak:
     handle: '0x810100AA'
 provisionworklist:
+  # tpmclear runs TPM2_Clear: it deletes every key in the TPM's owner and endorsement
+  # hierarchies (including any existing EK and AK, and keys used by other software such
+  # as disk encryption or SSH) and resets the owner and endorsement passwords.
+  # WARNING: only for a TPM that nothing else on this machine depends on. jp asks before
+  # running it unless -u is given. tpmprovision creates the EK and AK afresh, so it needs
+  # free handles: to keep the existing keys, answer n to both TPM questions.
   - tpmclear
   - tpmprovision
   - collecthostinfo

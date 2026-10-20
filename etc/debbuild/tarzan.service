@@ -1,14 +1,19 @@
 [Unit]
 Description=Tarzan Trust Agent
+Documentation=https://github.com/iolivergithub/jane/blob/main/docs/running.md
 After=network.target
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 Restart=always
-RestartSec=1
+RestartSec=5
+# tarzan needs root: the TPM device and the event logs under /sys/kernel/security.
 User=root
-ExecStart=/opt/jane/tarzan --sys
+EnvironmentFile=-/etc/opt/jane/tarzan.env
+# APIs offered to Jane; remove the ones you don't use (see docs/hardening.md).
+# Never add -unsafe.
+ExecStart=/opt/jane/tarzan -sys -tpm2 -uefi -ima
 
 [Install]
 WantedBy=multi-user.target

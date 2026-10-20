@@ -1,0 +1,13 @@
+#!/bin/sh
+# prerm for the jane package: on removal stop and disable the service, so systemd
+# does not keep trying to start a binary that is no longer there. Nothing is
+# done on upgrade (postinst restarts it).
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        systemctl stop jane.service >/dev/null 2>&1 || true
+        systemctl disable jane.service >/dev/null 2>&1 || true
+        ;;
+esac
+exit 0
