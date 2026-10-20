@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"a10/configuration"
 	"a10/datalayer"
@@ -36,32 +37,49 @@ func MakeLogEntry(ch string, op string, itemid string, itemtype string, message 
 
 }
 
-func writeToDB(wgrp *sync.WaitGroup, l structures.LogEntry) {
-	_, _ = datalayer.DB.Collection("log").InsertOne(context.TODO(), l)
+// dbTimeout bounds how long a log entry waits for MongoDB, so a slow or hung
+// database delays Jane's operations by at most this much per entry (#65).
+const dbTimeout = 5 * time.Second
 
-	wgrp.Done()
+// Failures are printed to stderr (the journal under systemd), not logged
+// through MakeLogEntry, which would recurse.
+
+func writeToDB(wgrp *sync.WaitGroup, l structures.LogEntry) {
+	defer wgrp.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	if _, err := datalayer.DB.Collection("log").InsertOne(ctx, l); err != nil {
+		log.Printf("JANE: log entry %s not written to database: %v", l.ItemID, err)
+	}
 }
 
 func writeToMessaging(wgrp *sync.WaitGroup, l structures.LogEntry) {
-	ch := fmt.Sprintf("AS/%s", l.Channel)
-	_ = datalayer.MESSAGING.Publish(ch, 0, false, makeCSVText(l))
+	defer wgrp.Done()
 
-	wgrp.Done()
+	ch := fmt.Sprintf("AS/%s", l.Channel)
+	t := datalayer.MESSAGING.Publish(ch, 0, false, makeCSVText(l))
+	// QoS 0: Wait only covers handing the message to the client, so it is quick.
+	if t.WaitTimeout(dbTimeout) && t.Error() != nil {
+		log.Printf("JANE: log entry %s not published to MQTT: %v", l.ItemID, t.Error())
+	}
 }
 
 func writeToLogfile(wgrp *sync.WaitGroup, l structures.LogEntry) {
+	defer wgrp.Done()
+
+	// Opened for each entry so that log rotation works; created 0640 (#65, #78).
 	f, err := os.OpenFile(configuration.ConfigData.Logging.LogFileLocation,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {
-		log.Println("Error opening log file ", configuration.ConfigData.Logging.LogFileLocation)
+		log.Printf("JANE: log entry %s not written: cannot open log file %s: %v", l.ItemID, configuration.ConfigData.Logging.LogFileLocation, err)
+		return
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(makeCSVText(l)); err != nil {
-		log.Println("Error writing to log file ", configuration.ConfigData.Logging.LogFileLocation)
+		log.Printf("JANE: log entry %s not written to log file %s: %v", l.ItemID, configuration.ConfigData.Logging.LogFileLocation, err)
 	}
-
-	wgrp.Done()
 }
 
 func makeCSVText(l structures.LogEntry) string {
