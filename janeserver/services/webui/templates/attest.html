@@ -330,6 +330,16 @@
             <tr><td><code>tpm2_uefiLogReplay</code></td><td><code>tpm2/pcrs</code></td><td class="text-body-secondary">&ndash;</td><td><code>uefilogcid</code></td>
                 <td>Replaying the UEFI event log in the <code>uefi/eventlog</code> claim named by <code>uefilogcid</code> (same element) gives this claim's values for
                 every PCR the log extends, per bank; a bank in only one of the two is skipped. With <code>tpm2_pcrDigest</code> this gives the chain event log &rarr; PCRs &rarr; quote.</td></tr>
+            <tr><td><code>tpm2_validSignature</code></td><td><code>tpm2/quote</code><br/><code>tpm2/gettime</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The signature over the claim's raw <code>attest</code> verifies with the AK (the element's <code>tpm2.ak.public</code>, or <code>tpm2/akpublic</code> if given as a parameter),
+                and the attest is a quote (8018) or time (8019) as the claim's function requires. The other quote rules read tarzan's decoded copy, which the signature does not cover.
+                Needs tarzan 1.5.3 or later; RSA AKs only.</td></tr>
+            <tr><td><code>tpm2_clockProgress</code></td><td><code>tpm2/quote</code><br/><code>tpm2/gettime</code></td><td class="text-body-secondary">&ndash;</td><td><code>previouscid</code></td>
+                <td>Compared with the earlier quote or gettime claim named by <code>previouscid</code> (same element; required, never searched for): fails if the reset count went down,
+                the restart count went down without a reset (TPM cleared or a different TPM), or the TPM clock went backwards (safe or not). Otherwise reports the reboots and restarts in between.</td></tr>
+            <tr><td><code>tpm2_capabilitiesFirmware</code></td><td><code>tpm2/capabilities</code></td><td class="text-body-secondary">&ndash;</td><td><code>quotecid</code></td>
+                <td>The firmware version the TPM reports in this unsigned claim equals the signed one in the quote or gettime claim named by <code>quotecid</code> (same element),
+                compared as numbers. Run <code>tpm2_validSignature</code> on that claim too.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">System</th></tr>
             <tr><td><code>sys_taRunningSafely</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
