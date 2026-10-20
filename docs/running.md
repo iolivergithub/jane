@@ -195,39 +195,13 @@ rc_cmd $1
 
 ## jp
 
-jp registers this machine with Jane as an element, provisions its TPM keys, records its expected values, and attests it. It reads a provisioning file (YAML); the deb installs an example as `/etc/opt/jane/provisioning.yaml.example`, and `provisioner/README.md` describes the file format.
+jp registers this machine with Jane, provisions its TPM keys, records its expected values, and attests it. Its modes, flags, when to use each, the provisioning file and exit codes are described in **[jp, the provisioner](jp.md)**.
 
 ```
 jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
 ```
 
-| Operation | Needs root | What it does |
-|---|---|---|
-| `create` | yes | first registration: runs the worklist, registers the element, writes the element ID file, records expected values. Refuses if the machine is already registered |
-| `update` | yes | refreshes the registered element and all its expected values (after firmware or OS updates); safe to run from cron or a package hook |
-| `attest` | no | attests the element against every intent in the file and runs their rules; never touches the TPM |
-
-| Option | Meaning |
-|---|---|
-| `--reprovisiontpm` | `create` and `update` only: run the worklist's `tpmclear` (evict the keys at the EK/AK handles) and `tpmprovision` (create new EK and AK). Without it they are skipped and the TPM is left unchanged |
-| `--recreate` | `create` only: register a new element although this machine is registered; the old one stays in Jane |
-| `--user NAME --pass PASSWORD` | Jane user for the REST API; both together; override `JANE_USERNAME`/`JANE_PASSWORD` |
-
-jp never asks questions, so it can run unattended: anything destructive needs its own flag. `-u`/`--unsafe` from earlier versions is accepted but has no effect.
-
-Exit status: 0 success (attest: every rule passed), 1 error, 2 bad command line, 3 attest: a rule did not pass.
-
-The element ID is kept in `/etc/opt/jane/janeelementid` (Windows: `%ProgramData%\jane\janeelementid`). `create` and `update` stop straight away, before contacting Jane, if they cannot write it.
-
-### Environment
-
-| Variable | Meaning |
-|---|---|
-| `JANE_USERNAME`, `JANE_PASSWORD` | Jane user and password, when Jane's REST API requires a login (`auth: rest: true`) |
-| `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, if one is set |
-| `SSL_CERT_FILE` | (Linux/BSD) a CA or self-signed certificate to trust for Jane's HTTPS |
-
-`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_USERNAME,JANE_PASSWORD,JANE_TPM_ENDORSEMENT_PASSWORD`, for `create` and `update`.
+In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_USERNAME`, `JANE_PASSWORD`, `JANE_TPM_ENDORSEMENT_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
 
 ## All environment variables
 

@@ -53,7 +53,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | File | |
 |---|---|
 | `/opt/jane/tarzan` | the trust agent |
-| `/opt/jane/jp` | the provisioner |
+| `/opt/jane/jp` | the provisioner (see [jp](jp.md)) |
 | `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy |
 | `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
 | `/etc/systemd/system/tarzan.service` | runs tarzan as root |

@@ -1,5 +1,7 @@
 # jp — Jane element provisioner (Go)
 
+User documentation: [docs/jp.md](../docs/jp.md) (modes, flags, when to use them). This README covers the provisioning file format in detail and the implementation.
+
 Go port of `provisioner/jp.py`. It registers the machine as an element with a
 Jane attestation server, can clear and provision the TPM, and records
 expected values for the intents listed in the provisioning file. It can
@@ -186,8 +188,8 @@ given), so one provisioning file can serve both platforms.
 `tpmclear` and `tpmprovision` change the TPM, so they run only for `create`
 or `update` with `--reprovisiontpm`; otherwise they are skipped (and reported),
 leaving the TPM as it is. `attest` never runs them and never opens the TPM.
-jp asks no questions: `-u`/`--unsafe` is accepted for old scripts but has no
-effect. This lets `jp update` and `jp attest` run unattended (cron, package
+jp asks no questions, and there is no `-u`/`--unsafe` any more (removed in
+1.5.4; scripts using it must drop it). This lets `jp update` and `jp attest` run unattended (cron, package
 hooks) without any risk to the TPM keys.
 
 
@@ -208,8 +210,9 @@ hooks) without any risk to the TPM keys.
   the section as written.
 
 Handles must be persistent handles (0x81xxxxxx), in hex or decimal.
-Owner and endorsement hierarchy authorisation is the empty password, as with
-tpm2-tools' defaults.
+The owner hierarchy is authorised with the empty password, as with tpm2-tools'
+defaults; the endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`
+(empty if unset).
 
 ## Tests
 
@@ -249,7 +252,7 @@ that a quote from the new AK verifies with its exported PEM key.
 - New `attest` operation (above), which prints rule results by name
   (`9001 Fail`); `create`/`update` no longer run rules (1.5.3).
 - jp asks no questions (1.5.4): the destructive TPM steps need
-  `--reprovisiontpm`, and `-u` is accepted but has no effect.
+  `--reprovisiontpm`; `-u`/`--unsafe` is removed.
 - HTTP requests time out after 60 seconds.
 
 Kept deliberately: quote expected-value names still repeat the intent ID

@@ -101,7 +101,7 @@ sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 - **tpmclear** deletes the keys stored at the EK and AK handles (0x810100EE and 0x810100AA), so they can be made afresh. It does not clear the rest of the TPM, but anything another program stored at exactly those handles is lost.
 - **tpmprovision** creates the endorsement key (EK) and attestation key (AK) at those handles.
 
-Without the flag both steps are skipped and the TPM is left as it is; use that if the TPM already has jp's keys. jp never asks questions, so every command here can also run unattended: only `--reprovisiontpm` (and `--recreate`) allow anything destructive.
+Without the flag both steps are skipped and the TPM is left as it is; use that if the TPM already has jp's keys. jp never asks questions, so every command here can also run unattended: only `--reprovisiontpm` (and `--recreate`) allow anything destructive. [jp, the provisioner](jp.md) explains each mode and flag.
 
 jp then collects information about the machine, registers it with Jane as an element, writes the element's ID to `/etc/opt/jane/janeelementid`, and records the expected values (the "known good" PCR values, firmware version, machine ID, UEFI variables) for each intent in the file.
 
@@ -126,5 +126,6 @@ In the Web UI:
 ## Next
 
 - [Hardening](hardening.md): your own TLS keys, logins, database and broker accounts, restricting addresses, the signing key. Do this before Jane is reachable from other machines.
+- [jp, the provisioner](jp.md): when to run `update` (after firmware and kernel updates), scheduling `attest`, re-provisioning the TPM.
 - [Running Jane, tarzan and jp](running.md): every option, flag and environment variable, and running on other systems.
 - [Contents](contents.md): all the documentation.

@@ -79,8 +79,6 @@ func run(argv []string) int {
 		switch {
 		case a == "--reprovisiontpm":
 			reprovision = true
-		case a == "-u" || a == "--unsafe":
-			fmt.Fprintf(os.Stderr, "jp: %s no longer has any effect: jp never asks, and the TPM steps run only with --reprovisiontpm\n", a)
 		case a == "--recreate":
 			recreate = true
 		case a == "-h" || a == "--help":

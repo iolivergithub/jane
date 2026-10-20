@@ -697,3 +697,12 @@ func TestDeprecatedWithRulesRunsNoRules(t *testing.T) {
 		t.Errorf("output:\n%s", out.String())
 	}
 }
+
+// -u/--unsafe was removed in 1.5.4: it is an unknown option now.
+func TestUnsafeFlagRemoved(t *testing.T) {
+	for _, f := range []string{"-u", "--unsafe"} {
+		if code := run([]string{"update", "testdata/examplecreateprovisioningfile.yaml", f}); code != exitUsage {
+			t.Errorf("%s: exit %d, want %d", f, code, exitUsage)
+		}
+	}
+}
