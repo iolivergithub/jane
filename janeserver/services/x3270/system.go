@@ -114,7 +114,6 @@ func configDetail(si systemInfo) detail {
 	add(labelled("REST", listenAddr(cfg.Rest.ListenOn, cfg.Rest.Port, cfg.Rest.UseHTTP))...)
 	add(labelled("Web", listenAddr(cfg.Web.ListenOn, cfg.Web.Port, cfg.Web.UseHTTP))...)
 	add(labelled("X3270", configuration.ListenAddress(cfg.X3270.ListenOn, cfg.X3270.Port)+"  (tn3270)")...)
-	add(labelled("Keylime", or(cfg.Keylime.ApiUrl, "(not utilised)"))...)
 
 	add(section("Logging")...)
 	add(labelled("Log file", cfg.Logging.LogFileLocation)...)

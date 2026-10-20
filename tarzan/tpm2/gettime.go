@@ -26,7 +26,10 @@ import (
 //	tpm2/nonce     qualifying data, base64
 //
 // The endorsement hierarchy (the privacy administrator) is authorised with
-// the empty password, as elsewhere in tarzan and jp (#76).
+// the empty password: go-tpm (v0.9.8) declares GetTime's PrivacyAdminHandle as
+// a plain handle, so no other password can be given. With an endorsement
+// password set (JANE_TPM_ENDORSEMENT_PASSWORD) gettime therefore fails with an
+// authorisation error; activatecredential and jp do use the password (#76).
 func GetTime(c echo.Context) error {
 
 	fmt.Println("tpm2 gettime called")

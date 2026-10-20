@@ -85,6 +85,7 @@ func main() {
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, configuration.ConfigData.System.Name, msg)
 	msg = fmt.Sprintf("Command line contained %v items: %v", len(os.Args), os.Args)
 	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, "command line", msg)
+	logging.MakeLogEntry("SYS", "startup/INIT", RUNSESSION, configuration.ConfigData.System.Name, datalayer.AuthSummary())
 
 	// Print our welcome message
 

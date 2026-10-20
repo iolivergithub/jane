@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -51,20 +50,20 @@ const (
 	imaASCIILog  = "/sys/kernel/security/ima/ascii_runtime_measurements"
 )
 
-// errQuit is returned when the operator answers "q" at a safety prompt.
-var errQuit = errors.New("terminated by operator")
-
 // Provisioner runs a provisioning file's worklist against a Jane server.
 type Provisioner struct {
 	P      *ProvisioningFile
 	Client *Client
-	Op     string // "create" or "update"
+	Op     string // "create", "update" or "attest"
 
-	// Unsafe skips the y/n/q safety prompts.
-	Unsafe bool
+	// ReprovisionTPM allows the worklist's destructive TPM steps, tpmclear
+	// (evict the keys at the EK/AK handles) and tpmprovision (create new
+	// ones). Without it create and update skip them, so jp can run
+	// unattended without ever changing the TPM; attest never runs them.
+	ReprovisionTPM bool
 
 	// Recreate lets create register a new element for a machine that is
-	// already registered. Without it create refuses, even with Unsafe.
+	// already registered. Without it create refuses.
 	Recreate bool
 
 	IDFile string // where the element's itemid is stored
@@ -74,7 +73,6 @@ type Provisioner struct {
 	LegacyIDFile string
 	KeyDir       string // where tpmprovision writes ek.pub, ak.pub and ak.name
 
-	In       *bufio.Reader
 	Out      io.Writer
 	Now      func() time.Time
 	HostInfo func() (HostInfo, error)
@@ -84,16 +82,14 @@ type Provisioner struct {
 	tpmDev  TPMDevice
 }
 
-func NewProvisioner(p *ProvisioningFile, op string, unsafe bool) *Provisioner {
+func NewProvisioner(p *ProvisioningFile, op string) *Provisioner {
 	return &Provisioner{
 		P:            p,
 		Client:       NewClient(p.AttestationServer),
 		Op:           op,
-		Unsafe:       unsafe,
 		IDFile:       defaultIDFile(),
 		LegacyIDFile: defaultLegacyIDFile(),
 		KeyDir:       os.TempDir(),
-		In:           bufio.NewReader(os.Stdin),
 		Out:          os.Stdout,
 		Now:          time.Now,
 		HostInfo:     collectHostInfo,
@@ -129,25 +125,16 @@ func (pv *Provisioner) ProcessWorklist() (*Element, error) {
 
 	for _, w := range pv.P.ProvisionWorklist {
 		switch w {
-		case "tpmclear":
-			ok, err := pv.ContinueQuestion("TPM Clear?")
-			if err != nil {
-				return e, err
+		case "tpmclear", "tpmprovision":
+			if !pv.tpmStepAllowed(w) {
+				continue
 			}
-			if ok {
-				if err := pv.tpmClear(); err != nil {
-					return e, fmt.Errorf("tpmclear: %w", err)
-				}
+			step := pv.tpmClear
+			if w == "tpmprovision" {
+				step = pv.tpmProvision
 			}
-		case "tpmprovision":
-			ok, err := pv.ContinueQuestion("TPM Provision?")
-			if err != nil {
-				return e, err
-			}
-			if ok {
-				if err := pv.tpmProvision(); err != nil {
-					return e, fmt.Errorf("tpmprovision: %w", err)
-				}
+			if err := step(); err != nil {
+				return e, fmt.Errorf("%s: %w", w, err)
 			}
 		case "makebetterdescription":
 			e.Description = pv.betterDescription()
@@ -379,6 +366,9 @@ func (pv *Provisioner) device() (TPMDevice, error) {
 	if pv.tpmDev != nil {
 		return pv.tpmDev, nil
 	}
+	if pv.Op == "attest" {
+		return nil, errors.New("attest does not use the TPM")
+	}
 	d, desc, err := pv.OpenTPM(pv.P.TPM2.Device)
 	if err != nil {
 		return nil, fmt.Errorf("opening TPM %q: %w", pv.P.TPM2.Device, err)
@@ -583,6 +573,28 @@ func (pv *Provisioner) existingIDFile() string {
 	return ""
 }
 
+// idFileUnreadable returns an error when an element ID file exists but this
+// process may not read it (e.g. /etc/opt/jane not accessible to this user), so
+// that it is not reported as missing.
+func (pv *Provisioner) idFileUnreadable() error {
+	for _, f := range []string{pv.IDFile, pv.LegacyIDFile} {
+		if f == "" {
+			continue
+		}
+		_, err := os.Stat(f)
+		if err == nil {
+			var fh *os.File
+			if fh, err = os.Open(f); err == nil {
+				fh.Close()
+			}
+		}
+		if errors.Is(err, fs.ErrPermission) {
+			return fmt.Errorf("cannot read the element ID file %s: permission denied (run jp with sudo, or check the permissions of %s)", f, filepath.Dir(f))
+		}
+	}
+	return nil
+}
+
 func (pv *Provisioner) readID() (string, error) {
 	f := pv.existingIDFile()
 	if f == "" {
@@ -649,29 +661,21 @@ func (pv *Provisioner) migrateIDFile() error {
 }
 
 //
-// Safety prompt
+// Destructive TPM steps
 //
 
-// ContinueQuestion asks the operator to confirm a step. It returns true
-// straight away in unsafe mode, and errQuit if the operator answers q.
-func (pv *Provisioner) ContinueQuestion(msg string) (bool, error) {
-	if pv.Unsafe {
-		return true, nil
+// tpmStepAllowed reports whether a destructive TPM worklist step (tpmclear,
+// tpmprovision) may run: only for create or update with --reprovisiontpm,
+// never for attest. A skipped step is reported, so the output says what was
+// left alone.
+func (pv *Provisioner) tpmStepAllowed(step string) bool {
+	if pv.Op == "attest" {
+		fmt.Fprintf(pv.Out, "%s: skipped, attest never changes the TPM\n", step)
+		return false
 	}
-	for {
-		fmt.Fprintf(pv.Out, "Safety check: %s (ynq) >", msg)
-		line, err := pv.In.ReadString('\n')
-		switch strings.TrimSpace(line) {
-		case "y":
-			return true, nil
-		case "n":
-			return false, nil
-		case "q":
-			return false, errQuit
-		}
-		if err != nil {
-			return false, fmt.Errorf("reading answer: %w", err)
-		}
-		fmt.Fprintln(pv.Out, "valid reponses are y=yes, n=no and q=quit now")
+	if !pv.ReprovisionTPM {
+		fmt.Fprintf(pv.Out, "%s: skipped, the TPM is left unchanged (give --reprovisiontpm to run it)\n", step)
+		return false
 	}
+	return true
 }

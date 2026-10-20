@@ -1,15 +1,35 @@
 [Unit]
 Description=Jane Attestation Engine
-After=network.target
+Documentation=https://github.com/iolivergithub/jane/blob/main/docs/contents.md
+Wants=network-online.target
+After=network-online.target mongod.service mosquitto.service
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 Restart=always
-RestartSec=1
+RestartSec=5
 User=jane
 Group=jane
+EnvironmentFile=-/etc/opt/jane/jane.env
 ExecStart=/opt/jane/janeserver --config=/etc/opt/jane/config.yaml
+
+# Hardening: Jane reads /etc/opt/jane and writes only /var/log/jane. If you move the
+# log file or keep keys elsewhere, allow it with a drop-in (systemctl edit jane), e.g.
+# [Service]
+# ReadWritePaths=/srv/jane/log
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/log/jane
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
 
 [Install]
 WantedBy=multi-user.target

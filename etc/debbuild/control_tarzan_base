@@ -4,3 +4,6 @@ Architecture: amd64
 Priority: optional
 Section: admin
 Description: Tarzan Trust Agent and Provisioner for Jane
+ tarzan collects attestation evidence (TPM 2.0, UEFI and IMA logs, system
+ information) for the Jane attestation engine; jp registers this machine with
+ Jane and provisions its TPM.

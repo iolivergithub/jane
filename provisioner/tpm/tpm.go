@@ -2,8 +2,8 @@
 // tpm2-tools commands the provisioner used to run (tpm2_evictcontrol,
 // tpm2_createek, tpm2_createak and tpm2_getcap).
 //
-// All hierarchy authorisations (owner, endorsement) use the empty password,
-// as tpm2-tools does by default.
+// The owner hierarchy uses the empty password, as tpm2-tools does by default;
+// the endorsement hierarchy uses JANE_TPM_ENDORSEMENT_PASSWORD (empty if unset).
 package tpm
 
 import (
@@ -13,6 +13,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -131,8 +132,14 @@ func ownerAuth() tpm2.AuthHandle {
 	return tpm2.AuthHandle{Handle: tpm2.TPMRHOwner, Auth: tpm2.PasswordAuth(nil)}
 }
 
+// EndorsementPasswordVar names the environment variable holding the TPM's
+// endorsement hierarchy password (#76), the same variable tarzan reads. Unset
+// or empty means the empty password, as before. Run jp with sudo -E (or
+// sudo --preserve-env=JANE_TPM_ENDORSEMENT_PASSWORD) to keep it.
+const EndorsementPasswordVar = "JANE_TPM_ENDORSEMENT_PASSWORD"
+
 func endorsementAuth() tpm2.AuthHandle {
-	return tpm2.AuthHandle{Handle: tpm2.TPMRHEndorsement, Auth: tpm2.PasswordAuth(nil)}
+	return tpm2.AuthHandle{Handle: tpm2.TPMRHEndorsement, Auth: tpm2.PasswordAuth([]byte(os.Getenv(EndorsementPasswordVar)))}
 }
 
 // ReadKey reads the public area of the object at h. It returns

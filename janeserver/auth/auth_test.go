@@ -236,6 +236,30 @@ func TestREST(t *testing.T) {
 	}
 }
 
+// #46: a failed REST login is logged; a good one and a request without
+// credentials are not.
+func TestRESTFailedLoginIsLogged(t *testing.T) {
+	_, rest := setup(t, false, true)
+	var logged []string
+	logEntry = func(ch, op, item, itemtype, msg string) { logged = append(logged, ch+" "+op+" "+item+" "+msg) }
+
+	do(rest, httptest.NewRequest(http.MethodGet, "/elements", nil))
+	req := httptest.NewRequest(http.MethodGet, "/elements", nil)
+	req.SetBasicAuth("ian", "secret")
+	do(rest, req)
+	if len(logged) != 0 {
+		t.Fatalf("logged without a failed login: %q", logged)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/elements", nil)
+	req.SetBasicAuth("ian", "wrong")
+	req.RemoteAddr = "192.0.2.7:4242"
+	do(rest, req)
+	if len(logged) != 1 || logged[0] != "AUTH login/FAIL ian failed rest login from 192.0.2.7" {
+		t.Fatalf("log entries = %q", logged)
+	}
+}
+
 func TestRESTDisabledIsPassThrough(t *testing.T) {
 	_, rest := setup(t, false, false)
 	if rec := do(rest, httptest.NewRequest(http.MethodGet, "/elements", nil)); rec.Code != http.StatusOK {

@@ -2,7 +2,7 @@
 
 Jane can require a login for each of its three interfaces separately: the Web UI, the REST API and the x3270 terminal interface. All three use the same users, held in Jane's MongoDB database. With no `auth:` section in `config.yaml`, nothing asks for a login.
 
-Read [Security](security.md) as well: logins do not make Jane safe to expose, and two of the interfaces can carry passwords unencrypted.
+Read [Hardening](hardening.md) as well: logins do not make Jane safe to expose on their own, and two of the interfaces can carry passwords unencrypted.
 
 ## Switching it on
 
@@ -13,7 +13,7 @@ auth:
   web: true            # require a login for the Web UI
   rest: false          # require HTTP Basic auth for the REST API
   x3270: true          # require a logon on the x3270 interface
-  sessiontimeout: 8h   # a Web UI login, or an x3270 logon, expires after this long without use
+  sessiontimeout: 30m  # a Web UI login, or an x3270 logon, expires after this long without use (default 30m)
 ```
 
 Restart Jane after changing this section. At startup Jane logs which interfaces need a login, and warns if one is enabled but there are no users, or if the Web UI needs a login while the x3270 interface does not.
@@ -35,7 +35,7 @@ Add a user, or set a new password for one, with `addjaneuser`:
 
 The second and third arguments are the `database: connection` and `database: name` values from `config.yaml` (`asvr` in the packaged configuration). The password is asked for twice and never appears on the command line; to script it, pipe it in on standard input.
 
-The script needs Python 3 with `argon2-cffi` and `pymongo`. The deb package recommends them; otherwise install them with `apt install python3-argon2 python3-pymongo`. More detail is in the script's [README](../etc/addjaneuser/README.md).
+The script needs Python 3 with `argon2-cffi` and `pymongo`. The deb package recommends them; otherwise install them with `apt install python3-argon2 python3-pymongo`. If MongoDB itself needs an account, addjaneuser reads it from `JANE_MONGODB_USERNAME`/`JANE_MONGODB_PASSWORD` (or `--dbuser`/`--dbpass`); see [Running](running.md#addjaneuser).
 
 - Passwords are stored as Argon2id hashes. Jane only verifies them; it never stores a password.
 - Anyone who can run `addjaneuser` against the database can reset any password; the old one is not needed.
@@ -63,7 +63,9 @@ curl -u ian https://jane.example:8520/elements
 ```
 
 - `/health` and CORS preflight (`OPTIONS`) requests stay open.
-- Anything calling the API must then send credentials. **The provisioner (`jp`) does not do this yet**, so it cannot be used while `rest: true`.
+- Anything calling the API must then send credentials. jp takes them from `JANE_USERNAME` and `JANE_PASSWORD`, or from `--user` and `--pass` given together (see [Running](running.md#jp)); `sudo -E` keeps the variables for `jp create` and `jp update`.
+- A failed REST login is logged on the `AUTH` channel with the client's address. Successful requests are not logged (every request carries the password).
+- Every request is checked against the stored Argon2id hash, which costs time and memory per request; token-based REST logins are planned for 1.5.5 (#89).
 - Basic authentication sends the password with every request, so use HTTPS (`rest: usehttp: false`).
 
 ## x3270 interface
@@ -91,4 +93,4 @@ With `x3270: false` the interface starts at the Primary Option Menu, as it did b
 
 ## What is logged
 
-Web UI and x3270 logins, failed logins and logoffs go to Jane's normal log (database, MQTT and log file) on the `AUTH` channel, with the client's address. x3270 entries say how the session ended: logoff, exit, disconnected or timed out. REST requests are not logged individually.
+Web UI and x3270 logins, failed logins and logoffs, and failed REST logins, go to Jane's normal log (database, MQTT and log file) on the `AUTH` channel, with the client's address. x3270 entries say how the session ended: logoff, exit, disconnected or timed out. Successful REST requests are not logged individually.

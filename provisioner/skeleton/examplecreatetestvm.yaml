@@ -14,9 +14,11 @@ endpoints:
   tarzan:
       endpoint: http://debianwork.local:8530
       protocol: A10HTTPRESTv2
-  ratds:
-      endpoint: http://debianwork.local:8895
-      protocol: RATSD      
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the std::intent::ratsd::* intents.
+  #ratsd:
+  #    endpoint: http://debianwork.local:8895
+  #    protocol: RATSD
 tpm2:
   device:   /dev/tpmrm0   
   ekcerthandle: '0x1C000002'   
@@ -25,6 +27,12 @@ tpm2:
   ak:
     handle: '0x810100AA'
 provisionworklist:
+  # tpmclear evicts (deletes) the persistent keys at the EK and AK handles below, so
+  # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
+  # Whatever was stored at those two handles is lost, and Jane's record of the old keys
+  # no longer matches until jp registers the new ones. Both steps run only when jp
+  # create/update is given --reprovisiontpm; otherwise they are skipped and the TPM is
+  # left unchanged, so jp can run unattended. jp attest never runs them.
   - tpmclear
   - tpmprovision
   - collecthostinfo
@@ -59,13 +67,15 @@ evs:
             parameters: { "uefilogcid": $uefilog }
   - std::intent::sha256::crtm::pcr0 :
       protocol: tarzan
+      cid: q_pcr0
       type: tpm2quote      
       rules:
         - tpm2_attestedValue
         - tpm2_firmware
         - tpm2_magicNumber
         - tpm2_safe
-        - tpm2_validNonce 
+        - tpm2_validNonce
+        - tpm2_validSignature
         - tpm2_pcrDigest:
             parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::firmware :
@@ -77,6 +87,7 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
+        - tpm2_validSignature
         - tpm2_pcrDigest:
             parameters: { "pcrscid": $pcrs }
   - std::intent::sha256::crtm::bootloaderonly  :
@@ -88,6 +99,7 @@ evs:
         - tpm2_magicNumber
         - tpm2_safe
         - tpm2_validNonce
+        - tpm2_validSignature
         - tpm2_pcrDigest:
             parameters: { "pcrscid": $pcrs }
   - std::intent::linux::ima::asciilog :
@@ -97,12 +109,21 @@ evs:
       rules:
         - tpm2_credentialActivated
         - tpm2_akAttributes
-  # TPM clock, reset and restart counters (signed) and the TPM's identity and
-  # configuration (unsigned); no rules yet
+  # TPM clock, reset and restart counters (signed): the signature, and progress since the
+  # pcr0 quote above (within this run; give an older claim's itemid to compare sessions)
   - std::intent::tpm2::gettime :
       protocol: tarzan
+      rules:
+        - tpm2_validSignature
+        - tpm2_clockProgress:
+            parameters: { "previouscid": $q_pcr0 }
+  # the TPM's identity and configuration (unsigned): its firmware version must equal the
+  # signed one in the pcr0 quote
   - std::intent::tpm2::capabilities :
       protocol: tarzan
+      rules:
+        - tpm2_capabilitiesFirmware:
+            parameters: { "quotecid": $q_pcr0 }
   - std::intent::uefi::efivars :
       protocol: tarzan
       type: uefiefivars

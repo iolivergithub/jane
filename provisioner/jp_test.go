@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/x509"
 	"encoding/base64"
@@ -40,6 +39,9 @@ type fakeJane struct {
 	ruleResults map[string]int  // rule -> result code; default 0 (Success)
 	ruleErrors  map[string]bool // rule -> answer 500 without a result, as for an unknown rule
 	failIntents map[string]bool // intent -> /attest fails
+
+	wantUser, wantPass string   // if wantUser is set, requests without these Basic credentials get 401
+	authSeen           []string // the Authorization header of each request
 }
 
 func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
@@ -48,6 +50,13 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 		defer f.mu.Unlock()
 		key := r.Method + " " + r.URL.Path
 		f.calls = append(f.calls, key)
+		f.authSeen = append(f.authSeen, r.Header.Get("Authorization"))
+		if f.wantUser != "" {
+			if u, p, ok := r.BasicAuth(); !ok || u != f.wantUser || p != f.wantPass {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
 		if b, _ := io.ReadAll(r.Body); len(b) > 0 {
 			var v any
 			if err := json.Unmarshal(b, &v); err != nil {
@@ -190,7 +199,8 @@ func newHarness(t *testing.T, op string) *harness {
 	t.Cleanup(srv.Close)
 	p.AttestationServer = srv.URL
 
-	pv := NewProvisioner(p, op, true)
+	pv := NewProvisioner(p, op)
+	pv.ReprovisionTPM = op != "attest" // as if --reprovisiontpm were given
 	pv.IDFile = filepath.Join(t.TempDir(), "janeelementid")
 	pv.LegacyIDFile = filepath.Join(t.TempDir(), "legacy-janeelementid") // never the real /etc
 	pv.Out = io.Discard
@@ -415,27 +425,55 @@ func TestPlainProcessEVsRunsNoRules(t *testing.T) {
 	}
 }
 
-func TestSafetyPrompts(t *testing.T) {
-	h := newHarness(t, "create")
-	h.pv.Unsafe = false
-	h.pv.P.ProvisionWorklist = []string{"tpmclear", "tpmprovision"}
-	h.pv.In = bufio.NewReader(strings.NewReader("maybe\nn\ny\n"))
-	if _, err := h.pv.ProcessWorklist(); err != nil {
-		t.Fatal(err)
-	}
-	// clear declined (after an invalid answer), provision accepted
-	if !slices.Equal(h.tpm.log, []string{"createek 0x810100EE", "createak 0x810100EE 0x810100AA"}) {
-		t.Errorf("tpm log = %v", h.tpm.log)
-	}
+// Without --reprovisiontpm, create and update leave the TPM alone (tpmclear
+// and tpmprovision are skipped and reported); with it they run, unasked.
+func TestTPMStepsNeedReprovisionFlag(t *testing.T) {
+	for _, op := range []string{"create", "update"} {
+		h := newHarness(t, op)
+		h.pv.ReprovisionTPM = false
+		h.pv.P.ProvisionWorklist = []string{"tpmclear", "tpmprovision"}
+		var out bytes.Buffer
+		h.pv.Out = &out
+		if _, err := h.pv.ProcessWorklist(); err != nil {
+			t.Fatal(err)
+		}
+		if len(h.tpm.log) != 0 {
+			t.Errorf("%s without --reprovisiontpm changed the TPM: %v", op, h.tpm.log)
+		}
+		if strings.Count(out.String(), "give --reprovisiontpm") != 2 {
+			t.Errorf("%s: skipped steps not reported:\n%s", op, out.String())
+		}
 
-	h.pv.In = bufio.NewReader(strings.NewReader("q\n"))
-	if _, err := h.pv.ProcessWorklist(); !errors.Is(err, errQuit) {
-		t.Errorf("err = %v, want errQuit", err)
+		h.pv.ReprovisionTPM = true
+		if _, err := h.pv.ProcessWorklist(); err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Contains(h.tpm.log, "createek 0x810100EE") {
+			t.Errorf("%s with --reprovisiontpm: tpm log = %v", op, h.tpm.log)
+		}
 	}
+}
 
-	h.pv.In = bufio.NewReader(strings.NewReader(""))
-	if _, err := h.pv.ProcessWorklist(); err == nil || errors.Is(err, errQuit) {
-		t.Errorf("EOF: err = %v, want a read error", err)
+// attest never opens the TPM, whatever the worklist or flags say.
+func TestAttestNeverTouchesTPM(t *testing.T) {
+	h := newHarness(t, "attest")
+	h.pv.ReprovisionTPM = true // even if set by mistake
+	h.pv.P.ProvisionWorklist = []string{"tpmclear", "tpmprovision", "collecttpm2"}
+	h.pv.Out = io.Discard
+	h.pv.ProcessWorklist()
+	os.WriteFile(h.pv.IDFile, []byte("E1"), 0o444)
+	h.pv.Run()
+	if len(h.tpm.opened) != 0 || len(h.tpm.log) != 0 {
+		t.Errorf("attest touched the TPM: opened %v, log %v", h.tpm.opened, h.tpm.log)
+	}
+	if _, err := h.pv.device(); err == nil {
+		t.Error("device() should refuse for attest")
+	}
+}
+
+func TestReprovisionFlagOnlyForCreateAndUpdate(t *testing.T) {
+	if code := run([]string{"attest", "testdata/examplecreateprovisioningfile.yaml", "--reprovisiontpm"}); code != exitUsage {
+		t.Errorf("attest --reprovisiontpm: exit %d, want %d", code, exitUsage)
 	}
 }
 
@@ -657,5 +695,14 @@ func TestDeprecatedWithRulesRunsNoRules(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "processevs_withrules: deprecated, using processevs") {
 		t.Errorf("output:\n%s", out.String())
+	}
+}
+
+// -u/--unsafe was removed in 1.5.4: it is an unknown option now.
+func TestUnsafeFlagRemoved(t *testing.T) {
+	for _, f := range []string{"-u", "--unsafe"} {
+		if code := run([]string{"update", "testdata/examplecreateprovisioningfile.yaml", f}); code != exitUsage {
+			t.Errorf("%s: exit %d, want %d", f, code, exitUsage)
+		}
 	}
 }

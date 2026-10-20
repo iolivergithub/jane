@@ -1,5 +1,7 @@
 # jp — Jane element provisioner (Go)
 
+User documentation: [docs/jp.md](../docs/jp.md) (modes, flags, when to use them). This README covers the provisioning file format in detail and the implementation.
+
 Go port of `provisioner/jp.py`. It registers the machine as an element with a
 Jane attestation server, can clear and provision the TPM, and records
 expected values for the intents listed in the provisioning file. It can
@@ -14,12 +16,29 @@ Linux, Windows, macOS, the BSDs, illumos/Solaris and AIX.
 ## Build and run
 
     go build -o jp .                          # or: CGO_ENABLED=0 GOOS=windows go build
-    sudo ./jp create provisioning.yaml        # asks before TPM steps
-    sudo ./jp update provisioning.yaml -u     # -u / --unsafe: no prompts
-    sudo ./jp attest provisioning.yaml        # attest the registered element
+    sudo ./jp create --reprovisiontpm provisioning.yaml   # first time: new EK and AK
+    sudo ./jp update provisioning.yaml        # leaves the TPM alone; safe to automate
+    ./jp attest provisioning.yaml             # attest the registered element (no root needed)
 
-Run as root (Administrator on Windows) for the TPM, the element ID file and
-the machine ID.
+`create` and `update` need root (Administrator on Windows) for the TPM, the
+element ID file and the machine ID; without write access to the element ID
+file's directory they stop before contacting Jane. `attest` only reads the
+element ID file and talks to Jane, so any user can run it. An element ID file
+that exists but cannot be read is reported as "permission denied", not as
+missing.
+
+### Credentials
+
+If Jane's REST API requires a login (`auth: rest: true`), jp sends HTTP Basic
+credentials from `JANE_USERNAME` and `JANE_PASSWORD`, or from `--user NAME
+--pass PASSWORD` (both together; they override the variables). `sudo` drops
+the environment, so use `sudo -E` (or `--preserve-env=JANE_USERNAME,JANE_PASSWORD`)
+for `create` and `update`. An HTTP 401 answer gives a message saying so. For a
+Jane on HTTPS with a self-signed certificate, set `SSL_CERT_FILE` to it
+(Linux/BSD).
+
+If the TPM's endorsement hierarchy has a password, set
+`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads).
 
 | | Unix-likes | Windows |
 |---|---|---|
@@ -43,8 +62,8 @@ in a future release.
   anything else (in particular before `tpmclear`/`tpmprovision`) it refuses,
   exit 1, if the machine already looks registered: the element ID file exists,
   or Jane already holds an element with the same `element.name` or the same
-  machine ID. It also refuses if Jane cannot be asked. `-u` does not lift
-  this. `--recreate` does (asking first unless `-u`): it registers a new
+  machine ID. It also refuses if Jane cannot be asked. `--recreate` lifts
+  this: it registers a new
   element and leaves the old one in Jane, whose TPM keys stop matching if the
   worklist re-provisions the TPM. A cloned VM that kept its source's
   `/etc/machine-id` is refused too; give it a new machine ID.
@@ -166,8 +185,17 @@ given), so one provisioning file can serve both platforms.
 
 ## TPM worklist steps
 
+`tpmclear` and `tpmprovision` change the TPM, so they run only for `create`
+or `update` with `--reprovisiontpm`; otherwise they are skipped (and reported),
+leaving the TPM as it is. `attest` never runs them and never opens the TPM.
+jp asks no questions, and there is no `-u`/`--unsafe` any more (removed in
+1.5.4; scripts using it must drop it). This lets `jp update` and `jp attest` run unattended (cron, package
+hooks) without any risk to the TPM keys.
+
+
 - `tpmclear` evicts the persistent objects at `tpm2.ek.handle` and
-  `tpm2.ak.handle`. An empty handle is reported, not an error.
+  `tpm2.ak.handle` (not TPM2_Clear: the rest of the TPM is untouched). An
+  empty handle is reported, not an error.
 - `tpmprovision` creates the TCG default RSA-2048 EK (`tpm2.RSAEKTemplate`)
   in the endorsement hierarchy and an RSA-2048 restricted signing AK
   (RSASSA, SHA-256) under it, persists both at the configured handles, writes
@@ -182,8 +210,9 @@ given), so one provisioning file can serve both platforms.
   the section as written.
 
 Handles must be persistent handles (0x81xxxxxx), in hex or decimal.
-Owner and endorsement hierarchy authorisation is the empty password, as with
-tpm2-tools' defaults.
+The owner hierarchy is authorised with the empty password, as with tpm2-tools'
+defaults; the endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`
+(empty if unset).
 
 ## Tests
 
@@ -222,8 +251,8 @@ that a quote from the new AK verifies with its exported PEM key.
 - New `uefiefivars` expected-value type.
 - New `attest` operation (above), which prints rule results by name
   (`9001 Fail`); `create`/`update` no longer run rules (1.5.3).
-- `-u` prints "unsafe mode" rather than the confusingly named
-  "safe mode is True".
+- jp asks no questions (1.5.4): the destructive TPM steps need
+  `--reprovisiontpm`; `-u`/`--unsafe` is removed.
 - HTTP requests time out after 60 seconds.
 
 Kept deliberately: quote expected-value names still repeat the intent ID

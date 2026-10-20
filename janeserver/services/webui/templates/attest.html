@@ -167,7 +167,7 @@
             <tr><td><code>tpm2/nonce</code></td><td>string, base64</td><td><span class="badge text-bg-secondary src">JANE</span></td>
                 <td>Fresh nonce, used as the qualifying data, as for a quote.</td></tr>
             <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
-                <td>Handle of the attestation key that signs the time, from the element's <code>tpm2.ak.handle</code>. The endorsement hierarchy is authorised with the empty password.</td></tr>
+                <td>Handle of the attestation key that signs the time, from the element's <code>tpm2.ak.handle</code>. The endorsement hierarchy is authorised with the empty password; a TPM with an endorsement password set (tarzan's <code>JANE_TPM_ENDORSEMENT_PASSWORD</code>) cannot answer this function.</td></tr>
             <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>TPM device, as above.</td></tr>
 
@@ -330,6 +330,16 @@
             <tr><td><code>tpm2_uefiLogReplay</code></td><td><code>tpm2/pcrs</code></td><td class="text-body-secondary">&ndash;</td><td><code>uefilogcid</code></td>
                 <td>Replaying the UEFI event log in the <code>uefi/eventlog</code> claim named by <code>uefilogcid</code> (same element) gives this claim's values for
                 every PCR the log extends, per bank; a bank in only one of the two is skipped. With <code>tpm2_pcrDigest</code> this gives the chain event log &rarr; PCRs &rarr; quote.</td></tr>
+            <tr><td><code>tpm2_validSignature</code></td><td><code>tpm2/quote</code><br/><code>tpm2/gettime</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
+                <td>The signature over the claim's raw <code>attest</code> verifies with the AK (the element's <code>tpm2.ak.public</code>, or <code>tpm2/akpublic</code> if given as a parameter),
+                and the attest is a quote (8018) or time (8019) as the claim's function requires. The other quote rules read tarzan's decoded copy, which the signature does not cover.
+                Needs tarzan 1.5.3 or later; RSA AKs only.</td></tr>
+            <tr><td><code>tpm2_clockProgress</code></td><td><code>tpm2/quote</code><br/><code>tpm2/gettime</code></td><td class="text-body-secondary">&ndash;</td><td><code>previouscid</code></td>
+                <td>Compared with the earlier quote or gettime claim named by <code>previouscid</code> (same element; required, never searched for): fails if the reset count went down,
+                the restart count went down without a reset (TPM cleared or a different TPM), or the TPM clock went backwards (safe or not). Otherwise reports the reboots and restarts in between.</td></tr>
+            <tr><td><code>tpm2_capabilitiesFirmware</code></td><td><code>tpm2/capabilities</code></td><td class="text-body-secondary">&ndash;</td><td><code>quotecid</code></td>
+                <td>The firmware version the TPM reports in this unsigned claim equals the signed one in the quote or gettime claim named by <code>quotecid</code> (same element),
+                compared as numbers. Run <code>tpm2_validSignature</code> on that claim too.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">System</th></tr>
             <tr><td><code>sys_taRunningSafely</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
@@ -338,15 +348,6 @@
                 <td>The machine ID reported by tarzan equals the expected value.</td></tr>
             <tr><td><code>sys_machineID_CrossRef</code></td><td><code>sys/info</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
                 <td>The machine ID reported by tarzan equals the element's <code>host.machineid</code>.</td></tr>
-
-            <tr class="fn-row grp-row"><th colspan="5">Keylime <span class="fn-note">&mdash; needs the Keylime API URL in Jane's configuration</span></th></tr>
-            <tr><td><code>keylime_mb</code></td><td><code>uefi/eventlog</code></td><td><span class="badge bg-success">EV</span> <code>mb_refstate</code></td>
-                <td><code>hash_alg</code><br/><code>pcrs_inquote</code><br/><code>pcrscid</code></td>
-                <td>Keylime validates the measured-boot event log against the reference state, and the PCR values it computes are compared with those in the
-                <code>tpm2/pcrs</code> claim named by <code>pcrscid</code>.</td></tr>
-            <tr><td><code>keylime_ima</code></td><td><code>ima/asciilog</code></td><td><span class="badge bg-success">EV</span> <code>runtime_policy</code></td>
-                <td><code>hash_alg</code><br/><code>pcrscid</code></td>
-                <td>Keylime validates the IMA log against the runtime policy, using PCR 10 from the <code>tpm2/pcrs</code> claim named by <code>pcrscid</code>.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">RATSD</th></tr>
             <tr><td><code>chares_validNonce</code></td><td><code>ratsd/chares</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
@@ -367,31 +368,6 @@
                 <td>Always return the result in their name, without looking at the claim. Useful for testing result handling.</td></tr>
          </tbody>
       </table></div>
-   </div>
-</div>
-
-<div class="card">
-   <div class="card-header">Keylime rule parameters</div>
-   <div class="card-body">
-      <div class="table-responsive"><table class="table table-sm">
-         <thead>
-            <tr><th style="width:12rem">Key</th><th style="width:9rem">Type</th><th style="width:9rem">Used by</th><th>Meaning</th></tr>
-         </thead>
-         <tbody>
-            <tr><td><code>hash_alg</code></td><td>string</td><td>both</td>
-                <td>Hash algorithm and PCR bank, e.g. <code>"sha256"</code>. Must be a bank present in the <code>tpm2/pcrs</code> claim.</td></tr>
-            <tr><td><code>pcrscid</code></td><td>string</td><td>both</td>
-                <td>Item ID of an earlier <code>tpm2/pcrs</code> claim for the same element; take it from that claim's page.</td></tr>
-            <tr><td><code>pcrs_inquote</code></td><td>list of strings</td><td><code>keylime_mb</code></td>
-                <td>The PCRs covered, as strings, e.g. <code>["0","1","2","3","4","5","6","7"]</code>.</td></tr>
-         </tbody>
-      </table></div>
-      <div class="mt-3">
-         <div class="small text-body-secondary mb-1">For <code>keylime_mb</code> (drop <code>pcrs_inquote</code> for <code>keylime_ima</code>):</div>
-<pre class="ref-ex">{"hash_alg": "sha256", "pcrs_inquote": ["0","1","2","3","4","5","6","7"], "pcrscid": "&lt;claim item id&gt;"}</pre>
-      </div>
-      <p class="small text-body-secondary mt-3 mb-0">A missing key gives a <i>fail</i> result naming it. The same object goes to every selected rule; extra keys are ignored,
-      so supplying all three lets you run both Keylime rules together.</p>
    </div>
 </div>
 

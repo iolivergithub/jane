@@ -14,14 +14,16 @@ func Registration() []structures.Rule {
 	ruleMagic := structures.Rule{"tpm2_magicNumber", "Checks the quote magic number is 0xFF544347", MagicNumberRule, false}
 	ruleQuoteType := structures.Rule{"tpm2_type", "Checks the type of the quote which must be 0x8018", QuoteTypeRule, false}
 	ruleIsSafe := structures.Rule{"tpm2_safe", "Checks that the value of safe is 1", IsSafe, false}
-	//ruleValidSignature := structures.Rule{"tpm2_validSignature", "Checks that the signature of rule is valid against the signing attestation key", ValidSignature, false}
 	ruleValidNonce := structures.Rule{"tpm2_validNonce", "Checks that nonce used for the claim matches the nonce in the quote", ValidNonce, false}
 	ruleCredentialActivated := structures.Rule{"tpm2_credentialActivated", "Checks the TPM recovered the secret of a credential made for the AK and EK (tpm2/activatecredential)", CredentialActivated, false}
 	ruleAKAttributes := structures.Rule{"tpm2_akAttributes", "Checks the AK used in tpm2/activatecredential is a restricted, fixedTPM signing key", AKAttributes, false}
 	rulePCRDigest := structures.Rule{"tpm2_pcrDigest", "Checks the PCR values in the tpm2/pcrs claim given by parameter pcrscid give this quote's attested value", PCRDigest, false}
 	ruleUEFILogReplay := structures.Rule{"tpm2_uefiLogReplay", "Replays the UEFI event log in the uefi/eventlog claim given by parameter uefilogcid against this tpm2/pcrs claim", UEFILogReplay, false}
+	ruleValidSignature := structures.Rule{"tpm2_validSignature", "Checks the signature of a tpm2/quote or tpm2/gettime claim's signed attest with the AK, and its type", ValidSignature, false}
+	ruleCapabilitiesFirmware := structures.Rule{"tpm2_capabilitiesFirmware", "Checks the firmware version in this tpm2/capabilities claim equals the signed one in the quote/gettime claim given by parameter quotecid", CapabilitiesFirmware, false}
+	ruleClockProgress := structures.Rule{"tpm2_clockProgress", "Checks the TPM clock, reset and restart counts against the earlier quote/gettime claim given by parameter previouscid", ClockProgress, false}
 
-	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType, ruleCredentialActivated, ruleAKAttributes, rulePCRDigest, ruleUEFILogReplay}
+	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType, ruleCredentialActivated, ruleAKAttributes, rulePCRDigest, ruleUEFILogReplay, ruleValidSignature, ruleCapabilitiesFirmware, ruleClockProgress}
 }
 
 func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
@@ -102,28 +104,6 @@ func QuoteTypeRule(claim structures.Claim, rule string, ev structures.ExpectedVa
 
 	return structures.Success, "TPM Quote (TPMS_ATTEST) type value is correct", nil
 }
-
-// func ValidSignature(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
-// 	quote, err := getQuote(claim)
-// 	if err != nil {
-// 		return structures.Fail, "Parsing TPM quote failed", err
-// 	}
-
-// 	akBytes, err := base64.StdEncoding.DecodeString(claim.Header.Element.TPM2.AK.Public)
-// 	if err != nil {
-// 		return structures.RuleCallFailure, "Base64 decoding the AK failed", err
-// 	}
-// 	akKey, err := utilities.ParseTPMKey(akBytes)
-// 	if err != nil {
-// 		return structures.Fail, "Parsing AK failed", err
-// 	}
-
-// 	if err := quote.VerifySignature(akKey); err != nil {
-// 		return structures.Fail, "Validation of the quote failed", nil
-// 	}
-
-// 	return structures.Success, "Quote was validated successfully", nil
-// }
 
 func ValidNonce(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 	quote, err := getQuote(claim)

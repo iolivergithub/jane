@@ -1,97 +1,87 @@
 # Compiling
 
-Ensure that Go is installed and correctly configured: janeserver, tarzan and the provisioner need Go 1.26 or later (see the `go` line in each `go.mod`). The Intel SGX SDK and Edgeless libraries are only needed for MarbleRun support (see below).
+janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`. Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. The Makefiles expect Go at `/usr/local/go/bin/go`. Builds are tested on Debian 13 on amd64.
 
-The instructions presented here have been tested in Ubuntu 22.04 om AMD64.
+- [janeserver](#janeserver)
+- [tarzan](#tarzan)
+- [jp](#jp)
+- [Version and build strings](#version-and-build-strings)
+- [Tests](#tests)
+- [Building the packages](#building-the-packages)
 
-- [Compiling](#compiling)
-   * [Compiling JANESERVER](#compiling-janeserver)
-      + [Install SGX SDK and Edgeless libraries](#install-sgx-sdk-and-edgeless-libraries)
-      + [Building ](#building)
-      + [Optional BUILD flag](#optional-build-flag)
-   * [Compiling tarzan](#compiling-tarzan)
-
-
-<!-- TOC --><a name="compiling"></a>
-
-
-<!-- TOC --><a name="compiling-janeserver"></a>
-## Compiling JANESERVER
-The default compilation Makefile for Jane is generic for all architectures and does not require additional librares. Skip straight to "Building".
-
-<!-- TOC --><a name="install-sgx-sdk-and-edgeless-libraries"></a>
-### Install SGX SDK and Edgeless libraries
-Skip this and move to "Building" if you are not interested in using MarbleRun. Using these additions requires changes to a few files to uncomment code and further downloads (see below). You will ONLY be able to run on Ubuntu/Debian for amd64 if you do this.
-
-Compilation requires an up-to-date mod file and the Edgeless environment variables - this is explained in the two parts below. Fortunately, unless Intel or Edgeless update their stuff you only have to install these once. The biggest issue is that these libraries are amd64 instruction set specific.
-
-Intel and Edgeless supply releases for Ubuntu and other operating systems. Here we should for Ubuntu Jammy (22.04). These commands might need to be run as `sudo`. Modify as appropriate for your operating system.
+## janeserver
 
 ```bash
-mkdir -p /etc/apt/keyrings 
-wget -q https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key -O /etc/apt/keyrings/intel-sgx-keyring.asc 
-echo "deb [signed-by=/etc/apt/keyrings/intel-sgx-keyring.asc arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main" > /etc/apt/sources.list.d/intel-sgx.list 
-apt update  
-wget https://github.com/edgelesssys/edgelessrt/releases/download/v0.4.1/edgelessrt_0.4.1_amd64_ubuntu-22.04.deb 
-apt-get install -y build-essential cmake libssl-dev libsgx-dcap-default-qpl libsgx-dcap-ql libsgx-dcap-quote-verify
-dpkg -i ./edgelessrt_0.4.1_amd64_ubuntu-22.04.deb
-```
-
-<!-- TOC --><a name="building"></a>
-### Building 
-
-Once SGX and Edgeless have been installed then you can just run this part every time you need to recompile. *MAKE SURE* you are in the `janeserver` directory when you run these commands:
-
-```bash
+cd janeserver
 make build
 ```
 
-You will now get a file called `janeserver` which is your executable. The Makefile also sets BUILD and VERSION flags. Further the Makefile also genates a PIE binary for security reasons.
+This runs `go mod tidy`, `go fmt` and builds a position-independent executable `janeserver` for linux/amd64. `Makefile.arm64` builds for 64-bit ARM. For other systems change `OS` and `ARCH` in the Makefile, or build directly (see below).
 
-If you wish to build for other architectures, modify the OS and ARCH environment variables in the Makefile.
+To run it from the source tree, copy and edit `config.yaml` and see [Running](running.md#janeserver).
 
-<!-- TOC --><a name="optional-build-flag"></a>
-### Optional BUILD and VERSION flags
-Skip this section.
-
-If you wish to set build and version flag, then specify  as part of the `ldflags -X` option as in the example command to compile below. Set the value `123` to whatever you want (within reason - a short string is fine). If you don't do this, and it is completely optional, then default value for the build flag will be `not set`.
+## tarzan
 
 ```bash
-. GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
+cd tarzan
+make build
 ```
 
-or
+builds `tarzan` for linux/amd64 (`Makefile.arm64` and `Makefile.arm6` for ARM). tarzan runs on many systems; `go tool dist list` lists the possible `GOOS`/`GOARCH` pairs. For example:
 
 ```bash
-. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.BUILD=123 main.VERSION=0.9'" -o janeserver
+GOOS=linux   GOARCH=arm64 go build -o tarzan_arm64     # Raspberry Pi 4/5, 64-bit
+GOOS=linux   GOARCH=arm   go build -o tarzan_arm       # Raspberry Pi 3
+GOOS=windows GOARCH=amd64 go build -o tarzan.exe       # Windows 10/11
+GOOS=openbsd GOARCH=amd64 go build -o tarzan_openbsd   # also netbsd, freebsd
+GOOS=linux   GOARCH=s390x go build -o tarzan_s390x     # IBM Z, or Hercules
 ```
 
-<!-- TOC --><a name="compiling-tarzan"></a>
-## Compiling tarzan
-Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Tarzan is only required if you want to use this protocol - it is useful for debugging and building interesting tests.
+What each system can offer differs: Windows controls the TPM itself and has no UEFI or IMA logs; systems without a TPM can still answer `sys/info`.
 
-*MAKE SURE* you are in the `tarzan` directory.  tarzan is much simpler than janeserver and requires just compilation. 
+## jp
 
 ```bash
-Make build
+cd provisioner
+make build
 ```
 
-This generates a PIE binary with BUILD and VERSION tags set for amd64 linux. 
+builds and strips `jp` for linux/amd64 (`Makefile.arm64` for ARM). jp also builds for Windows (`GOOS=windows`).
 
-BUILD and VERSION flags are similar to janeserver.
+## Version and build strings
 
-For other architectures you can build tarzan manually: use `go tool dist list` for a list of operating system and architecture options. Listed below are a few common options - and we like to append this to the binary name when we're generating a few of these for the devices we have (remeber amd64 is 64-bit Intel/AMD x86 based chips, eg: Xeons, i9's, i7's, Threaripper etc etc)
+janeserver and tarzan show a version and build string at start-up and in the Web UI. The Makefiles set the build string from the date and `VERSION` (default `locally_compiled`):
 
 ```bash
-GOOS=linux GOARCH=arm go build -o tarzan_arm                 # eg: Pi 3s
-GOOS=linux GOARCH=arm64 go build -o tarzan_arm64             # eg: Pi 4, 5s in 64-bit mode (also 3's I think)
-GOOS=windows GOARCH=amd64 go build -o tarzan_win             # eg: Pretty much every Win10, Win11 machine
-GOOS=plan9 GOARCH=386 go build -o tarzan_belllabs            # Because I was in Bell Labs and plan9 was freaking cool! The real Unix next!
-GOOS=linux GOARCH=s390x go build -o tarzan_mainframe         # Because you either have an z-Series in the basement or Hercules
-GOOS=solaris GOARCH=amd64 go build -o tarzan_solaris         # I still mourn the lost of the SparcStation and UltraSparcs, RIP Sun.
-GOOS=opebsd GOARCH=amd64 go build -o tarzan_openbsd          # BSD for security (netbsd and freebsd are supported too)
-GOOS=darmin GOARCH=arm64 go build -o tarzan_mac              # For the Apple people out there...no TPM, but if you figure out attesting a T2 let me know
-GOOS=aix GOARCH=ppc64 go build -o tarzan_aix                 # If you have an AIX box, again let me know...DRTM is supported during boot and a TPM too?
-GOOS=wasip1 GOARCH=wasm go build -o tarzan_aix                # Web Assembly works too...never tried this myself, so I wonder how it works
+make build VERSION=1.5.4
 ```
 
+or, building directly:
+
+```bash
+go build -ldflags="-X 'main.VERSION=1.5.4' -X 'main.BUILD=$(date)'" -o janeserver
+```
+
+## Tests
+
+In each module:
+
+```bash
+go vet -composites=false ./...      # janeserver; plain go vet ./... for tarzan and provisioner
+go test ./...
+```
+
+Tests that need a real TPM are skipped unless an environment variable names the device: `JANE_TEST_TPM` (janeserver), `TARZAN_TEST_TPM` (tarzan), `JP_TEST_TPM` (jp), e.g. `TARZAN_TEST_TPM=/dev/tpmrm0 go test ./tpm2`. They create only transient objects. Some jp tests check behaviour without root and are skipped when run as root.
+
+## Building the packages
+
+```bash
+cd etc/debbuild
+./debbuild.sh
+```
+
+Check first that the last line of `versions.txt` is the version you want (`1.5.4 dd mis yyyy`, the month in Welsh). The script compiles janeserver, tarzan and jp, builds the two deb packages in `/tmp/janedebbuild` (`jane_<version>_amd64.deb`, `tarzan_<version>_amd64.deb`), sets the file modes inside them, converts them to RPMs with `alien`, lints them with `lintian`, and gzips the results.
+
+`alien` and `lintian` are optional: without them those steps print errors, but the deb files are still built. The RPMs are not tested (the install scripts assume Debian tools and systemd).
+
+What the packages install and do is described in [Installing with dpkg/apt](deb.md).

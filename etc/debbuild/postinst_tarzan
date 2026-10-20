@@ -1,24 +1,49 @@
 #!/bin/sh
+# postinst for the tarzan package (tarzan and jp). $1 is "configure"; $2 is
+# the previously configured version, empty on a first install.
+set -e
 
-RED='\033[0;31m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+DOCS=https://github.com/iolivergithub/jane/blob/main
 
-echo "${PURPLE}Running post installation scripts${NC}"
+[ "$1" = "configure" ] || exit 0
+PREVIOUS="$2"
 
-echo "${PURPLE}Enabling Tarzan with systemd${NC}"
-systemctl enable tarzan.service
+# Ownership and permissions. /opt/jane and /etc/opt/jane may be shared with the
+# jane package, which sets the directories; only tarzan's own files are changed.
+for f in /opt/jane/tarzan /opt/jane/jp; do
+    if [ -f "$f" ]; then
+        chown root:root "$f"
+        chmod 755 "$f"
+    fi
+done
+if [ -f /etc/opt/jane/tarzan.env ]; then
+    chown root:root /etc/opt/jane/tarzan.env
+    chmod 600 /etc/opt/jane/tarzan.env
+fi
+if [ -f /etc/opt/jane/provisioning.yaml.example ]; then
+    chown root:root /etc/opt/jane/provisioning.yaml.example
+    chmod 644 /etc/opt/jane/provisioning.yaml.example
+fi
+if [ -f /etc/systemd/system/tarzan.service ]; then
+    chown root:root /etc/systemd/system/tarzan.service
+    chmod 644 /etc/systemd/system/tarzan.service
+fi
 
-echo "${PURPLE}Starting Tarzan with systemd${NC}"
-systemctl start tarzan.service
+systemctl daemon-reload
+systemctl enable tarzan.service >/dev/null 2>&1 || true
+systemctl restart tarzan.service || true
 
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-echo "${RED}   *** CHECK!!!!! **** ${NC}"
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
-echo "${RED} Edit the /etc/systemd/system/tarzan.service ${NC}"
-echo "${RED} Ensure Tarzan is running the correct services${NC}"
-echo "${RED} For the provisioner (jp), copy and edit${NC}"
-echo "${RED} /etc/opt/jane/provisioning.yaml.example${NC}"
-echo "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}"
+if [ -n "$PREVIOUS" ]; then
+    echo "tarzan upgraded from $PREVIOUS and restarted. Changes: $DOCS/CHANGELOG.md"
+    exit 0
+fi
 
-echo "${PURPLE}Post installation scripts complete${NC}"
+echo
+echo "tarzan is installed and running on port 8530 (HTTP; APIs: sys, tpm2, uefi, ima)."
+echo "To register this machine with Jane:"
+echo "    cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml"
+echo "    (edit it), then: sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml"
+echo "Quick start: $DOCS/docs/quickstart.md"
+echo "tarzan has no authentication; see $DOCS/docs/hardening.md"
+echo
+exit 0

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
@@ -156,8 +155,8 @@ func runCreate(t *testing.T, h *harness) (int, string) {
 	return h.pv.Run(), out.String()
 }
 
-func TestCreateRefusesWithIDFileEvenUnsafe(t *testing.T) {
-	h := newHarness(t, "create") // harness runs with Unsafe set
+func TestCreateRefusesWithIDFile(t *testing.T) {
+	h := newHarness(t, "create") // harness runs with --reprovisiontpm
 	os.WriteFile(h.pv.IDFile, []byte("OLD\n"), 0o644)
 	code, out := runCreate(t, h)
 	if code != exitError {
@@ -263,23 +262,9 @@ func TestCreateWithoutMachineIDChecksNameOnly(t *testing.T) {
 	}
 }
 
-func TestRecreateAsksAndCanBeDeclined(t *testing.T) {
-	h := newHarness(t, "create")
-	h.pv.Unsafe, h.pv.Recreate = false, true
-	os.WriteFile(h.pv.IDFile, []byte("OLD"), 0o644)
-	h.pv.In = bufio.NewReader(strings.NewReader("n\n"))
-	code, out := runCreate(t, h)
-	if code != exitOK || h.jane.mutations() != 0 || len(h.tpm.opened) != 0 {
-		t.Errorf("declining: exit %d, calls %v, tpm %v", code, h.jane.calls, h.tpm.opened)
-	}
-	if !strings.Contains(out, "Recreate this element?") {
-		t.Errorf("output:\n%s", out)
-	}
-}
-
 func TestRecreateGoesAhead(t *testing.T) {
 	h := newHarness(t, "create")
-	h.pv.Recreate = true // with Unsafe from the harness: no prompt
+	h.pv.Recreate = true // explicit flag: no question asked
 	os.WriteFile(h.pv.IDFile, []byte("OLD"), 0o644)
 	h.jane.elements = []fakeElement{{"OLD", "Debian13VM", "abc123"}}
 	if code, out := runCreate(t, h); code != exitOK {

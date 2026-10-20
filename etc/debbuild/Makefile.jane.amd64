@@ -10,13 +10,6 @@ build: libs fmt
 	#strip ${BINARY_NAME}
 	ls -l --color=auto ${BINARY_NAME}
 
-
-#buildwithmarble: libs fmt
-#	. /opt/edgelessrt/share/openenclave/openenclaverc && go vet -composites=false ./... 
-#	. /opt/edgelessrt/share/openenclave/openenclaverc && GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build -ldflags="-X 'main.BUILD=${BUILD_DATE}' -X 'main.VERSION=${VERSION}'" ${PIE_ON} -o ${BINARY_NAME}
-#	strip ${BINARY_NAME}
-#	ls -l --color=auto ${BINARY_NAME}
-
 fmt:
 	go fmt ./...
 

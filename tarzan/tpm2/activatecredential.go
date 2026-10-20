@@ -119,13 +119,13 @@ func activateCredential(tpm transport.TPM, akh, ekh tpm2.TPMHandle, blob, secret
 
 // ekSession satisfies the authorisation policy of an EK made from the
 // standard (low range) template, TPM2_PolicySecret(TPM_RH_ENDORSEMENT) with
-// the empty endorsement password. A policy session is single use, so each
+// the endorsement password (empty unless JANE_TPM_ENDORSEMENT_PASSWORD is set). A policy session is single use, so each
 // command needs a fresh one. Same as the provisioner's.
 func ekSession() tpm2.Session {
 	return tpm2.Policy(tpm2.TPMAlgSHA256, 16,
 		func(t transport.TPM, s tpm2.TPMISHPolicy, nonce tpm2.TPM2BNonce) error {
 			_, err := tpm2.PolicySecret{
-				AuthHandle:    tpm2.AuthHandle{Handle: tpm2.TPMRHEndorsement, Auth: tpm2.PasswordAuth(nil)},
+				AuthHandle:    tpm2.AuthHandle{Handle: tpm2.TPMRHEndorsement, Auth: endorsementAuth()},
 				PolicySession: s,
 				NonceTPM:      nonce,
 			}.Execute(t)

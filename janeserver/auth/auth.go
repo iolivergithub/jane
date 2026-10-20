@@ -17,7 +17,7 @@
 //	  web: true            # protect the Web UI
 //	  rest: false          # protect the REST API with HTTP Basic auth
 //	  x3270: false         # require a logon on the x3270 (tn3270) interface
-//	  sessiontimeout: 8h   # sliding expiry of a Web UI login; idle timeout of an x3270 logon
+//	  sessiontimeout: 30m  # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 package auth
 
 import (
@@ -39,7 +39,7 @@ type Config struct {
 	SessionTimeout time.Duration `yaml:"sessiontimeout"`
 }
 
-const defaultSessionTimeout = 8 * time.Hour
+const defaultSessionTimeout = 30 * time.Minute
 
 // Package state. Set once by Initialise (or by tests) before any service starts.
 var (

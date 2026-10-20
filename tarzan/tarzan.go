@@ -167,6 +167,13 @@ func main() {
 	welcomeMessage(*flagUNSAFEFILEACCESS)
 	checkUnsafeMode(*flagUNSAFEFILEACCESS)
 
+	if *flagTPM2 {
+		if tpm2.EndorsementPasswordSet() {
+			fmt.Println("TPM endorsement hierarchy password: set (" + tpm2.EndorsementPasswordVar + ")")
+		} else {
+			fmt.Println("TPM endorsement hierarchy password: empty")
+		}
+	}
 	startRESTInterface(*flagSYS, *flagTPM2, *flagUEFI, *flagIMA, *flagTXT, flagPort)
 	exitMessage()
 }

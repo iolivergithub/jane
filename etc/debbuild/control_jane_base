@@ -4,5 +4,10 @@ Architecture: amd64
 Priority: optional
 Section: admin
 Depends: adduser
-Recommends: python3, python3-argon2, python3-pymongo
+Recommends: mosquitto, python3, python3-argon2, python3-pymongo
 Description: Jane Attestation Engine
+ Remote attestation server: holds known-good values for elements and attests
+ and verifies them through trust agents such as tarzan.
+ .
+ Requires MongoDB, which is not in Debian: install it from MongoDB's own
+ repository (see docs/quickstart.md), and an MQTT broker such as Mosquitto.
