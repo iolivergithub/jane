@@ -4,6 +4,24 @@ All notable changes to Jane are listed here, newest first. Days with several
 commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
+## [1.5.4] – 2026-10-20
+- New rule `tpm2_validSignature` (on `tpm2/quote` and `tpm2/gettime` claims): verifies the TPM's signature over the raw attestation with the element's AK (or `tpm2/akpublic`), and that the attestation type matches the function (#83). Needs tarzan 1.5.3 or later; RSA AKs.
+- New rule `tpm2_clockProgress` (on quote or gettime claims, required parameter `previouscid`): compares the TPM clock, reset and restart counts with an earlier claim; fails if a count went down (TPM cleared or replaced) or the clock went backwards, otherwise reports the reboots in between.
+- New rule `tpm2_capabilitiesFirmware` (on `tpm2/capabilities` claims, parameter `quotecid`): the reported firmware version equals the signed one in a quote or gettime claim (#77).
+- The provisioning example and skeletons run these rules (the pcr0 quote gets `cid: q_pcr0`).
+- MongoDB and MQTT accounts from environment variables `JANE_MONGODB_USERNAME`, `JANE_MONGODB_PASSWORD`, `JANE_MONGODB_AUTHSOURCE`, `JANE_MQTT_USERNAME`, `JANE_MQTT_PASSWORD` (#79, #80); unset means no account, as before. The deb ships `/etc/opt/jane/jane.env` (root:jane 640, commented out). Works with HashiCorp Vault Agent.
+- addjaneuser reads the same MongoDB variables; `--dbuser` and `--dbpass` (together) override them.
+- jp sends REST credentials from `JANE_USERNAME`/`JANE_PASSWORD` or `--user`/`--pass` (together), so it works with `auth: rest: true` (#46). Failed REST logins are logged on the `AUTH` channel.
+- jp: `create` and `update` stop before contacting Jane if they cannot write the element ID file (no root); an unreadable ID file is reported as "permission denied", not missing; `attest` needs no root.
+- TPM endorsement hierarchy password from `JANE_TPM_ENDORSEMENT_PASSWORD` for tarzan (credential activation; `/etc/opt/jane/tarzan.env`, root 600) and jp (#76). `tpm2/gettime` cannot use it (a TPM library limitation) and fails while one is set.
+- **Web UI login and x3270 idle timeout now 30 minutes** (was 8 hours). An edited `config.yaml` kept on upgrade keeps its value.
+- Logging: the database write times out after 5 s instead of waiting forever; failures are reported on stderr; new log files are created 640 (#65).
+- **Keylime and MarbleRun removed** (#91), with the element fields `mrcoordinator`/`mrmarbleinstance`, `enclave.json` and the EGo/SGX dependency: janeserver now builds, vets and tests on any platform. Existing `config.yaml` files with a `keylime:` section still load. This also drops `go-jose`, the subject of a Dependabot alert.
+- deb: `apt remove` stops and disables the service (it used to keep restarting a missing binary); upgrades restart tarzan and a running Jane; file modes are set inside the packages; `/etc/opt/jane` is 751; an existing ordinary user called `jane` stops the install; calm install messages with documentation links, and a hint when MongoDB or Mosquitto is missing; jane recommends `mosquitto`.
+- deb: `jane.service` is sandboxed (no capabilities, read-only file system except `/var/log/jane`, ...) and starts after MongoDB and Mosquitto; both units restart after 5 s.
+- deb: tarzan starts with `-sys -tpm2 -uefi -ima`, so the provisioning example works out of the box. The provisioning example's ratsd endpoint is commented out (spelling fixed) and `tpmclear` is explained.
+- Documentation reorganised: Quick start → Getting started → Hardening, then reference pages (new: rules, claims, results, sessions, signing, protocols, trust agents). `automaticStartup.md` and `security.md` are folded in; screenshots are to be retaken. Help & About links to the Quick start and Hardening.
+
 ## [1.5.3] – 2026-10-18
 - UEFI event log claims are decoded and shown as a list of events (type, PCR, digest, light decoding of UEFI variables, image paths and text), one bank at a time with a PCR filter (#73). Parsing uses Google's go-eventlog.
 - New rule `tpm2_uefiLogReplay` (on a `tpm2/pcrs` claim, parameter `uefilogcid`): replays the UEFI event log against the PCR values, per bank (#71).
