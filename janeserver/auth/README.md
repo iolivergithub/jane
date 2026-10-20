@@ -60,5 +60,6 @@ Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t
 
 - The `/live` page talks directly to the MQTT broker over WebSockets, so that stream is protected only by broker credentials.
 - The x3270 interface is unencrypted; bind it to `127.0.0.1` (`x3270: listenon:`) and reach it through an SSH tunnel if passwords matter.
-- The provisioner (`jp`) does not send REST credentials yet, so it cannot be used with `rest: true`.
+- jp sends REST credentials from `JANE_USERNAME`/`JANE_PASSWORD` or `--user`/`--pass` (since 1.5.4).
+- A failed REST login is logged with `logEntry("AUTH", "login/FAIL", ...)` and the client address, as for the Web UI and x3270; successful requests are not logged.
 - There is no CSRF token. SameSite=Lax cookies stop cross-site POSTs in current browsers.

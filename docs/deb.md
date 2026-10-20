@@ -1,20 +1,36 @@
-# Building and Installing with DEB and RPM files
+# Installing with dpkg/apt
 
-First ensure you know how to build things manually...or not.
+Jane comes as two Debian packages: **jane** (the attestation engine, for the Jane host) and **tarzan** (the trust agent and the provisioner jp, for each element). This page describes what they install, what installing, upgrading and removing do, and how systemd runs the services afterwards. For a step-by-step first installation see the [Quick start](quickstart.md); for building the packages see [Compiling](compiling.md#building-the-packages).
 
-## Generating the DEB and RPM files
+## Before you install
 
-Change to the `etc/debbuild` directory, check that the last line of `versions.txt` is the version you want, then run the build script:
+The jane package needs two services it cannot install itself:
+
+- **MongoDB**, which is not in Debian: install it from MongoDB's repository (see the [Quick start](quickstart.md#1-mongodb)).
+- **an MQTT broker**: the package recommends `mosquitto`, which `apt` installs with it.
+
+The jane package depends on `adduser` and recommends `mosquitto`, `python3`, `python3-argon2` and `python3-pymongo` (the last three for `addjaneuser`). The tarzan package has no dependencies.
+
+## Installing
+
+Release files are gzipped (`jane_<version>_amd64.deb.gz`); unzip them first with `gunzip`. Then, as root:
 
 ```bash
-./debbuild.sh
+apt install ./jane_<version>_amd64.deb ./tarzan_<version>_amd64.deb
 ```
 
-This compiles janeserver, tarzan and the provisioner (`jp`), builds two deb packages, lints them and converts them to rpms.
+`apt install` also installs the recommended packages; `dpkg -i` installs only the package itself.
 
-NB: linting only works if `lintian` is installed, and rpm generation only if `alien` is installed. Otherwise you'll get errors from those steps, but you will still get the deb files.
+**Installing jane:**
 
-The packages are built in `/tmp/janedebbuild`, named by version and architecture, e.g. `jane_1.5.1_amd64.deb.gz` and `tarzan_1.5.1_amd64.deb.gz`.
+1. creates the system user and group `jane` if they don't exist. If an ordinary (non-system) user called `jane` already exists, the installation stops: rename that account first;
+2. sets the owners and modes in the table below;
+3. enables `jane.service`, but does **not** start it;
+4. prints how to start it and where the documentation is, and says so if MongoDB or Mosquitto seem to be missing on this machine (only checked when `config.yaml` points at a local database or broker).
+
+The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto on 127.0.0.1. Start Jane with `systemctl start jane`, then go on with the [Quick start](quickstart.md) and [Hardening](hardening.md).
+
+**Installing tarzan:** sets the owners and modes of its files, then enables and starts `tarzan.service` (APIs `-sys -tpm2 -uefi -ima` on port 8530) and prints how to register the machine with jp.
 
 ## What is in the packages
 
@@ -23,15 +39,14 @@ The packages are built in `/tmp/janedebbuild`, named by version and architecture
 | File | |
 |---|---|
 | `/opt/jane/janeserver` | the attestation engine |
-| `/opt/jane/addjaneuser` | adds Jane users or resets passwords, see [Authentication](authentication.md) |
+| `/opt/jane/addjaneuser` | adds Jane users or resets passwords (see [Running](running.md#addjaneuser)) |
 | `/etc/opt/jane/config.yaml` | configuration: every option, optional ones commented out, all logins off |
-| `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate - replace them |
-| `/etc/opt/jane/standardintents.json` | a copy of the standard intents matching this version, for loading by hand if downloading them fails |
-| `/etc/systemd/system/jane.service` | runs Jane as the `jane` user |
+| `/etc/opt/jane/jane.env` | environment for janeserver (MongoDB and MQTT accounts), all commented out |
+| `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate, only used when you switch to HTTPS; replace them (see [Hardening](hardening.md#3-your-own-tls-key-and-certificate)) |
+| `/etc/opt/jane/standardintents.json` | the standard intents matching this version, for loading by hand if downloading them fails |
+| `/etc/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
-
-It depends on `adduser` and recommends `python3`, `python3-argon2` and `python3-pymongo` (for `addjaneuser`). MongoDB and an MQTT broker (e.g. Mosquitto) are needed but not installed by the package.
 
 **tarzan** (package `tarzantrustagent`)
 
@@ -39,137 +54,83 @@ It depends on `adduser` and recommends `python3`, `python3-argon2` and `python3-
 |---|---|
 | `/opt/jane/tarzan` | the trust agent |
 | `/opt/jane/jp` | the provisioner |
-| `/etc/opt/jane/provisioning.yaml.example` | an example provisioning file for `jp` - copy it and edit the copy |
+| `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy |
+| `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
 | `/etc/systemd/system/tarzan.service` | runs tarzan as root |
 
-The configuration files are dpkg conffiles: an upgrade will not overwrite your changes to them without asking.
+`config.yaml`, `jane.env`, `tarzan.env`, the keys, the provisioning example and both units are dpkg conffiles: an upgrade never overwrites your changes without asking.
 
-## The jane user and permissions
+## Owners and permissions
 
-Jane runs as the unprivileged system user `jane`, created when the package is installed. Every install and upgrade sets the ownership and permissions of Jane's files as below: binaries and configuration belong to root so the `jane` user cannot change them, `jane` reads its configuration and keys through its group, and it owns only its log.
+Every install and upgrade of jane sets these, so wrong owners left from earlier versions or by hand are corrected. Binaries and configuration belong to root, so the `jane` user cannot change them; `jane` reads its configuration and keys through its group and owns only its log.
 
 | Path | Owner | Mode |
 |---|---|---|
 | `/opt/jane` (directory) | `root:root` | 755 |
-| `/opt/jane/janeserver`, `/opt/jane/addjaneuser` | `root:root` | 755 |
-| `/etc/opt/jane` (directory) | `root:jane` | 750 |
-| `/etc/opt/jane/config.yaml`, `/etc/opt/jane/*.key` | `root:jane` | 640 |
-| `/etc/opt/jane/*.crt`, `/etc/opt/jane/standardintents.json` | `root:jane` | 644 |
-| `/var/log/jane` (directory) | `jane:jane` | 750 |
-| files in `/var/log/jane` | `jane:jane` | 640 |
-| `/etc/systemd/system/jane.service` | `root:root` | 644 |
+| `/opt/jane/janeserver`, `addjaneuser`, `tarzan`, `jp` | `root:root` | 755 |
+| `/etc/opt/jane` (directory) | `root:jane` | 751 |
+| `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` | `root:jane` | 640 |
+| `*.crt`, `standardintents.json` in `/etc/opt/jane` | `root:jane` | 644 |
+| `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
+| `/etc/opt/jane/provisioning.yaml.example` | `root:root` | 644 |
+| `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
+| `/etc/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 
-Any keys you add or replace, such as a TLS key or a signing key, must be readable by group `jane` too:
+- `/etc/opt/jane` is 751: other users may open a file whose name they know (jp reading the element ID file) but cannot list the directory; secrets are protected by their own modes. The modes are already set inside the packages, so secrets are never readable by others, not even during installation.
+- Keys you add or replace (TLS, signing) must be readable by group `jane`: `chown root:jane FILE; chmod 640 FILE`. Files named `*.key` and `*.pem` are fixed on every upgrade; other names are left as you set them.
+- To read Jane's log as another user, add that user to group `jane`.
+- The element ID file `/etc/opt/jane/janeelementid` is written by jp as root, mode 444.
 
-```bash
-chown root:jane /etc/opt/jane/mykey.key
-chmod 640 /etc/opt/jane/mykey.key
-```
+## Running under systemd
 
-Notes:
-- `/opt/jane` and `/etc/opt/jane` are shared with the tarzan package; only Jane's own files are changed. Installing or upgrading tarzan after Jane may set `/etc/opt/jane` back to 755; the files inside stay protected, and the next Jane install or upgrade sets 750 again. `jp` runs as root and is not affected.
-- To read Jane's log as a user other than root, add that user to group `jane`.
-- The `jane` user is not added to the `tss` group: janeserver does not use the TPM.
-
-## Installation with DEB
-
-As root, unzip the packages and run `dpkg -i ./jane_1.5.1_amd64.deb` and/or `dpkg -i ./tarzan_1.5.1_amd64.deb` (or `apt install ./jane_1.5.1_amd64.deb`, which also installs the recommended Python packages).
-
-In both cases the jane and tarzan services will be enabled with systemd. Tarzan will also be started - check with journalctl. Jane is not started: edit `/etc/opt/jane/config.yaml` and replace the keys first, then `systemctl start jane.service`.
-
-Example output from an older version is below (file names, paths and messages have since changed slightly):
+| | jane | tarzan |
+|---|---|---|
+| Unit | `/etc/systemd/system/jane.service` | `/etc/systemd/system/tarzan.service` |
+| Runs as | `jane` | `root` |
+| Command | `/opt/jane/janeserver --config=/etc/opt/jane/config.yaml` | `/opt/jane/tarzan -sys -tpm2 -uefi -ima` |
+| Environment file | `/etc/opt/jane/jane.env` | `/etc/opt/jane/tarzan.env` |
+| Started on install | no | yes |
+| Restarts after failure | every 5 s | every 5 s |
 
 ```bash
-$ su -
-Password: 
-root@Debian:~# cd /tmp/janedebbuild/
-root@Debian:/tmp/janedebbuild# gunzip jane.deb.gz
-root@Debian:/tmp/janedebbuild# gunzip tarzan.deb.gz
-root@Debian:/tmp/janedebbuild# dpkg -i ./jane.deb 
-Selecting previously unselected package janeattestationengine.
-(Reading database ... 206615 files and directories currently installed.)
-Preparing to unpack ./jane.deb ...
-Unpacking janeattestationengine (1.0) ...
-Setting up janeattestationengine (1.0) ...
-Running post installation scripts
-Enabling Jane with systemd
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   *** CHECK!!!!! **** 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- Edit the /etc/opt/jane/config.yaml
- Replace keys in /etc/opt/jane
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Post installation scripts complete
-root@Debian:/tmp/janedebbuild# dpkg -i ./tarzan.deb 
-Selecting previously unselected package tarzantrustagent.
-(Reading database ... 206623 files and directories currently installed.)
-Preparing to unpack ./tarzan.deb ...
-Unpacking tarzantrustagent (1.0) ...
-Setting up tarzantrustagent (1.0) ...
-Running post installation scripts
-Enabling Tarzan with systemd
-Starting Tarzan with systemd
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   *** CHECK!!!!! **** 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- Edit the /etc/systemd/system/tarzan.service 
- Ensure Tarzan is runnign the correct services
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Post installation scripts complete
+systemctl start|stop|restart|status jane      # the same for tarzan
+journalctl -u jane                            # its output; -f to follow
 ```
 
-The results of checking the status with systemd are below. Note that jane *has not* been started - only enabled.
+`jane.service` starts after the network, MongoDB (`mongod.service`) and Mosquitto, when they are on the same machine. Until it can reach both it exits and is restarted every 5 seconds.
+
+**Environment files.** systemd reads them (`EnvironmentFile=`), not Jane or tarzan; the programs only see the variables. Format: `KEY=value`, one per line, `#` for comments; quote values containing spaces or `#`. A missing file is fine. After editing: `systemctl restart jane` (or `tarzan`). The variables are listed in [Running](running.md#all-environment-variables).
+
+**Changing a unit.** Don't edit the packaged units; add a drop-in, which upgrades leave alone:
 
 ```bash
-root@Debian:/tmp/janedebbuild# systemctl status jane.service 
-○ jane.service - Jane Attestation Engine
-     Loaded: loaded (/etc/systemd/system/jane.service; enabled; preset: enabled)
-     Active: inactive (dead)
-root@Debian:/tmp/janedebbuild# systemctl status tarzan.service 
-● tarzan.service - Tarzan Trust Agent
-     Loaded: loaded (/etc/systemd/system/tarzan.service; enabled; preset: enabled)
-     Active: active (running) since Mon 2024-12-02 20:26:30 EET; 1min 51s ago
-   Main PID: 7224 (tarzan)
-      Tasks: 6 (limit: 38436)
-     Memory: 3.3M
-        CPU: 2ms
-     CGroup: /system.slice/tarzan.service
-             └─7224 /opt/jane/tarzan --sys
-
-Dec 02 20:26:30 Debian tarzan[7224]: +========================================================
-Dec 02 20:26:30 Debian tarzan[7224]: |  TA10 version - Starting
-Dec 02 20:26:30 Debian tarzan[7224]: |   + linux O/S on amd64
-Dec 02 20:26:30 Debian tarzan[7224]: |   + version v0.2, build Mon Dec  2 07:40:59 PM EET 2024 main.VERSION=locally_compiled
-Dec 02 20:26:30 Debian tarzan[7224]: |   + session identifier is 7e050497-9570-45d8-9445-addfe8c6226c
-Dec 02 20:26:30 Debian tarzan[7224]: |   + unsafe mode? false
-Dec 02 20:26:30 Debian tarzan[7224]: +========================================================
-Dec 02 20:26:30 Debian tarzan[7224]:    +-- Sys attestation API enabled
-Dec 02 20:26:30 Debian tarzan[7224]:    +-- HTTP interface on port :8530 enabled
-Dec 02 20:26:30 Debian tarzan[7224]: ⇨ http server started on [::]:8530
+sudo systemctl edit tarzan
 ```
 
-## Removal with DEB
-
-Simply stop and disable the services, then purge. For example:
-
-```bash
-root@Debian:/tmp/janedebbuild# systemctl stop jane.service
-root@Debian:/tmp/janedebbuild# systemctl stop tarzan.service
-root@Debian:/tmp/janedebbuild# systemctl disable jane.service 
-Removed "/etc/systemd/system/multi-user.target.wants/jane.service".
-root@Debian:/tmp/janedebbuild# systemctl disable tarzan.service 
-Removed "/etc/systemd/system/multi-user.target.wants/tarzan.service".
-root@Debian:/tmp/janedebbuild# dpkg -P janeattestationengine 
-(Reading database ... 206625 files and directories currently installed.)
-Removing janeattestationengine (1.0) ...
-Purging configuration files for janeattestationengine (1.0) ...
-dpkg: warning: while removing janeattestationengine, directory '/etc/opt' not empty so not removed
-root@Debian:/tmp/janedebbuild# dpkg -P tarzantrustagent 
-(Reading database ... 206618 files and directories currently installed.)
-Removing tarzantrustagent (1.0) ...
-Purging configuration files for tarzantrustagent (1.0) ...
+```ini
+[Service]
+ExecStart=
+ExecStart=/opt/jane/tarzan -sys -tpm2
 ```
 
-## Installation with RPM
+The empty `ExecStart=` clears the packaged command. Drop-ins also suit extra Jane flags (`--startx3270=false`), running Jane under Vault Agent, or the sandbox settings below.
 
-Probably similar to DEB, you can figure this out.
+**The sandbox.** `jane.service` restricts janeserver: no capabilities, no new privileges, the file system read-only except `/var/log/jane`, no access to `/home` or devices, its own `/tmp`, no kernel or cgroup changes. If you move the log file or keep keys elsewhere, allow it with a drop-in, e.g. `ReadWritePaths=/srv/jane/log` or `ProtectHome=read-only`. `systemd-analyze security jane.service` summarises the restrictions. tarzan is not sandboxed: it needs root, the TPM and `/sys/kernel/security`.
+
+## Upgrading
+
+Install the new packages the same way. Your changed conffiles are kept (dpkg asks if the packaged version changed too). Then:
+
+- jane is restarted if it was running, otherwise left stopped;
+- tarzan is restarted;
+- owners and modes are set again (table above).
+
+Read the [changelog](../CHANGELOG.md) for each release; for example, load the standard intents again when a release adds intents.
+
+## Removing
+
+`apt remove janeattestationengine` (or `tarzantrustagent`) stops and disables the service and removes the programs. Configuration, keys, the element ID file and `/var/log/jane` stay; `apt purge` removes the conffiles too. The `jane` user is kept, as is usual for system users. MongoDB data is untouched.
+
+## RPM
+
+The build also converts the packages to RPMs with `alien`. They are not tested: the install scripts assume Debian tools (`adduser`) and systemd.

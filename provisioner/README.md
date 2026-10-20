@@ -16,10 +16,27 @@ Linux, Windows, macOS, the BSDs, illumos/Solaris and AIX.
     go build -o jp .                          # or: CGO_ENABLED=0 GOOS=windows go build
     sudo ./jp create provisioning.yaml        # asks before TPM steps
     sudo ./jp update provisioning.yaml -u     # -u / --unsafe: no prompts
-    sudo ./jp attest provisioning.yaml        # attest the registered element
+    ./jp attest provisioning.yaml             # attest the registered element (no root needed)
 
-Run as root (Administrator on Windows) for the TPM, the element ID file and
-the machine ID.
+`create` and `update` need root (Administrator on Windows) for the TPM, the
+element ID file and the machine ID; without write access to the element ID
+file's directory they stop before contacting Jane. `attest` only reads the
+element ID file and talks to Jane, so any user can run it. An element ID file
+that exists but cannot be read is reported as "permission denied", not as
+missing.
+
+### Credentials
+
+If Jane's REST API requires a login (`auth: rest: true`), jp sends HTTP Basic
+credentials from `JANE_USERNAME` and `JANE_PASSWORD`, or from `--user NAME
+--pass PASSWORD` (both together; they override the variables). `sudo` drops
+the environment, so use `sudo -E` (or `--preserve-env=JANE_USERNAME,JANE_PASSWORD`)
+for `create` and `update`. An HTTP 401 answer gives a message saying so. For a
+Jane on HTTPS with a self-signed certificate, set `SSL_CERT_FILE` to it
+(Linux/BSD).
+
+If the TPM's endorsement hierarchy has a password, set
+`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads).
 
 | | Unix-likes | Windows |
 |---|---|---|
@@ -167,7 +184,8 @@ given), so one provisioning file can serve both platforms.
 ## TPM worklist steps
 
 - `tpmclear` evicts the persistent objects at `tpm2.ek.handle` and
-  `tpm2.ak.handle`. An empty handle is reported, not an error.
+  `tpm2.ak.handle` (not TPM2_Clear: the rest of the TPM is untouched). An
+  empty handle is reported, not an error.
 - `tpmprovision` creates the TCG default RSA-2048 EK (`tpm2.RSAEKTemplate`)
   in the endorsement hierarchy and an RSA-2048 restricted signing AK
   (RSASSA, SHA-256) under it, persists both at the configured handles, writes

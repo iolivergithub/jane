@@ -27,12 +27,11 @@ tpm2:
   ak:
     handle: '0x810100AA'
 provisionworklist:
-  # tpmclear runs TPM2_Clear: it deletes every key in the TPM's owner and endorsement
-  # hierarchies (including any existing EK and AK, and keys used by other software such
-  # as disk encryption or SSH) and resets the owner and endorsement passwords.
-  # WARNING: only for a TPM that nothing else on this machine depends on. jp asks before
-  # running it unless -u is given. tpmprovision creates the EK and AK afresh, so it needs
-  # free handles: to keep the existing keys, answer n to both TPM questions.
+  # tpmclear evicts (deletes) the persistent keys at the EK and AK handles below, so
+  # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
+  # Whatever was stored at those two handles is lost, and Jane's record of the old keys
+  # no longer matches until jp registers the new ones. jp asks before each TPM step
+  # unless -u is given; to keep the existing keys, answer n to both TPM questions.
   - tpmclear
   - tpmprovision
   - collecthostinfo

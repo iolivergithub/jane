@@ -1,232 +1,243 @@
-# Table of contents
+# Running Jane, tarzan and jp
 
-- [Running JANESERVER](#running-janeserver)
-  - [JANESERVER Configuration File](#janeserver-configuration-file)
-- [Running TARZAN](#running-tarzan)
-  - [Command line options](#command-line-options)
-  - [Unsafe operation - Here be a good way to open your system to every hacker ever](#unsafe-operation---here-be-a-good-way-to-open-your-system-to-every-hacker-ever)
+This is the reference for every option, flag and environment variable of the programs, and for running them by hand or on systems other than Debian. For a first installation follow the [Quick start](quickstart.md); for securing an installation see [Hardening](hardening.md); for what the deb packages install and how systemd runs them see [Installing with dpkg/apt](deb.md).
 
-# Running JANESERVER
+- [What runs where](#what-runs-where)
+- [MongoDB and Mosquitto](#mongodb-and-mosquitto)
+- [janeserver](#janeserver)
+- [addjaneuser](#addjaneuser)
+- [tarzan](#tarzan)
+- [jp](#jp)
+- [All environment variables](#all-environment-variables)
 
-Janeserver requires a configuration file and optionally keys for the https certs. We've supplied a temporary key in the dist folder...don't use these unless you're crazy. We also like triggering github to give us private key warnings because we've stored them there. Browsers will complain unless your certs a signed by a suitable authority, eg: LetsTrust.
+## What runs where
 
-NOTE: this document only deals with running things natively. Docker support has been removed for now (1.5.3) and will return in a future release.
+| Program | Runs on | Talks to |
+|---|---|---|
+| janeserver | the Jane host | MongoDB, the MQTT broker, trust agents (tarzan, ratsd) |
+| addjaneuser | wherever it can reach Jane's MongoDB | MongoDB |
+| tarzan | each element (machine being attested), as root | answers janeserver |
+| jp | each element | janeserver's REST API; the local TPM |
 
-An example configuration file with explanation is given below. Store this in some known place, eg: /etc
+Installed from the deb packages, the programs are in `/opt/jane` and their configuration in `/etc/opt/jane`. Built from source (see [Compiling](compiling.md)) they can live anywhere.
 
-Generate some keys with a suitable name (not temporary.key) and store these in a suitable place too:
+## MongoDB and Mosquitto
+
+janeserver needs both before it starts, and panics (and, under systemd, restarts) until it can reach them.
+
+| Jane setting | Meaning |
+|---|---|
+| `database: connection` | MongoDB connection string, e.g. `mongodb://127.0.0.1:27017`; options such as `tls=true` or `authSource` may be added |
+| `database: name` | the database Jane uses; created on first use |
+| `messaging: broker`, `port` | MQTT broker address and port for janeserver (plain TCP; TLS is not supported yet, #87) |
+| `messaging: portws` | the broker's WebSocket port, used by the browser for the Web UI's Live page |
+| `messaging: clientid` | MQTT client ID; must be unique per Jane instance |
+
+Setting them up without accounts is in the [Quick start](quickstart.md) (steps 1 and 2); with accounts, and with TLS for the Live page, in [Hardening](hardening.md) (steps 7 and 8). Accounts are given to Jane through environment variables, never in `config.yaml`.
+
+## janeserver
+
+### Command line
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--config=FILE` | `./config.yaml` | the configuration file |
+| `--startREST=false` | true | don't start the REST API |
+| `--startWebUI=false` | true | don't start the Web UI |
+| `--startx3270=false` | true | don't start the x3270 (tn3270) interface |
+
+### Configuration file
+
+The packaged `/etc/opt/jane/config.yaml` lists every option with comments; a commented example for running from the source tree is `janeserver/config.yaml`.
+
+| Section | Keys | Notes |
+|---|---|---|
+| `system` | `name` | a name for this Jane instance, shown in the UIs and logs |
+| `database` | `connection`, `name` | see above |
+| `messaging` | `broker`, `port`, `portws`, `clientid` | see above |
+| `rest` | `port` (8520), `listenon`, `usehttp`, `crt`, `key` | REST API. `listenon`: address to bind, `0.0.0.0` or empty for all, `127.0.0.1` for this machine only. `usehttp: true` serves plain HTTP; otherwise HTTPS with `crt`/`key` |
+| `web` | `port` (8540), `listenon`, `usehttp`, `crt`, `key` | Web UI, as for `rest` |
+| `x3270` | `port` (3270), `listenon` | tn3270 terminal interface; never encrypted |
+| `logging` | `logfilelocation`, `sessionupdatelogging` | Jane's log file (CSV, one entry per line), and whether to log every claim and result added to a session |
+| `signing` (optional) | `keyfile` | PEM private key for claim, result and session footers; without it an ephemeral key is made at each start. See [Signing](signing.md) |
+| `auth` (optional) | `web`, `rest`, `x3270`, `sessiontimeout` (30m) | logins per interface; without the section nothing asks for a login. See [Authentication](authentication.md) |
+
+Restart Jane after changing the file.
+
+### Environment variables
+
+| Variable | Meaning | Unset or empty |
+|---|---|---|
+| `JANE_MONGODB_USERNAME` | MongoDB account | no account (or whatever the connection string says) |
+| `JANE_MONGODB_PASSWORD` | its password | empty |
+| `JANE_MONGODB_AUTHSOURCE` | database the account is defined in | `admin`, or the connection string's `authSource` |
+| `JANE_MQTT_USERNAME` | MQTT broker account | anonymous |
+| `JANE_MQTT_PASSWORD` | its password | none |
+| `JANE_X3270_DEBUG` | any value: log the x3270 data stream (debugging) | off |
+
+An account in the environment replaces a username in the connection string. Jane reads the variables once, at start.
+
+### Starting it
+
+**By hand** (from the source tree, or for testing):
 
 ```bash
-openssl genrsa 2048 > temporary.key
-chmod 400 temporary.key 
-openssl req -new -x509 -nodes -sha256 -days 365 -key temporary.key -out temporary.crt
+export JANE_MONGODB_USERNAME=jane JANE_MONGODB_PASSWORD='...'    # only if MongoDB needs an account
+./janeserver --config=config.yaml
 ```
 
-NOTE: you'll find `temporary.key` and `temporary.crt` in a few places in this repository. *DO NOT USE THESE KEYS* - they're just for demonstration purposes and if you do use them then you are crazy and this will result in a VERY insecure system. *You have been warned*.
+**Deb install (systemd):** `systemctl start|stop|restart|status jane`; the variables come from `/etc/opt/jane/jane.env`. See [Installing with dpkg/apt](deb.md).
 
-EDIT the `config.yaml` configuration file so that the locations of these keys are recorded there.
+**Windows:** run `janeserver.exe` as a service (e.g. with the Service Control Manager or a service wrapper) and set the variables in the service's environment.
 
-To start `janeserver` run and point the config option to where the config file is. NB: the actual executable name might vary - for example in the binaries only release each binary also has information about the operating system and CPU architecture - you can rename which ever one work for you to just `janeserver'.
+**HashiCorp Vault:** either let Vault Agent render `jane.env` and restart Jane when it changes, or run janeserver under Vault Agent's process supervisor mode with `env_template` entries for the variables. See [Hardening](hardening.md#9-where-secrets-live).
 
-```bash
-./janeserver -config=config.yaml
+### Start-up output
+
 ```
-
-NOTE: On Windows the `.exe` MUST be preserved:
-
-```bash
-./janeserver.exe -config=config.yaml
-```
-
-You should see something similar to the following. If a config file is not found it will exit immediately. If Mosquitto or Mongo are not available then it will eventually time out. Finally if you are using https for the webui service, if the keys are not found it will exit with an error. The name of the database, location of config file and session identifier will all be different of course.
-
-```bash
-generating private, public key pair for claim signing - just for this session so no chance to verify later. THese keys MUST be external
-JANE: Configuration file location:  /home/ian/config.yaml
+JANE: Configuration file location:  /etc/opt/jane/config.yaml
 JANE: initialising database MONGO connection
+JANE: MongoDB authentication: none
 JANE: Database infrastructure MONGO is running
 JANE: Initialising message infrastructure MQTT connection
-JANE: Message infrastructure MQTT is running
+JANE: MQTT authentication: none
 JANE: MQTT connected
-
-+========================================================================================
-|  JANE version
-|   + linux O/S on amd64
-|   + version v1.0rc1, build not set
-|   + runing with name ASVR_GO_1_TEST
-|   + session identifier is 5eddb86d-ce05-4319-91aa-d4815d61b008
-+========================================================================================
-
-X3270 service listening on port 3270
-⇨ http server started on [::]:8520
-⇨ http server started on [::]:8540
+JANE: Message infrastructure MQTT is running
+JANE: Authentication: web false, rest false, x3270 false, session timeout 30m0s
+...
 ```
 
-If that works, point your browser at the machine where this is running and port 8540.
+The authentication lines show the accounts used (`user jane`), never passwords. Jane warns if a login is required but there are no users, or if no signing key is configured. Under systemd: `journalctl -u jane`.
 
-## JANESERVER Configuration File
+### The log
 
-Note the lines with "CHANGE ME" - review these for your system.
+Every operation is logged three ways: to the `log` collection in MongoDB, to MQTT topic `AS/<channel>`, and to `logging: logfilelocation` as CSV. The file is created with mode 640 and opened for each entry, so log rotation works. If MongoDB does not answer within 5 seconds the entry is reported on standard error (the journal) instead.
 
-   * The name of the system can set to anything you want.
-   * The MQTT client ID must be unique if you indend running more than one instance
-   * The MQTT port probably doesn't need chaning
-   * The MOTT server must allow anonymous connections, read the Mosquitto documentation for this
-   * Address of the monogoDB server must be set
-   * Choose any name you want for your attestation database
-   * crt and key files should have the full path to the keys generated earlier
-   * usehttp -- set this to true if you want less#CHANGE ME security
-   * listenon -- the address each service binds to: 0.0.0.0 (or left out) for all interfaces, 127.0.0.1 for this machine only
-   * X3270 -- a tn3270 terminal interface to Jane (lists, details, attest, log, configuration). It is unencrypted
-   * Logging goes to a default place in /var/log or somewhere suitable on Windows
-   * signing (optional) -- the key used to sign claim, result and session footers; see [Security](security.md)
-   * auth (optional) -- logins for the Web UI, REST API and x3270; see [Authentication](authentication.md)
+## addjaneuser
 
-The lines with "DEFAULT VALUE" most likely do not need to change, but review for your system just in case.
+Adds a Jane user, or sets a new password for an existing one. The password is stored as an Argon2id hash. Installed as `/opt/jane/addjaneuser`; in the source tree `etc/addjaneuser/addjaneuser`. Needs Python 3 with `argon2-cffi` and `pymongo` (`apt install python3-argon2 python3-pymongo`).
 
-Read the sections on security and keys
-
-```yaml
-#Some general naming
-system:
-  name: ASVR_GO_1_TEST                              #CHANGE ME
-
-#MongoDB Configuration
-database:
-  connection: mongodb://192.168.1.203:27017         #CHANGE ME
-  name: attestationDatabase                         #CHANGE ME
-
-#MQTT Configuration
-messaging:
-  broker: 192.168.1.203                             #CHANGE ME
-  port: 1883                                        #DEFAULT VALUE
-  portws: 8081                                      #DEFAULT VALUE (MQTT over WebSockets, used by the Live page)
-  clientid: attestationMQTTclient                   #CHANGE ME
-
-#REST Interface Configuration
-rest:
-  port: 8520                                        #DEFAULT VALUE
-  crt: temporary.crt                                #CHANGE ME
-  key: temporary.key                                #CHANGE ME
-  usehttp: false                                    #DEFAULT VALUE
-  listenon: 0.0.0.0                                 #DEFAULT VALUE
-
-#Web Interface Configuration
-web:
-  port: 8540                                        #DEFAULT VALUE
-  crt: temporary.crt                                #CHANGE ME
-  key: temporary.key                                #CHANGE ME
-  usehttp: false                                    #DEFAULT VALUE
-  listenon: 0.0.0.0                                 #DEFAULT VALUE
-
-#X3270
-x3270:
-  port: 3270                                        #DEFAULT VALUE
-  listenon: 0.0.0.0                                 #DEFAULT VALUE
-
-#Log file
-logging:
-  logfilelocation: /var/log/jane.log                #DEFAULT VALUE
-  sessionupdatelogging: false                       #DEFAULT VALUE
-
-#Footer signing (optional; without it a new random key is used at each start)
-#signing:
-#  keyfile: /etc/opt/jane/signing.key
-
-#Authentication (optional; without it nothing asks for a login)
-#auth:
-#  web: false
-#  rest: false
-#  x3270: false
-#  sessiontimeout: 8h
+```
+addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 ```
 
-The complete, commented example is `etc/debbuild/config.yaml`, which the deb package installs.
-
-# Running TARZAN
-
-Tarzan is a reference trust agent implementation that responds to the A10HTTPREST protocol. Running tarzan is simple, just speicfy which services you want started, eg: sys and tpm2. 
-
-NB: the actual executable name might vary - for example in the binaries only release each binary also has information about the operating system and CPU architecture - you can rename which ever one work for you to just `janeserver'.
-
+`MONGODB_URL` and `DATABASE` are Jane's `database: connection` and `database: name` (`asvr` in the packaged configuration).
 
 ```bash
-./tarzan --tpm2 --sys
+sudo /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr       # asks for the password twice
+echo 'secret' | /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr   # from a script
 ```
 
-On Windows keep the `.exe` extension, ie: `tarzan.exe --tpm2 --sys`
+If MongoDB requires an account, addjaneuser reads `JANE_MONGODB_USERNAME`, `JANE_MONGODB_PASSWORD` and `JANE_MONGODB_AUTHSOURCE`, like Jane. On a deb install, as root:
 
 ```bash
-+========================================================================================
-|  tarzan version - Starting
-|   + linux O/S on amd64
-|   + version v0.1, build not set
-|   + session identifier is 19a14951-76c3-4641-b9ac-fa65683e5c36
-|   + unsafe mode? false
-+========================================================================================
-
-⇨ http server started on [::]:8530
+set -a; . /etc/opt/jane/jane.env; set +a
+/opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
 ```
 
-If you are running on Linux and need access to files such as the UEFI log file then you will need to run tarzan as sudo.
+`--dbuser` and `--dbpass` (both together) override the variables. A password on the command line is visible to other users and kept in shell history; the variables are the safer way.
 
-tarzan requires access to the TPM device, eg `/dev/tpm0` on Linux (Windows handles this internally), and so whichever user tarzan is running as needs access to that device.
+Users are removed in `mongosh`: `db.users.deleteOne({username: "ian"})`. Jane needs no restart after users change. See [Authentication](authentication.md).
+
+## tarzan
+
+tarzan is the reference trust agent: it answers Jane over HTTP (protocol `A10HTTPRESTv2`) with TPM 2.0 quotes and other evidence, event logs and system information. It runs as root (the TPM device, `/sys/kernel/security`).
+
+### Flags
+
+At least one API must be enabled.
+
+| Flag | Meaning |
+|---|---|
+| `-sys` | system information (OS, architecture, hostname, machine ID, ...) |
+| `-tpm2` | TPM 2.0: PCRs, quotes, gettime, capabilities, credential activation |
+| `-uefi` | UEFI event log and UEFI variables |
+| `-ima` | Linux IMA measurement log |
+| `-txt` | Intel TXT log (not implemented yet) |
+| `-port=N` | listen on port N (default 8530) |
+| `-unsafe` | **never use**: lets callers ask for any file instead of the standard log locations, i.e. read any file as root |
+
+Flags may be written with one or two dashes (`-tpm2` or `--tpm2`).
+
+### Environment
+
+| Variable | Meaning |
+|---|---|
+| `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, only if one has been set (`tpm2_changeauth -c e`). Unset means the empty password. Used by credential activation; `tpm2/gettime` cannot use it and fails while a password is set |
+
+### Running it
+
+**By hand:**
 
 ```bash
-sudo ./tarzan --tpm2 --sys
+sudo ./tarzan -sys -tpm2 -uefi -ima
 ```
 
-If you are running on Windows, then there are more restrictions to TPM 2.0 use. You can read PCRs but not get quotes due to the way Windows `locks` the TPM. If you can generate an AK successfully then you can generate quotes. Similarly UEFI eventlog and IMA logs are NOT available on Windows.
+**Deb install (systemd):** the packaged unit starts `-sys -tpm2 -uefi -ima` and reads `/etc/opt/jane/tarzan.env`; see [Installing with dpkg/apt](deb.md).
 
-## Command line options
+**OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`:
 
-Tarzan's services and configuration is all done by command line flags. At least one of these must be specified for tarzan to respond to anything at all. At minimum the sys service just to report what system you are running on should be enabled.
+```sh
+#!/bin/ksh
+#
+# $OpenBSD: tarzan
 
-| Flag |  Description |
-| --- | --- | --- |
-| --tpm2 | Start the services to respond to TPM2 attestation requests |
-| --uefi | Start the services to respond to UEFI attestation requests |
-| --ima | Start the services to respond to Linux IMA attestation requests |
-| --txt | Start the services to respond to Intel TXT attestation requests |
-| --sys | Start the services to respond to TPM2 attestation requests |
+daemon="/opt/jane/tarzan"
+daemon_flags="-sys -tpm2"
 
+. /etc/rc.d/rc.subr
 
-tarzan by default listens on port 8530, this can be changed using the --port option
-
-For example, to start tarzan on port 4789 and reporting on uefi, ima and sys you would use (possibly with sudo):
-
-```bash
-tarzan --sysy --uefi --ima --port=4789
+rc_bg=YES
+rc_cmd $1
 ```
 
-## Unsafe operation - Here be a good way to open your system to every hacker ever
+**Windows:** run `tarzan.exe` (e.g. `tarzan.exe -sys -tpm2`) as Administrator, or as a service. Windows controls the TPM itself: PCRs can be read, but quotes need an AK the system allows, and UEFI and IMA logs are not available.
 
-tarzan can read UEFI and IMA logs in non-standard places, but in order to do this, the element description in the Jane's database would have to refer to those specifically. tarzan by default operates in a *safe* mode where it will only use the standard locations in Linux's securityfs. You can turn off this mode:
+## jp
 
-```bash
-sudo ./tarzan -unsafe=true
+jp registers this machine with Jane as an element, provisions its TPM keys, records its expected values, and attests it. It reads a provisioning file (YAML); the deb installs an example as `/etc/opt/jane/provisioning.yaml.example`, and `provisioner/README.md` describes the file format.
+
+```
+jp [-h] [-u] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
 ```
 
-which responds with
+| Operation | Needs root | What it does |
+|---|---|---|
+| `create` | yes | first registration: runs the worklist (TPM clear and provisioning ask first), registers the element, writes the element ID file, records expected values. Refuses if the machine is already registered |
+| `update` | yes | refreshes the registered element and all its expected values (after firmware or OS updates) |
+| `attest` | no | attests the element against every intent in the file and runs their rules |
 
-```bash
-$ sudo ./tarzan -unsafe=true
-+========================================================================================
-|  tarzan version - Starting
-|   + linux O/S on amd64
-|   + version v0.1, build not set
-|   + session identifier is 4e85a08d-7d1c-450d-9a7a-659f29ab8380
-|   + unsafe mode? true
-+========================================================================================
+| Option | Meaning |
+|---|---|
+| `-u`, `--unsafe` | don't ask before TPM and overwrite steps |
+| `--recreate` | `create` only: register a new element although this machine is registered (asks first unless `-u`) |
+| `--user NAME --pass PASSWORD` | Jane user for the REST API; both together; override `JANE_USERNAME`/`JANE_PASSWORD` |
 
+Exit status: 0 success (attest: every rule passed), 1 error, 2 bad command line, 3 attest: a rule did not pass.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-tarzan is running in UNSAFE file access mode.  Unsafe is set to true
-Requests for log files, eg: UEFI, IMA, that supply a non default location will happily read that file
-This is a HUGE security issue. YOU HAVE BEEN WARNED
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-⇨ http server started on [::]:8530
-```
+The element ID is kept in `/etc/opt/jane/janeelementid` (Windows: `%ProgramData%\jane\janeelementid`). `create` and `update` stop straight away, before contacting Jane, if they cannot write it.
 
-Really, *don't do this*...you've now given everyone with access to port 8530 (and it is all over http) root access to every file on your system.
+### Environment
 
+| Variable | Meaning |
+|---|---|
+| `JANE_USERNAME`, `JANE_PASSWORD` | Jane user and password, when Jane's REST API requires a login (`auth: rest: true`) |
+| `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, if one is set |
+| `SSL_CERT_FILE` | (Linux/BSD) a CA or self-signed certificate to trust for Jane's HTTPS |
+
+`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_USERNAME,JANE_PASSWORD,JANE_TPM_ENDORSEMENT_PASSWORD`, for `create` and `update`.
+
+## All environment variables
+
+| Variable | Program | Meaning | Unset or empty |
+|---|---|---|---|
+| `JANE_MONGODB_USERNAME` | janeserver, addjaneuser | MongoDB account | no account |
+| `JANE_MONGODB_PASSWORD` | janeserver, addjaneuser | its password | empty |
+| `JANE_MONGODB_AUTHSOURCE` | janeserver, addjaneuser | database the account is defined in | `admin` / connection string |
+| `JANE_MQTT_USERNAME` | janeserver | MQTT account | anonymous |
+| `JANE_MQTT_PASSWORD` | janeserver | its password | none |
+| `JANE_X3270_DEBUG` | janeserver | log the x3270 data stream | off |
+| `JANE_USERNAME` | jp | Jane user for the REST API | no credentials |
+| `JANE_PASSWORD` | jp | its password | empty |
+| `JANE_TPM_ENDORSEMENT_PASSWORD` | tarzan, jp | TPM endorsement hierarchy password | empty password |
+| `SSL_CERT_FILE` | jp (Go) | extra trusted certificates for HTTPS | system store |

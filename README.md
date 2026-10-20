@@ -2,10 +2,14 @@
 
 This is the source for the Jane Attestation Engine, a fork and major rewrite of the former A10 Nokia Attestation Engine.
 
-This software is used as the remote attestation engine as part of a trusted and/or confidential computing environment. This is the system that holds the known good values about devices and other elements, and provides the attestation and validation mechanisms.
+Jane is the remote attestation engine of a trusted or confidential computing environment: it holds the known-good values for devices and other elements, asks their trust agents for evidence (TPM 2.0 quotes, measured-boot and IMA logs, UEFI variables, ...), and verifies it with rules. It explores mechanisms for remote attestation and implements ideas from the IETF RATS architecture.
 
-The software here is provided as-is - there is no security (http for the win!) and the error checking in places is completely missing. The point of this was to explore more interesting mechanisms for remote attestation and to implement ideas from the IEFT RATS specification. *READ* the security section!!!
+| Directory | Contents |
+|---|---|
+| `janeserver/` | the attestation engine: Web UI, REST API and x3270 terminal interface |
+| `tarzan/` | tarzan, the reference trust agent |
+| `provisioner/` | jp, which registers an element with Jane, provisions its TPM and attests it |
+| `etc/` | packaging (`etc/debbuild`), standard intents, `addjaneuser`, scripts |
+| `docs/` | the documentation |
 
-Refer to the [contents](docs/contents.md) in the `docs` directory.
-
-Logins for the Web UI, REST API and x3270 interface are optional and off by default; see [Authentication](docs/authentication.md). Changes by release are in the [changelog](CHANGELOG.md).
+Start with the [Quick start](docs/quickstart.md), then read [Hardening](docs/hardening.md): out of the box Jane runs without TLS or logins, and it is research software, provided as-is. All documentation: [contents](docs/contents.md). Changes by release: [changelog](CHANGELOG.md).

@@ -167,7 +167,7 @@
             <tr><td><code>tpm2/nonce</code></td><td>string, base64</td><td><span class="badge text-bg-secondary src">JANE</span></td>
                 <td>Fresh nonce, used as the qualifying data, as for a quote.</td></tr>
             <tr><td><code>tpm2/akhandle</code></td><td>string, hex</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
-                <td>Handle of the attestation key that signs the time, from the element's <code>tpm2.ak.handle</code>. The endorsement hierarchy is authorised with the empty password.</td></tr>
+                <td>Handle of the attestation key that signs the time, from the element's <code>tpm2.ak.handle</code>. The endorsement hierarchy is authorised with the empty password; a TPM with an endorsement password set (tarzan's <code>JANE_TPM_ENDORSEMENT_PASSWORD</code>) cannot answer this function.</td></tr>
             <tr><td><code>tpm2/device</code></td><td>string, path</td><td><span class="badge text-bg-info src">ELEMENT</span></td>
                 <td>TPM device, as above.</td></tr>
 
