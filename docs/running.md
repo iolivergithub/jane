@@ -198,20 +198,22 @@ rc_cmd $1
 jp registers this machine with Jane as an element, provisions its TPM keys, records its expected values, and attests it. It reads a provisioning file (YAML); the deb installs an example as `/etc/opt/jane/provisioning.yaml.example`, and `provisioner/README.md` describes the file format.
 
 ```
-jp [-h] [-u] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
+jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
 ```
 
 | Operation | Needs root | What it does |
 |---|---|---|
-| `create` | yes | first registration: runs the worklist (TPM clear and provisioning ask first), registers the element, writes the element ID file, records expected values. Refuses if the machine is already registered |
-| `update` | yes | refreshes the registered element and all its expected values (after firmware or OS updates) |
-| `attest` | no | attests the element against every intent in the file and runs their rules |
+| `create` | yes | first registration: runs the worklist, registers the element, writes the element ID file, records expected values. Refuses if the machine is already registered |
+| `update` | yes | refreshes the registered element and all its expected values (after firmware or OS updates); safe to run from cron or a package hook |
+| `attest` | no | attests the element against every intent in the file and runs their rules; never touches the TPM |
 
 | Option | Meaning |
 |---|---|
-| `-u`, `--unsafe` | don't ask before TPM and overwrite steps |
-| `--recreate` | `create` only: register a new element although this machine is registered (asks first unless `-u`) |
+| `--reprovisiontpm` | `create` and `update` only: run the worklist's `tpmclear` (evict the keys at the EK/AK handles) and `tpmprovision` (create new EK and AK). Without it they are skipped and the TPM is left unchanged |
+| `--recreate` | `create` only: register a new element although this machine is registered; the old one stays in Jane |
 | `--user NAME --pass PASSWORD` | Jane user for the REST API; both together; override `JANE_USERNAME`/`JANE_PASSWORD` |
+
+jp never asks questions, so it can run unattended: anything destructive needs its own flag. `-u`/`--unsafe` from earlier versions is accepted but has no effect.
 
 Exit status: 0 success (attest: every rule passed), 1 error, 2 bad command line, 3 attest: a rule did not pass.
 

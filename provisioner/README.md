@@ -14,8 +14,8 @@ Linux, Windows, macOS, the BSDs, illumos/Solaris and AIX.
 ## Build and run
 
     go build -o jp .                          # or: CGO_ENABLED=0 GOOS=windows go build
-    sudo ./jp create provisioning.yaml        # asks before TPM steps
-    sudo ./jp update provisioning.yaml -u     # -u / --unsafe: no prompts
+    sudo ./jp create --reprovisiontpm provisioning.yaml   # first time: new EK and AK
+    sudo ./jp update provisioning.yaml        # leaves the TPM alone; safe to automate
     ./jp attest provisioning.yaml             # attest the registered element (no root needed)
 
 `create` and `update` need root (Administrator on Windows) for the TPM, the
@@ -60,8 +60,8 @@ in a future release.
   anything else (in particular before `tpmclear`/`tpmprovision`) it refuses,
   exit 1, if the machine already looks registered: the element ID file exists,
   or Jane already holds an element with the same `element.name` or the same
-  machine ID. It also refuses if Jane cannot be asked. `-u` does not lift
-  this. `--recreate` does (asking first unless `-u`): it registers a new
+  machine ID. It also refuses if Jane cannot be asked. `--recreate` lifts
+  this: it registers a new
   element and leaves the old one in Jane, whose TPM keys stop matching if the
   worklist re-provisions the TPM. A cloned VM that kept its source's
   `/etc/machine-id` is refused too; give it a new machine ID.
@@ -183,6 +183,14 @@ given), so one provisioning file can serve both platforms.
 
 ## TPM worklist steps
 
+`tpmclear` and `tpmprovision` change the TPM, so they run only for `create`
+or `update` with `--reprovisiontpm`; otherwise they are skipped (and reported),
+leaving the TPM as it is. `attest` never runs them and never opens the TPM.
+jp asks no questions: `-u`/`--unsafe` is accepted for old scripts but has no
+effect. This lets `jp update` and `jp attest` run unattended (cron, package
+hooks) without any risk to the TPM keys.
+
+
 - `tpmclear` evicts the persistent objects at `tpm2.ek.handle` and
   `tpm2.ak.handle` (not TPM2_Clear: the rest of the TPM is untouched). An
   empty handle is reported, not an error.
@@ -240,8 +248,8 @@ that a quote from the new AK verifies with its exported PEM key.
 - New `uefiefivars` expected-value type.
 - New `attest` operation (above), which prints rule results by name
   (`9001 Fail`); `create`/`update` no longer run rules (1.5.3).
-- `-u` prints "unsafe mode" rather than the confusingly named
-  "safe mode is True".
+- jp asks no questions (1.5.4): the destructive TPM steps need
+  `--reprovisiontpm`, and `-u` is accepted but has no effect.
 - HTTP requests time out after 60 seconds.
 
 Kept deliberately: quote expected-value names still repeat the intent ID

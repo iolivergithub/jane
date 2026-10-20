@@ -9,11 +9,12 @@
 #   endpoints          where Jane reaches tarzan (default port 8530) and, if used, ratsd
 #   tpm2               the TPM device and the EK/AK handles to use
 #   provisionworklist  tpmclear deletes the keys at the EK/AK handles and tpmprovision creates
-#                      them afresh; jp asks before each TPM step unless -u is given
+#                      them afresh; both run only with --reprovisiontpm (jp never asks)
 #
-#     sudo /opt/jane/jp create /etc/opt/jane/provisioning.yaml   # first provisioning only
-#     sudo /opt/jane/jp update /etc/opt/jane/provisioning.yaml   # after firmware (fwupd) or apt updates
-#     /opt/jane/jp attest /etc/opt/jane/provisioning.yaml        # no root needed
+#     sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml  # first time, new TPM keys
+#     sudo /opt/jane/jp update /etc/opt/jane/provisioning.yaml   # after firmware (fwupd) or apt updates;
+#                                                                # TPM left unchanged, safe to automate
+#     /opt/jane/jp attest /etc/opt/jane/provisioning.yaml        # no root needed, never touches the TPM
 #
 # If Jane's REST API requires a login (auth: rest: true), give jp a Jane user:
 #     export JANE_USERNAME=... JANE_PASSWORD=...   (sudo -E keeps them for create/update)
@@ -51,8 +52,9 @@ provisionworklist:
   # tpmclear evicts (deletes) the persistent keys at the EK and AK handles below, so
   # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
   # Whatever was stored at those two handles is lost, and Jane's record of the old keys
-  # no longer matches until jp registers the new ones. jp asks before each TPM step
-  # unless -u is given; to keep the existing keys, answer n to both TPM questions.
+  # no longer matches until jp registers the new ones. Both steps run only when jp
+  # create/update is given --reprovisiontpm; otherwise they are skipped and the TPM is
+  # left unchanged, so jp can run unattended. jp attest never runs them.
   - tpmclear
   - tpmprovision
   - collecthostinfo

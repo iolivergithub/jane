@@ -2,7 +2,7 @@
 // an element with a Jane attestation server and, optionally, provisions the
 // TPM and records expected values; it can then attest the element.
 //
-//	jp create|update|attest <provisioning file> [-u|--unsafe] [--recreate] [--user NAME --pass PASSWORD]
+//	jp create|update|attest <provisioning file> [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD]
 package main
 
 import (
@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const usage = `usage: jp [-h] [-u] [--recreate] [--user NAME --pass PASSWORD] operation pfile
+const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] operation pfile
 
 Jane Element Configurator
 
@@ -31,10 +31,15 @@ positional arguments:
 
 options:
   -h, --help     show this help message and exit
-  -u, --unsafe   do not ask for confirmation before TPM and overwrite steps
+  --reprovisiontpm
+                 create and update only: run the worklist's destructive TPM
+                 steps, tpmclear (evict the keys at the EK/AK handles) and
+                 tpmprovision (create new EK and AK). Without it they are
+                 skipped and the TPM is left unchanged, so jp can run
+                 unattended safely. attest never touches the TPM
   --recreate     create only: register a new element even though this
-                 machine is already registered (asks first unless -u);
-                 the old element is left in Jane, orphaned
+                 machine is already registered; the old element is left in
+                 Jane, orphaned
   --user NAME    Jane user, if Jane's REST API requires a login
   --pass PASSWORD
                  its password; --user and --pass must be given together and
@@ -47,8 +52,9 @@ environment:
   JANE_TPM_ENDORSEMENT_PASSWORD
                  the TPM's endorsement hierarchy password, if one is set
 
-create and update need root (the TPM and /etc/opt/jane/janeelementid);
-attest does not.
+jp never asks questions: anything destructive needs its own flag
+(--reprovisiontpm, --recreate). create and update need root (the TPM and
+/etc/opt/jane/janeelementid); attest does not.
 
 exit status:
   0  success (attest: every rule passed)
@@ -65,14 +71,16 @@ func run(argv []string) int {
 	fmt.Println("Jane Element Configuration")
 
 	// Flags may appear anywhere, as with the original argparse CLI.
-	unsafe, recreate := false, false
+	reprovision, recreate := false, false
 	var user, pass *string
 	var pos []string
 	for i := 0; i < len(argv); i++ {
 		a := argv[i]
 		switch {
+		case a == "--reprovisiontpm":
+			reprovision = true
 		case a == "-u" || a == "--unsafe":
-			unsafe = true
+			fmt.Fprintf(os.Stderr, "jp: %s no longer has any effect: jp never asks, and the TPM steps run only with --reprovisiontpm\n", a)
 		case a == "--recreate":
 			recreate = true
 		case a == "-h" || a == "--help":
@@ -111,10 +119,6 @@ func run(argv []string) int {
 	}
 	op, pfile := pos[0], pos[1]
 
-	if unsafe {
-		fmt.Println("unsafe mode: safety prompts are skipped")
-	}
-
 	if op != "create" && op != "update" && op != "attest" {
 		fmt.Println("Unknown command, not one of: create, update, attest")
 		return exitUsage
@@ -122,6 +126,10 @@ func run(argv []string) int {
 
 	if recreate && op != "create" {
 		fmt.Fprintf(os.Stderr, "jp: --recreate only applies to create\n%s", usage)
+		return exitUsage
+	}
+	if reprovision && op == "attest" {
+		fmt.Fprintf(os.Stderr, "jp: --reprovisiontpm only applies to create and update; attest never touches the TPM\n%s", usage)
 		return exitUsage
 	}
 
@@ -140,8 +148,12 @@ func run(argv []string) int {
 		return exitError
 	}
 
-	pv := NewProvisioner(p, op, unsafe)
+	pv := NewProvisioner(p, op)
 	pv.Recreate = recreate
+	pv.ReprovisionTPM = reprovision
+	if reprovision {
+		fmt.Println("--reprovisiontpm: tpmclear and tpmprovision in the worklist will change the TPM")
+	}
 	pv.Client.User, pv.Client.Pass = credentials(user, pass, os.Getenv)
 	if pass != nil {
 		fmt.Println("warning: --pass puts the password on the command line, where other users can see it; JANE_PASSWORD is safer")
@@ -219,10 +231,6 @@ func (pv *Provisioner) Run() int {
 	}
 
 	if _, err := pv.ProcessWorklist(); err != nil {
-		if errors.Is(err, errQuit) {
-			fmt.Println("Terminating immediately")
-			return exitOK
-		}
 		fmt.Println("Error:", err)
 		return exitError
 	}

@@ -29,8 +29,9 @@ provisionworklist:
   # tpmclear evicts (deletes) the persistent keys at the EK and AK handles below, so
   # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
   # Whatever was stored at those two handles is lost, and Jane's record of the old keys
-  # no longer matches until jp registers the new ones. jp asks before each TPM step
-  # unless -u is given; to keep the existing keys, answer n to both TPM questions.
+  # no longer matches until jp registers the new ones. Both steps run only when jp
+  # create/update is given --reprovisiontpm; otherwise they are skipped and the TPM is
+  # left unchanged, so jp can run unattended. jp attest never runs them.
   - tpmclear
   - tpmprovision
   - collecthostinfo

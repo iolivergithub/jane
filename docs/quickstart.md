@@ -93,13 +93,15 @@ At least change `element: name` to this machine's name. The defaults expect Jane
 Then register the machine:
 
 ```bash
-sudo /opt/jane/jp create /etc/opt/jane/provisioning.yaml
+sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 ```
 
-jp asks before each step that changes the TPM:
+`--reprovisiontpm` lets jp run the two worklist steps that change the TPM:
 
-- **TPM Clear?** deletes the keys stored at the EK and AK handles (0x810100EE and 0x810100AA), so they can be made afresh. It does not clear the rest of the TPM, but anything another program stored at exactly those handles is lost. On a TPM that already has jp's keys you can answer `n` to both questions to keep them.
-- **TPM Provision?** creates the endorsement key (EK) and attestation key (AK) at those handles.
+- **tpmclear** deletes the keys stored at the EK and AK handles (0x810100EE and 0x810100AA), so they can be made afresh. It does not clear the rest of the TPM, but anything another program stored at exactly those handles is lost.
+- **tpmprovision** creates the endorsement key (EK) and attestation key (AK) at those handles.
+
+Without the flag both steps are skipped and the TPM is left as it is; use that if the TPM already has jp's keys. jp never asks questions, so every command here can also run unattended: only `--reprovisiontpm` (and `--recreate`) allow anything destructive.
 
 jp then collects information about the machine, registers it with Jane as an element, writes the element's ID to `/etc/opt/jane/janeelementid`, and records the expected values (the "known good" PCR values, firmware version, machine ID, UEFI variables) for each intent in the file.
 

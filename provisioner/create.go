@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -15,9 +14,8 @@ type registration struct {
 // createPreflight runs before create's worklist, so before any TPM step. It
 // refuses to create when the machine is already registered: the element ID
 // file exists, or Jane holds an element with the same name or machine ID.
-// Unsafe does not lift the refusal; only Recreate does, and that still asks
-// unless Unsafe is set. It returns stop=true with the exit code when create
-// must not go ahead.
+// Only Recreate (--recreate) lifts the refusal. It returns stop=true with
+// the exit code when create must not go ahead.
 func (pv *Provisioner) createPreflight(idFileExists bool) (code int, stop bool) {
 	var reasons []string
 	if idFileExists {
@@ -48,22 +46,13 @@ func (pv *Provisioner) createPreflight(idFileExists bool) (code int, stop bool) 
 	if !pv.Recreate {
 		fmt.Fprintln(pv.Out, "Refusing to create: run 'jp update' to refresh the existing element and its")
 		fmt.Fprintln(pv.Out, "expected values, or 'jp create --recreate' to register a new element anyway")
-		fmt.Fprintln(pv.Out, "(the old one is left in Jane, and a tpmclear/tpmprovision in the worklist")
-		fmt.Fprintln(pv.Out, "will invalidate its keys). Nothing was changed.")
+		fmt.Fprintln(pv.Out, "(the old one is left in Jane, and with --reprovisiontpm the worklist's")
+		fmt.Fprintln(pv.Out, "tpmclear/tpmprovision invalidate its keys). Nothing was changed.")
 		return exitError, true
 	}
 
 	fmt.Fprintln(pv.Out, "--recreate: a new element will be registered; the old one is left in Jane,")
-	fmt.Fprintln(pv.Out, "and its TPM keys will no longer match if the worklist re-provisions the TPM.")
-	ok, err := pv.ContinueQuestion("Recreate this element?")
-	if errors.Is(err, errQuit) || (err == nil && !ok) {
-		fmt.Fprintln(pv.Out, "Terminating safely.")
-		return exitOK, true
-	}
-	if err != nil {
-		fmt.Fprintln(pv.Out, "Error:", err)
-		return exitError, true
-	}
+	fmt.Fprintln(pv.Out, "and its TPM keys will no longer match if --reprovisiontpm re-provisions the TPM.")
 	return 0, false
 }
 
