@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,15 @@ import (
 type Client struct {
 	BaseURL string
 	HTTP    *http.Client
+	// User and Pass are sent as HTTP Basic credentials when User is set, for a
+	// Jane whose REST API requires a login (auth: rest: true) (#46).
+	User, Pass string
 }
+
+// errUnauthorized is returned for an HTTP 401 answer: Jane wants credentials,
+// or refused the ones given.
+var errUnauthorized = errors.New("Jane refused the request with HTTP 401 (login required or wrong credentials); " +
+	"set JANE_USERNAME and JANE_PASSWORD, or give --user and --pass")
 
 func NewClient(base string) *Client {
 	return &Client{
@@ -59,12 +68,18 @@ func (c *Client) do(method, path string, body any) (int, []byte, error) {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	if c.User != "" {
+		req.SetBasicAuth(c.User, c.Pass)
+	}
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer resp.Body.Close()
 	rb, err := io.ReadAll(resp.Body)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized {
+		err = errUnauthorized
+	}
 	return resp.StatusCode, rb, err
 }
 

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -78,6 +79,9 @@ func RESTMiddleware() echo.MiddlewareFunc {
 		},
 		Validator: func(username, password string, c echo.Context) (bool, error) {
 			if !users.Authenticate(username, password) {
+				// Failed REST logins are logged like Web UI and x3270 ones (#46).
+				// Successes are not: every REST request carries the password.
+				logEntry("AUTH", "login/FAIL", username, "user", fmt.Sprintf("failed rest login from %s", c.RealIP()))
 				return false, nil
 			}
 			c.Set(contextUserKey, username)

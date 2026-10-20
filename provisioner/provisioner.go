@@ -583,6 +583,28 @@ func (pv *Provisioner) existingIDFile() string {
 	return ""
 }
 
+// idFileUnreadable returns an error when an element ID file exists but this
+// process may not read it (e.g. /etc/opt/jane not accessible to this user), so
+// that it is not reported as missing.
+func (pv *Provisioner) idFileUnreadable() error {
+	for _, f := range []string{pv.IDFile, pv.LegacyIDFile} {
+		if f == "" {
+			continue
+		}
+		_, err := os.Stat(f)
+		if err == nil {
+			var fh *os.File
+			if fh, err = os.Open(f); err == nil {
+				fh.Close()
+			}
+		}
+		if errors.Is(err, fs.ErrPermission) {
+			return fmt.Errorf("cannot read the element ID file %s: permission denied (run jp with sudo, or check the permissions of %s)", f, filepath.Dir(f))
+		}
+	}
+	return nil
+}
+
 func (pv *Provisioner) readID() (string, error) {
 	f := pv.existingIDFile()
 	if f == "" {
