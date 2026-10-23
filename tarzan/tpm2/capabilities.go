@@ -155,8 +155,8 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		return rtn, err
 	}
 
-	// algorithms
-	err = getCapability(tpm, tpm2.TPMCapAlgs, 0, func(d tpm2.TPMUCapabilities) (uint32, error) {
+	// algorithms, from TPM_ALG_FIRST (0x0001): some TPMs reject 0 (#105)
+	err = getCapability(tpm, tpm2.TPMCapAlgs, 0x0001, func(d tpm2.TPMUCapabilities) (uint32, error) {
 		algs, err := d.Algorithms()
 		if err != nil {
 			return 0, err
@@ -172,8 +172,9 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		return rtn, err
 	}
 
-	// ECC curves
-	err = getCapability(tpm, tpm2.TPMCapECCCurves, 0, func(d tpm2.TPMUCapabilities) (uint32, error) {
+	// ECC curves, from TPM_ECC_NIST_P192 (0x0001): Intel PTT rejects
+	// TPM_ECC_NONE (0) with TPM_RC_VALUE (#105)
+	err = getCapability(tpm, tpm2.TPMCapECCCurves, 0x0001, func(d tpm2.TPMUCapabilities) (uint32, error) {
 		curves, err := d.ECCCurves()
 		if err != nil {
 			return 0, err
