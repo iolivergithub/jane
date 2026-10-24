@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1262 1075" width="1262" height="1075" role="img" aria-label="Deployment and component diagram of Jane">
+<title>Jane: deployment and components</title>
+<style>
+  svg { --panel:#f7f9f8; --ink:#1b2a2e; --ink2:#33464b; --muted:#607378; --line:#2f4449;
+        --node:#dde5e2; --nodetop:#ccd7d3; --comp:#fbfcfc; --pkg:#f2f6f5; --accent:#0d6f78; }
+  @media (prefers-color-scheme: dark) {
+    svg { --panel:#172124; --ink:#dde7e5; --ink2:#b9c8c5; --muted:#8fa3a7; --line:#a3b8bc;
+          --node:#1d2a2d; --nodetop:#26363a; --comp:#1a2528; --pkg:#1f2c2f; --accent:#5ec4cd; }
+  }
+  .bg { fill: var(--panel); }
+  text { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace; fill: var(--ink); }
+  .n3d { fill: var(--node); stroke: var(--line); stroke-width: 1.2; }
+  .n3dt { fill: var(--nodetop); stroke: var(--line); stroke-width: 1.2; }
+  .cmp { fill: var(--comp); stroke: var(--line); stroke-width: 1.3; }
+  .pkg { fill: var(--pkg); stroke: var(--line); stroke-width: 1.1; }
+  .hdrline { stroke: var(--line); stroke-width: 1.1; }
+  .nm { font-size: 13px; font-weight: 600; }
+  .nm12 { font-size: 12px; font-weight: 600; }
+  .sm { font-size: 11px; fill: var(--ink2); }
+  .st { font-size: 10.5px; fill: var(--muted); font-style: italic; }
+  .tab { font-size: 11px; font-weight: 600; }
+  .lbl { font-size: 10.5px; fill: var(--muted); }
+  .call { stroke: var(--line); stroke-width: 1.3; fill: none; marker-end: url(#ah); }
+  .flow { stroke: var(--accent); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; marker-end: url(#ahA); }
+  .ret { stroke: var(--line); stroke-width: 1.2; fill: none; stroke-dasharray: 5 4; marker-end: url(#ah); }
+  .plain { stroke: var(--line); stroke-width: 1.3; fill: none; }
+  .mk { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .mkA { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .mkf { fill: var(--line); stroke: var(--line); }
+  .note { fill: var(--pkg); stroke: var(--muted); stroke-width: 1; }
+  .icon { fill: var(--comp); stroke: var(--line); stroke-width: 1.1; }
+  .actor { fill: none; stroke: var(--line); stroke-width: 1.3; }
+</style>
+<rect class="bg" x="0" y="0" width="1262" height="1075"/>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10" class="mk"/></marker>
+        <marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10" class="mkA"/></marker>
+        <marker id="dia" viewBox="0 0 14 10" refX="1" refY="5" markerWidth="13" markerHeight="9" orient="auto"><path d="M1,5 L7,1 L13,5 L7,9 Z" class="mkf"/></marker>
+      </defs>
+
+      <!-- clients -->
+      <g>
+        <rect x="75" y="24" width="240" height="60" class="cmp"/>
+        <circle cx="95" cy="40" r="6" class="actor"/><path d="M95,46 V62 M87,52 H103 M95,62 L88,73 M95,62 L102,73" class="actor"/>
+        <text x="114" y="45" class="st">«actor»</text><text x="114" y="63" class="nm">Scripts · curl · Ansible</text>
+      </g>
+      <g>
+        <rect x="390" y="24" width="220" height="60" class="cmp"/>
+        <circle cx="410" cy="40" r="6" class="actor"/><path d="M410,46 V62 M402,52 H418 M410,62 L403,73 M410,62 L417,73" class="actor"/>
+        <text x="429" y="45" class="st">«actor»</text><text x="429" y="63" class="nm">Operator · tn3270</text>
+      </g>
+      <g>
+        <rect x="700" y="24" width="220" height="60" class="cmp"/>
+        <circle cx="720" cy="40" r="6" class="actor"/><path d="M720,46 V62 M712,52 H728 M720,62 L713,73 M720,62 L727,73" class="actor"/>
+        <text x="739" y="45" class="st">«actor»</text><text x="739" y="63" class="nm">Operator · browser</text>
+      </g>
+
+      <!-- Jane server host node -->
+      <polygon points="20,140 32,128 1242,128 1230,140" class="n3dt"/>
+      <polygon points="1230,140 1242,128 1242,722 1230,734" class="n3dt"/>
+      <rect x="20" y="140" width="1210" height="594" class="n3d"/>
+      <text x="965" y="160" class="st">«node»</text>
+      <text x="965" y="177" class="nm">Jane server host</text>
+      <text x="965" y="194" class="sm">systemd jane.service · user jane</text>
+
+      <!-- janeserver component -->
+      <rect x="50" y="180" width="890" height="544" class="cmp"/>
+      <text x="66" y="200"><tspan class="st">«component» </tspan><tspan class="nm">janeserver</tspan><tspan class="sm"> · Go · /opt/jane/janeserver</tspan></text>
+      <g aria-hidden="true"><rect x="914" y="188" width="16" height="20" class="icon"/><rect x="909" y="192" width="10" height="5" class="icon"/><rect x="909" y="200" width="10" height="5" class="icon"/></g>
+
+      <!-- services -->
+      <rect x="80" y="214" width="118" height="14" class="pkg"/><rect x="80" y="228" width="230" height="64" class="pkg"/>
+      <text x="86" y="224.5" class="tab">services/restapi</text>
+      <text x="92" y="248" class="nm">REST API</text>
+      <text x="92" y="266" class="sm">:8520 · JSON for jp, scripts</text>
+      <text x="92" y="282" class="sm">/attest /verify /session …</text>
+
+      <rect x="385" y="214" width="112" height="14" class="pkg"/><rect x="385" y="228" width="230" height="64" class="pkg"/>
+      <text x="391" y="224.5" class="tab">services/x3270</text>
+      <text x="397" y="248" class="nm">x3270 UI</text>
+      <text x="397" y="266" class="sm">:3270 · tn3270 screens</text>
+      <text x="397" y="282" class="sm">attest · browse · log</text>
+
+      <rect x="695" y="214" width="112" height="14" class="pkg"/><rect x="695" y="228" width="230" height="64" class="pkg"/>
+      <text x="701" y="224.5" class="tab">services/webui</text>
+      <text x="707" y="248" class="nm">Web UI</text>
+      <text x="707" y="266" class="sm">:8540 · HTML (embedded)</text>
+      <text x="707" y="282" class="sm">attest · browse · live log</text>
+
+      <path d="M195,84 V213" class="call"/><text x="201" y="118" class="lbl">HTTPS · JSON</text>
+      <path d="M500,84 V213" class="call"/><text x="506" y="118" class="lbl">tn3270</text>
+      <path d="M810,84 V213" class="call"/><text x="816" y="118" class="lbl">HTTPS</text>
+
+      <!-- auth -->
+      <rect x="80" y="316" width="48" height="14" class="pkg"/><rect x="80" y="330" width="845" height="56" class="pkg"/>
+      <text x="86" y="326.5" class="tab">auth</text>
+      <text x="92" y="351" class="sm">Web UI login sessions · x3270 logons · REST credentials · UserStore (users) · Authoriser</text>
+      <text x="92" y="372" class="sm">REST: API key (Bearer) · Web UI, x3270: username + password · shared failed-login limit</text>
+      <path d="M195,292 V329" class="call"/><path d="M500,292 V329" class="call"/><path d="M810,292 V329" class="call"/>
+
+      <!-- operations -->
+      <rect x="80" y="406" width="128" height="14" class="pkg"/><rect x="80" y="420" width="845" height="80" class="pkg"/>
+      <text x="86" y="416.5" class="tab">operations (core)</text>
+      <text x="92" y="442" class="nm12">Attest · Verify · sessions: open · add claim/result · close + sign footer</text>
+      <text x="92" y="462" class="sm">elements · intents · expected values · claims · results · opaque objects · log queries</text>
+      <text x="92" y="480" class="sm">protocol and rule registries · footers signed through signing</text>
+      <path d="M195,386 V405" class="call"/><path d="M500,386 V419" class="call"/><path d="M810,386 V419" class="call"/>
+      <text x="516" y="404" class="lbl">requests after authentication</text>
+
+      <!-- row 1: protocols, rules, signing, logging -->
+      <rect x="80" y="526" width="74" height="14" class="pkg"/><rect x="80" y="540" width="250" height="86" class="pkg"/>
+      <text x="86" y="536.5" class="tab">protocols</text>
+      <text x="92" y="558" class="sm">A10HTTPRESTv2 → tarzan</text>
+      <text x="92" y="573" class="sm">RATSD → ratsd</text>
+      <text x="92" y="588" class="sm">A10NULLPROTOCOL · A10NETCONF</text>
+      <text x="92" y="603" class="sm">TESTCONTAINERPROTOCOL</text>
+
+      <rect x="345" y="526" width="48" height="14" class="pkg"/><rect x="345" y="540" width="245" height="86" class="pkg"/>
+      <text x="351" y="536.5" class="tab">rules</text>
+      <text x="357" y="558" class="sm">tpm2rules · uefirules</text>
+      <text x="357" y="573" class="sm">sysrules · chares (ratsd)</text>
+      <text x="357" y="588" class="sm">nullrule · testcontainerrules</text>
+
+      <rect x="605" y="526" width="60" height="14" class="pkg"/><rect x="605" y="540" width="140" height="86" class="pkg"/>
+      <text x="611" y="536.5" class="tab">signing</text>
+      <text x="617" y="558" class="sm">claim, result and</text>
+      <text x="617" y="573" class="sm">session footers:</text>
+      <text x="617" y="588" class="sm">hash · signature</text>
+      <text x="617" y="603" class="sm">kid · alg</text>
+
+      <rect x="760" y="526" width="62" height="14" class="pkg"/><rect x="760" y="540" width="165" height="86" class="pkg"/>
+      <text x="766" y="536.5" class="tab">logging</text>
+      <text x="772" y="558" class="sm">each log entry to</text>
+      <text x="772" y="573" class="sm">MongoDB log</text>
+      <text x="772" y="588" class="sm">MQTT AS/&lt;channel&gt;</text>
+      <text x="772" y="603" class="sm">/var/log/jane</text>
+
+      <path d="M205,500 V539" class="call"/><path d="M467,500 V539" class="call"/><path d="M675,500 V539" class="call"/><path d="M842,500 V539" class="call"/>
+
+      <!-- row 2: structures, configuration, datalayer -->
+      <rect x="80" y="642" width="84" height="14" class="pkg"/><rect x="80" y="656" width="330" height="56" class="pkg"/>
+      <text x="86" y="652.5" class="tab">structures</text>
+      <text x="92" y="674" class="sm">Element · Intent · ExpectedValue · Claim</text>
+      <text x="92" y="689" class="sm">Result · Session · LogEntry · OpaqueObject</text>
+      <text x="92" y="704" class="st">data model, used by every package</text>
+
+      <rect x="425" y="642" width="100" height="14" class="pkg"/><rect x="425" y="656" width="165" height="56" class="pkg"/>
+      <text x="431" y="652.5" class="tab">configuration</text>
+      <text x="437" y="674" class="sm">reads config.yaml</text>
+      <text x="437" y="689" class="sm">(auth reads its</text>
+      <text x="437" y="704" class="sm">own auth: block)</text>
+
+      <rect x="605" y="642" width="80" height="14" class="pkg"/><rect x="605" y="656" width="320" height="56" class="pkg"/>
+      <text x="611" y="652.5" class="tab">datalayer</text>
+      <text x="617" y="674" class="sm">MongoDB driver · MQTT client (paho)</text>
+      <text x="617" y="689" class="sm">credentials from the environment</text>
+
+      <path d="M842,626 V655" class="flow"/>
+      <path d="M925,460 H934 V684 H926" class="call"/>
+
+      <!-- right column on the host -->
+      <rect x="965" y="228" width="250" height="70" class="cmp"/>
+      <text x="977" y="246" class="st">«executable»</text>
+      <text x="977" y="263" class="nm">addjaneuser (Python)</text>
+      <text x="977" y="281" class="sm">users: passwords, API keys</text>
+
+      <path d="M965,330 H1199 L1215,346 V426 H965 Z" class="cmp"/><path d="M1199,330 V346 H1215" class="plain"/>
+      <text x="977" y="348" class="st">«artifact»</text>
+      <text x="977" y="365" class="nm">/etc/opt/jane/</text>
+      <text x="977" y="383" class="sm">config.yaml · TLS cert &amp; key</text>
+      <text x="977" y="399" class="sm">signing key</text>
+      <text x="977" y="415" class="sm">standardintents.json</text>
+
+      <path d="M965,460 H1199 L1215,476 V516 H965 Z" class="cmp"/><path d="M1199,460 V476 H1215" class="plain"/>
+      <text x="977" y="478" class="st">«artifact»</text>
+      <text x="977" y="496" class="nm">/var/log/jane/jane.log</text>
+      <text x="977" y="510" class="sm">written by logging</text>
+
+      <path d="M925,580 H950 V488 H964" class="flow"/>
+
+      <!-- element node -->
+      <polygon points="20,786 32,774 682,774 670,786" class="n3dt"/>
+      <polygon points="670,786 682,774 682,1052 670,1064" class="n3dt"/>
+      <rect x="20" y="786" width="650" height="278" class="n3d"/>
+      <text x="36" y="806"><tspan class="st">«node» </tspan><tspan class="nm">Element</tspan><tspan class="sm"> · the attested machine (many)</tspan></text>
+
+      <rect x="45" y="840" width="215" height="104" class="cmp"/>
+      <text x="57" y="858" class="st">«component»</text>
+      <text x="57" y="875" class="nm">tarzan</text>
+      <text x="57" y="893" class="sm">:8530 · runs as root</text>
+      <text x="57" y="909" class="sm">/sys /tpm2 /uefi /ima</text>
+      <text x="57" y="925" class="sm">trust agent (Go)</text>
+
+      <rect x="285" y="840" width="150" height="52" class="cmp"/>
+      <text x="297" y="858" class="st">«device»</text>
+      <text x="297" y="874" class="nm">TPM 2.0</text>
+      <text x="297" y="887" class="sm">/dev/tpm*</text>
+
+      <rect x="460" y="840" width="190" height="104" class="cmp"/>
+      <text x="472" y="858" class="st">«component»</text>
+      <text x="472" y="875" class="nm">ratsd (optional)</text>
+      <text x="472" y="893" class="sm">:8895 · CMW evidence</text>
+      <text x="472" y="909" class="sm">TSM, GPU leaf attesters</text>
+
+      <rect x="45" y="976" width="390" height="74" class="cmp"/>
+      <text x="57" y="994" class="st">«executable»</text>
+      <text x="57" y="1011" class="nm">jp, the provisioner</text>
+      <text x="57" y="1028" class="sm">create · update (sudo, TPM) · attest (user)</text>
+      <text x="57" y="1043" class="sm">REST key: JANE_API_KEY or --apikeyfile</text>
+
+      <path d="M260,866 H284" class="call"/>
+      <path d="M360,976 V893" class="call"/><text x="366" y="940" class="lbl">create /</text><text x="366" y="953" class="lbl">update</text>
+
+      <!-- protocols to tarzan and ratsd -->
+      <path d="M80,600 H35 V752 H152 V839" class="call"/>
+      <path d="M152,752 H555 V839" class="call"/>
+      <text x="180" y="747" class="lbl">HTTP · protocols request evidence</text>
+
+      <!-- jp to REST -->
+      <path d="M45,1013 H8 V108 H110 V213" class="call"/>
+      <text x="16" y="103" class="lbl">jp → REST · API key</text>
+
+      <!-- MongoDB -->
+      <polygon points="700,786 712,774 1012,774 1000,786" class="n3dt"/>
+      <polygon points="1000,786 1012,774 1012,958 1000,970" class="n3dt"/>
+      <rect x="700" y="786" width="300" height="184" class="n3d"/>
+      <text x="716" y="806"><tspan class="st">«node» </tspan><tspan class="nm">MongoDB</tspan></text>
+      <text x="716" y="824" class="sm">database asvr (default) · :27017</text>
+      <text x="716" y="848" class="sm">elements · intents · expectedvalues</text>
+      <text x="716" y="864" class="sm">claims · results · sessions</text>
+      <text x="716" y="880" class="sm">log · opaqueobjects</text>
+      <text x="716" y="898" class="sm">users: username, password, apikey</text>
+
+      <!-- Mosquitto -->
+      <polygon points="1032,786 1044,774 1244,774 1232,786" class="n3dt"/>
+      <polygon points="1232,786 1244,774 1244,898 1232,910" class="n3dt"/>
+      <rect x="1032" y="786" width="200" height="124" class="n3d"/>
+      <text x="1048" y="806"><tspan class="st">«node» </tspan><tspan class="nm">Mosquitto</tspan></text>
+      <text x="1048" y="824" class="sm">MQTT :1883 · ws :8081</text>
+      <text x="1048" y="842" class="sm">topics AS/&lt;channel&gt;</text>
+      <text x="1048" y="858" class="sm">log entries as CSV</text>
+
+      <path d="M765,712 V771" class="flow"/>
+      <path d="M900,712 V748 H1132 V771" class="flow"/>
+      <path d="M1215,263 H1254 V944 H1001" class="flow"/>
+      <text x="1012" y="938" class="lbl">addjaneuser writes users</text>
+    </svg>

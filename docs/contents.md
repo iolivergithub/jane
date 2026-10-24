@@ -10,6 +10,8 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 
 ## Reference
 
+- [Architecture](architecture.md): the parts of Jane, the data model and how they fit together, in brief.
+
 **Installing and running**
 
 - [Installing with dpkg/apt](deb.md): what the packages install, upgrade and removal, running under systemd.
