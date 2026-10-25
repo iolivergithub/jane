@@ -56,13 +56,13 @@ make -f ../etc/debbuild/Makefile.jane.$ARCHTECTURE build VERSION="$VERSIONNUMBER
 ls -l janeserver
 
 #compile Tarzan
-echo "${BLUE}Compling Tarzan${NC}"
+echo "${BLUE}Compiling Tarzan${NC}"
 cd ../tarzan
 make -f ../etc/debbuild/Makefile.tarzan.$ARCHTECTURE build VERSION="$VERSIONNUMBER"
 ls -l tarzan
 
 #compile Provisioner - included in the tarzan.deb package
-echo "${BLUE}Compling JP${NC}"
+echo "${BLUE}Compiling JP${NC}"
 cd ../provisioner
 make  -f ../etc/debbuild/Makefile.provisioner.amd64 build VERSION="$VERSIONNUMBER"
 ls -l jp
@@ -83,7 +83,7 @@ cp ../../tarzan/tarzan $TARZANBASE/opt/jane
 cp ../../provisioner/jp $TARZANBASE/opt/jane
 
 #Copy configuration files
-echo "${BLUE}Copying congfiguration files and temporary keys"
+echo "${BLUE}Copying configuration files and temporary keys"
 cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
 
 cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
