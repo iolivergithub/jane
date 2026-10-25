@@ -63,7 +63,7 @@ func StartX3270(ctx context.Context) {
 		default:
 			conn, err := tcpListener.Accept()
 			if err != nil {
-				//fmt.Println("An error occured:", err.Error(), " Will reset timeout deadline anyway")
+				//fmt.Println("An error occurred:", err.Error(), " Will reset timeout deadline anyway")
 				deadline = time.Now().Add(10 * time.Second)
 				tcpListener.SetDeadline(deadline)
 			} else {

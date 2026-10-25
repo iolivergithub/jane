@@ -92,7 +92,7 @@ func main() {
 	welcomeMessage()
 
 	// initialise the internal parts of the system, ie: rules and protocols.
-	// If the datalayer have come up properly, but some other external error has occured, eg: authorisation etc,
+	// If the datalayer have come up properly, but some other external error has occurred, eg: authorisation etc,
 	// then we will get a panic from these below.
 
 	protocols.RegisterProtocols()
@@ -111,8 +111,8 @@ func main() {
 
 	internalservices()
 
-	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologise for the inconvience (bring 42 towels)")
-	fmt.Println("+=== Final message: We apologise for the inconvience (42). Next time, bring a towel ===")
+	logging.MakeLogEntry("SYS", "shutdown", configuration.ConfigData.System.Name, "JANE "+VERSION, "Final message: We apologise for the inconvenience (bring 42 towels)")
+	fmt.Println("+=== Final message: We apologise for the inconvenience (42). Next time, bring a towel ===")
 
 }
 
