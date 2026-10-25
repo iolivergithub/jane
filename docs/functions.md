@@ -77,7 +77,7 @@ Runs TPM2_GetCapability and reports which TPM the element has and how it is conf
 | --- | --- | --- | --- |
 | tpm2/device | Y | String | The TPM device to use, from the element's `tpm2.device` |
 
-The claim body has `summary` (manufacturer, vendorstring, firmwareversion, family, level, revision, fips140_2), `properties` (every fixed and variable TPM property by its TCG name, e.g. `TPM_PT_MANUFACTURER`), `pcrbanks` (bank: number of PCRs allocated), `algorithms`, `ecccurves` and `persistenthandles`.
+The claim body has `summary` (manufacturer, vendorstring, firmwareversion, family, level, revision, fips140_2), `properties` (every fixed and variable TPM property by its TCG name, e.g. `TPM_PT_MANUFACTURER`), `pcrbanks` (bank: number of PCRs allocated), `algorithms`, `ecccurves`, `persistenthandles` and `commands` (each command the TPM implements, by TCG name and code, e.g. `TPM_CC_Quote (0x158)`; a command not in tarzan's table, newer or vendor-specific, is given by its code; tarzan 1.5.5 and later).
 
 ## uefi/eventlog
 This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; the `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim.

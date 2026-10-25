@@ -34,3 +34,26 @@ func TestCapabilityDecoding(t *testing.T) {
 		t.Errorf("curve %q", got)
 	}
 }
+
+func TestCommandNames(t *testing.T) {
+	cases := []struct {
+		a    tpm2.TPMACC
+		want string
+	}{
+		{tpm2.TPMACC{CommandIndex: 0x158}, "TPM_CC_Quote (0x158)"},
+		{tpm2.TPMACC{CommandIndex: 0x11F, NV: true, CHandles: 2}, "TPM_CC_NV_UndefineSpaceSpecial (0x11f)"},
+		{tpm2.TPMACC{CommandIndex: 0x1A1}, "0x1a1"},
+		{tpm2.TPMACC{CommandIndex: 0x0002, V: true}, "vendor command (0x20000002)"},
+	}
+	for _, c := range cases {
+		if got := commandName(commandCode(c.a)); got != c.want {
+			t.Errorf("command %+v: got %q, want %q", c.a, got, c.want)
+		}
+	}
+	// every name is a TPM_CC_ name and its code is in the TPM_CC range
+	for code, name := range tpmCommandNames {
+		if code < 0x11F || code > 0x1FF || len(name) < 8 || name[:7] != "TPM_CC_" {
+			t.Errorf("bad table entry 0x%x %q", code, name)
+		}
+	}
+}

@@ -15,7 +15,8 @@ import (
 
 // Capabilities runs TPM2_GetCapability and reports the TPM's identity and
 // configuration: fixed and variable properties, allocated PCR banks,
-// algorithms, ECC curves and persistent handles (#69). Nothing is signed, so
+// algorithms, ECC curves, persistent handles (#69) and the commands the TPM
+// implements (#103). Nothing is signed, so
 // this describes the TPM rather than proves anything about it.
 //
 // Parameters:
@@ -61,6 +62,7 @@ type tpm2capabilitiesReturn struct {
 	Algorithms        []string            `json:"algorithms"`
 	ECCCurves         []string            `json:"ecccurves"`
 	PersistentHandles []string            `json:"persistenthandles"`
+	Commands          []string            `json:"commands"` // e.g. "TPM_CC_Quote (0x158)"
 }
 
 // capabilitiesSummary picks out the properties that identify the TPM.
@@ -190,6 +192,24 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		return rtn, err
 	}
 
+	// implemented commands, from TPM_CC_FIRST (0x011F) (#103)
+	err = getCapability(tpm, tpm2.TPMCapCommands, 0x011F, func(d tpm2.TPMUCapabilities) (uint32, error) {
+		cmds, err := d.Command()
+		if err != nil {
+			return 0, err
+		}
+		next := uint32(0)
+		for _, a := range cmds.CommandAttributes {
+			code := commandCode(a)
+			rtn.Commands = append(rtn.Commands, commandName(code))
+			next = code + 1
+		}
+		return next, nil
+	})
+	if err != nil {
+		return rtn, err
+	}
+
 	// persistent handles (0x81xxxxxx)
 	err = getCapability(tpm, tpm2.TPMCapHandles, 0x81000000, func(d tpm2.TPMUCapabilities) (uint32, error) {
 		handles, err := d.Handles()
@@ -215,6 +235,28 @@ func propertyName(p tpm2.TPMPT) string {
 		return n
 	}
 	return fmt.Sprintf("0x%08x", uint32(p))
+}
+
+// commandCode is the command code (TPM_CC) of a command's attributes: the
+// index, with bit 29 set for a vendor-specific command.
+func commandCode(a tpm2.TPMACC) uint32 {
+	code := uint32(a.CommandIndex)
+	if a.V {
+		code |= 0x20000000
+	}
+	return code
+}
+
+// commandName is a command's TCG name and code, e.g. "TPM_CC_Quote (0x158)",
+// or just the code in hex if unknown (newer commands, vendor commands).
+func commandName(code uint32) string {
+	if n, ok := tpmCommandNames[code]; ok {
+		return fmt.Sprintf("%s (0x%x)", n, code)
+	}
+	if code&0x20000000 != 0 {
+		return fmt.Sprintf("vendor command (0x%08x)", code)
+	}
+	return fmt.Sprintf("0x%x", code)
 }
 
 // propertyValue decodes the properties that have a text form; the rest are
