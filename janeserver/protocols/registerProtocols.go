@@ -8,7 +8,6 @@ import (
 	"a10/protocols/nullprotocol"
 	"a10/protocols/ratsdprotocol"
 	"a10/protocols/testcontainerprotocol"
-	"a10/protocols/veraisonpsaprotocol"
 )
 
 func RegisterProtocols() {
@@ -16,7 +15,6 @@ func RegisterProtocols() {
 	operations.AddProtocol(nullprotocol.Registration())
 	operations.AddProtocol(netconfprotocol.Registration())
 	operations.AddProtocol(testcontainerprotocol.Registration())
-	operations.AddProtocol(veraisonpsaprotocol.Registration())
 	operations.AddProtocol(ratsdprotocol.Registration())
 
 }

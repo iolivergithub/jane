@@ -9,7 +9,6 @@ import (
 	"a10/rules/sysrules"
 	"a10/rules/tpm2rules"
 	"a10/rules/uefirules"
-	"a10/rules/veraison"
 
 	"a10/rules/testcontainerrules"
 )
@@ -20,7 +19,6 @@ func RegisterRules() {
 	registerListOfRules(uefirules.Registration())
 	registerListOfRules(testcontainerrules.Registration())
 	registerListOfRules(sysrules.Registration())
-	registerListOfRules(veraison.Registration())
 	registerListOfRules(chares.Registration())
 
 }

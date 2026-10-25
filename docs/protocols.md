@@ -9,7 +9,6 @@ A protocol is how Jane talks to a trust agent. Each element endpoint names one (
 | `A10NULLPROTOCOL` | none | any (`*/*`) | testing: always returns a fixed test claim |
 | `A10NETCONF` | none | `null/good`, `null/test` | proof of concept for NETCONF; returns a fixed claim |
 | `TESTCONTAINERPROTOCOL` | none | `testcontainers/repoimageintegrity` | test protocol for containers |
-| `EVCLI_PSA` | none | any (`*/*`) | test version: always returns a PSA test token |
 
 The parameters each function takes, and what it returns, are in [Functions](functions.md); the attest page's **Reference** shows them too, with where each value comes from.
 

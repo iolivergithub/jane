@@ -268,10 +268,10 @@
 
 <!-- Test protocols -->
 <div class="card">
-   <div class="card-header">Test protocols <span class="fw-normal text-body-secondary">&mdash; A10NULLPROTOCOL, A10NETCONF, TESTCONTAINERPROTOCOL, EVCLI_PSA</span></div>
+   <div class="card-header">Test protocols <span class="fw-normal text-body-secondary">&mdash; A10NULLPROTOCOL, A10NETCONF, TESTCONTAINERPROTOCOL</span></div>
    <div class="card-body">
       <p class="mb-0">These return fixed test claims and ignore all intent parameters. Each records its own random 32-byte <code>nonce</code> in the claim.
-      A10NULLPROTOCOL and A10NETCONF only produce a non-error claim for function <code>null/null</code>; EVCLI_PSA only for <code>veraison/psa/get_token</code>.</p>
+      A10NULLPROTOCOL and A10NETCONF only produce a non-error claim for function <code>null/null</code>.</p>
    </div>
 </div>
 
@@ -356,10 +356,6 @@
             <tr><td><code>chares_validAttesterNonces</code></td><td><code>ratsd/chares</code></td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
                 <td>Each leaf attester's evidence contains the nonce ratsd derived for it: <code>SHAKE(ratsd/nonce)</code> truncated to that attester's size in
                 <code>vnd.veraison.nonce_adjust_map</code>. Supports TSM reports (nonce in <code>outblob</code>; the mock TSM's hex form is accepted) and NVIDIA GPU evidence.</td></tr>
-
-            <tr class="fn-row grp-row"><th colspan="5">Veraison</th></tr>
-            <tr><td><code>veraisin_psa_token_verify</code></td><td><code>veraison/psa/get_token</code></td><td><span class="badge bg-success">EV</span> <span class="text-body-secondary">any</span></td><td class="text-body-secondary">none</td>
-                <td>Placeholder: needs an expected value to exist but always succeeds. The name's spelling is as registered.</td></tr>
 
             <tr class="fn-row grp-row"><th colspan="5">Test rules</th></tr>
             <tr><td><code>testcontainer_LIFE</code><br/><code>testcontainer_43</code><br/><code>testcontainer_FOOBAR</code></td><td>test protocol claims</td><td class="text-body-secondary">&ndash;</td><td class="text-body-secondary">none</td>
