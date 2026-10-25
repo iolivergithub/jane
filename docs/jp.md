@@ -17,7 +17,7 @@ jp is built to run unattended (from cron, a systemd timer, a package hook) as we
 ## Synopsis
 
 ```
-jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
+jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
 ```
 
 Installed from the deb it is `/opt/jane/jp`. Options may come before or after the mode and file.
@@ -72,7 +72,7 @@ Checks the machine against Jane's expected values, without changing anything:
 |---|---|---|
 | `--reprovisiontpm` | create, update | Allow the worklist's TPM steps: `tpmclear` deletes the keys at the EK and AK handles, `tpmprovision` creates a new EK and AK there. Without it both are skipped (reported as `skipped, the TPM is left unchanged`). Rejected with `attest` |
 | `--recreate` | create | Register a new element although this machine is already registered. The old element is left in Jane, orphaned; with `--reprovisiontpm` its keys no longer match the TPM |
-| `--user NAME`, `--pass PASSWORD` | all | Jane user for the REST API, when Jane requires a login. Must be given together; they override `JANE_USERNAME`/`JANE_PASSWORD`. A password on the command line is visible to other users (`ps`) and stays in shell history: prefer the variables |
+| `--apikeyfile PATH` | all | Read the Jane REST API key from a file holding the key alone (e.g. `/etc/opt/jane/jp.key`), when Jane requires one (`auth: rest: true`). Overrides `JANE_API_KEY`. See [Authentication](authentication.md#rest-api) |
 | `-h`, `--help` | | Print the usage and exit |
 
 There is no `-u`/`--unsafe` any more (see [Changes in 1.5.4](#changes-in-154)).
@@ -106,19 +106,21 @@ sudo -E /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 
 | Variable | Meaning |
 |---|---|
-| `JANE_USERNAME`, `JANE_PASSWORD` | Jane user and password for the REST API, when Jane's `auth: rest: true` |
+| `JANE_API_KEY` | the Jane REST API key (`jane_...`, made with `addjaneuser --apikey`), when Jane's `auth: rest: true` |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, only if one is set (`tpm2_changeauth -c e`); used when creating the EK. Unset means the empty password |
 | `SSL_CERT_FILE` | (Linux/BSD) a certificate to trust for Jane's HTTPS, e.g. Jane's self-signed certificate |
 
-`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_USERNAME,JANE_PASSWORD,JANE_TPM_ENDORSEMENT_PASSWORD`.
+`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_API_KEY,JANE_TPM_ENDORSEMENT_PASSWORD`, or give the key with `--apikeyfile`.
+
+`JANE_USERNAME`, `JANE_PASSWORD`, `--user` and `--pass` were removed in 1.5.5: jp stops with a message if it is given them without a key. Jane and jp must both be 1.5.5 or later.
 
 ## Exit status and output
 
 | Status | Meaning |
 |---|---|
 | 0 | success; for `attest`, every rule passed |
-| 1 | error: bad provisioning file, element ID file missing or unreadable, Jane or the TPM unreachable, Jane refused the credentials (HTTP 401), no permission (create/update without root), machine already registered (create) |
-| 2 | bad command line (unknown option, missing argument, `--user` without `--pass`, `--recreate` or `--reprovisiontpm` with the wrong mode), or a mistake in the provisioning file's variables |
+| 1 | error: bad provisioning file, element ID file missing or unreadable, Jane or the TPM unreachable, Jane refused the API key (HTTP 401) or this address made too many failed attempts (HTTP 429), no permission (create/update without root), machine already registered (create) |
+| 2 | bad command line (unknown option, missing argument, the removed `--user`/`--pass`, an API key that is unreadable or not a Jane key, `--recreate` or `--reprovisiontpm` with the wrong mode), or a mistake in the provisioning file's variables |
 | 3 | `attest` only: a rule did not pass, could not be run, or an intent could not be attested |
 
 `attest` prints each intent with its claim and each rule's result, then a summary and the variables:

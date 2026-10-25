@@ -1,4 +1,4 @@
-{{define "content"}}
+{{define "title"}}Element {{ .E.Name }} · {{end}}{{define "content"}}
 <style>
    .ev-tile { min-width: 9rem; }
    .ev-tile .ev-num { font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
@@ -52,7 +52,7 @@
 <div class="d-flex flex-wrap align-items-start gap-3 mb-3">
    <div class="me-auto">
       <h3 class="mb-1"><i class="fa fa-server me-2 text-body-secondary"></i>{{ .E.Name }}</h3>
-      <div class="small text-body-secondary font-monospace mb-1">{{ .E.ItemID }}</div>
+      <div class="small text-body-secondary font-monospace mb-1"><span data-copy>{{ .E.ItemID }}</span> <button type="button" class="btn btn-link btn-sm p-0 align-baseline j-copy" title="Copy the ID" aria-label="Copy the ID"><i class="fa fa-clipboard"></i></button></div>
       {{ if .E.Description }}<div class="mb-2">{{ .E.Description }}</div>{{ end }}
       <div class="d-flex flex-wrap gap-1">
          {{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}
@@ -77,7 +77,7 @@
             </div>
          {{ else }}
             <div class="ev-num text-body-secondary">None</div>
-            <a class="small" href="/attest">Attest now</a>
+            <a class="small" href="/attest?eid={{ .E.ItemID }}">Attest now</a>
          {{ end }}
       </div></div>
       <div class="card ev-tile"><div class="card-body py-2">
@@ -264,7 +264,7 @@
 })();
 </script>
 {{ else }}
-<div class="alert alert-secondary">This element has not been attested yet. <a href="/attest">Run an attestation</a>.</div>
+<div class="alert alert-secondary">This element has not been attested yet. <a href="/attest?eid={{ .E.ItemID }}">Run an attestation</a>.</div>
 {{ end }}
 
 <!-- lists -->

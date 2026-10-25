@@ -42,6 +42,10 @@ logging:
   logfilelocation: /tmp/ga10.log
   sessionupdatelogging: false
 
+#Attestation sessions longer than this many seconds are flagged LONG SESSION (minimum 30, default 60)
+#sessions:
+#  longsession: 60
+
 #Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
 #and footers on claims, results and sessions cannot be verified once Jane stops)
 #The key is a PEM private key: PKCS#8, PKCS#1 or SEC1; RSA (PS256), ECDSA P-256/384/521 (ES256/384/512) or Ed25519 (EdDSA)
@@ -54,6 +58,6 @@ logging:
 #  etc/addjaneuser/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
 #auth:
 #  web: true            # require a login for the Web UI
-#  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
+#  rest: false          # require an API key for the REST API (jp/scripts send Authorization: Bearer jane_...; see docs/authentication.md)
 #  x3270: false         # require a logon on the x3270 interface (passwords travel unencrypted)
 #  sessiontimeout: 30m  # Web UI login, or x3270 logon, expires after this long without use

@@ -47,106 +47,110 @@ type hashablePartSession struct {
 	Message    string
 }
 
-// We close the session and sign it
+// CloseSession closes the session and signs it.
+//
+// The footer covers the claim and result lists as read. The write only
+// succeeds if the session is still open and its lists are unchanged (#90):
+// if a claim or result was added in between, the session is read again and
+// the close tried once more, so the signed lists always equal the stored ones.
+// Anything added after the close is refused by AddClaimToSession and
+// AddResultToSession.
 func CloseSession(itemid string) error {
+	for attempt := 0; attempt < 2; attempt++ {
+		//Get the session, return error if not found
+		session, err := GetSessionByItemID(itemid)
+		if err != nil {
+			return fmt.Errorf("Session not found %v : %v", itemid, err)
+		}
 
-	//Get the session, return error if not found
-	session, err := GetSessionByItemID(itemid)
-	if err != nil {
-		return fmt.Errorf("Session not found %v : %v", itemid, err)
+		//Check if the session isn't already closed
+		if session.Timing.Closed != 0 {
+			return fmt.Errorf("Session already closed %v", itemid)
+		}
+
+		//The lists as read, for the filter below
+		filter := bson.D{{"itemid", itemid}, {"timing.closed", 0}, {"claimlist", sameList(session.ClaimList)}, {"resultlist", sameList(session.ResultList)}}
+
+		//Update the session
+		session.Timing.Closed = utilities.MakeTimestamp()
+
+		// hash and sign the session
+		footer, _ := hashAndSignSession(hashablePartSession{session.ItemID, session.Timing, session.ClaimList, session.ResultList, session.Message})
+		session.Footer = footer
+
+		//Write to database
+		closedSession, err := datalayer.DB.Collection("sessions").ReplaceOne(context.TODO(), filter, session)
+		if err != nil {
+			return fmt.Errorf("Database error in close session: %v", err)
+		}
+		if closedSession.MatchedCount == 1 {
+			logging.MakeLogEntry("S", "close", itemid, "session", "")
+			return nil
+		}
+		// No match: a claim or result was added (or the session closed) since it was read.
 	}
-
-	//Check if the session isn't already closed
-	if session.Timing.Closed != 0 {
-		return fmt.Errorf("Session already closed %v : %v", itemid, err)
-	}
-
-	//Update the session
-	session.Timing.Closed = utilities.MakeTimestamp()
-
-	// hash and sign the session
-	footer, _ := hashAndSignSession(hashablePartSession{session.ItemID, session.Timing, session.ClaimList, session.ResultList, session.Message})
-	session.Footer = footer
-
-	//Write to database
-	filter := bson.D{{"itemid", itemid}}
-	closedSession, err := datalayer.DB.Collection("sessions").ReplaceOne(context.TODO(), filter, session)
-
-	if err != nil {
-		return fmt.Errorf("Database error in close session: %v", err)
-	} else if closedSession.MatchedCount != 1 || closedSession.ModifiedCount != 1 {
-		return fmt.Errorf("Session not updated: %v", err)
-	} else {
-		logging.MakeLogEntry("S", "close", itemid, "session", "")
-		return nil
-	}
+	return fmt.Errorf("Session %v not closed: it changed while being closed; try again", itemid)
 }
 
+// sameList is the filter value matching a stored claim or result list equal to
+// l. An empty list also matches one stored as null (older sessions).
+func sameList(l []string) interface{} {
+	if len(l) == 0 {
+		return bson.D{{"$in", bson.A{nil, bson.A{}}}}
+	}
+	return l
+}
+
+// AddClaimToSession appends a claim to an open session. The append is a
+// single atomic update that only matches an open session (#90), so
+// overlapping adds are all kept and nothing is added after the close.
 func AddClaimToSession(sid string, cid string) error {
-	//Get the session, return error if not found
-	session, err := GetSessionByItemID(sid)
-	if err != nil {
-		return fmt.Errorf("Element not found %v : %v", sid, err)
-	}
-
-	//ensure that the claim exists
-	_, err = GetClaimByItemID(cid)
-	if err != nil {
-		return fmt.Errorf("Claim %v (for session) not found %v : %v", cid, sid, err)
-	}
-
-	//Update the session
-	session.ClaimList = append(session.ClaimList, cid)
-
-	//Write to database
-	filter := bson.D{{"itemid", sid}}
-	updatedsession, err := datalayer.DB.Collection("sessions").ReplaceOne(context.TODO(), filter, session)
-
-	if err != nil {
-		return fmt.Errorf("Database error in add claim to session: %w", err)
-	} else if updatedsession.MatchedCount != 1 || updatedsession.ModifiedCount != 1 {
-		return fmt.Errorf("Session not updated: %w", err)
-	} else {
-		if configuration.ConfigData.Logging.SessionUpdateLogging == true {
-			logging.MakeLogEntry("S", "update", sid, "session", fmt.Sprintf("claim,%s", cid))
-		}
-		return nil
-	}
+	return addToSession(sid, "claimlist", cid, "claim")
 }
 
+// AddResultToSession appends a result to an open session; see AddClaimToSession.
 func AddResultToSession(sid string, rid string) error {
+	return addToSession(sid, "resultlist", rid, "result")
+}
+
+// addToSession appends id to the session's list field (claimlist or resultlist).
+func addToSession(sid string, field string, id string, kind string) error {
 	//Get the session, return error if not found
-	session, err := GetSessionByItemID(sid)
+	_, err := GetSessionByItemID(sid)
 	if err != nil {
-		return fmt.Errorf("Element not found %v : %v", sid, err)
+		return fmt.Errorf("Session not found %v : %v", sid, err)
 	}
 
-	//ensure that the claim exists
-	_, err = GetResultByItemID(rid)
+	//ensure that the claim or result exists
+	if kind == "claim" {
+		_, err = GetClaimByItemID(id)
+	} else {
+		_, err = GetResultByItemID(id)
+	}
 	if err != nil {
-		return fmt.Errorf("Result %v (for session) not found %v : %v", rid, sid, err)
+		return fmt.Errorf("%v %v (for session) not found %v : %v", kind, id, sid, err)
 	}
 
-	//Update the session
-	session.ResultList = append(session.ResultList, rid)
-
-	//Write to database
-	filter := bson.D{{"itemid", sid}}
-	updatedsession, err := datalayer.DB.Collection("sessions").ReplaceOne(context.TODO(), filter, session)
+	//Append, only while the session is open
+	filter := bson.D{{"itemid", sid}, {"timing.closed", 0}}
+	update := bson.D{{"$push", bson.D{{field, id}}}}
+	updatedsession, err := datalayer.DB.Collection("sessions").UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
-		return fmt.Errorf("Database returned an error %w", err)
-	} else if updatedsession.MatchedCount != 1 || updatedsession.ModifiedCount != 1 {
-		return fmt.Errorf("Session not updated. Error if any is %w", err)
+		return fmt.Errorf("Database error in add %v to session: %w", kind, err)
+	} else if updatedsession.MatchedCount != 1 {
+		return fmt.Errorf("Session %v is closed: %v %v not added", sid, kind, id)
+	} else if updatedsession.ModifiedCount != 1 {
+		return fmt.Errorf("Session %v not updated", sid)
 	} else {
 		if configuration.ConfigData.Logging.SessionUpdateLogging == true {
-			logging.MakeLogEntry("S", "update", sid, "session", fmt.Sprintf("result,%s", rid))
+			logging.MakeLogEntry("S", "update", sid, "session", fmt.Sprintf("%s,%s", kind, id))
 		}
 		return nil
 	}
 }
 
-// GetElementByItemID returns a single element or error
+// GetSessionByItemID returns a single session or error
 func GetSessionByItemID(itemid string) (structures.Session, error) {
 	var elem structures.Session
 

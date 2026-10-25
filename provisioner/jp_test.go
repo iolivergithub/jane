@@ -40,8 +40,8 @@ type fakeJane struct {
 	ruleErrors  map[string]bool // rule -> answer 500 without a result, as for an unknown rule
 	failIntents map[string]bool // intent -> /attest fails
 
-	wantUser, wantPass string   // if wantUser is set, requests without these Basic credentials get 401
-	authSeen           []string // the Authorization header of each request
+	wantKey  string   // if set, requests without "Authorization: Bearer <wantKey>" get 401
+	authSeen []string // the Authorization header of each request
 }
 
 func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
@@ -51,11 +51,9 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 		key := r.Method + " " + r.URL.Path
 		f.calls = append(f.calls, key)
 		f.authSeen = append(f.authSeen, r.Header.Get("Authorization"))
-		if f.wantUser != "" {
-			if u, p, ok := r.BasicAuth(); !ok || u != f.wantUser || p != f.wantPass {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+		if f.wantKey != "" && r.Header.Get("Authorization") != "Bearer "+f.wantKey {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 		if b, _ := io.ReadAll(r.Body); len(b) > 0 {
 			var v any

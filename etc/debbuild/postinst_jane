@@ -5,6 +5,10 @@ set -e
 
 DOCS=https://github.com/iolivergithub/jane/blob/main
 
+# Retire the pre-1.5.5 conffile unit (see preinst, #96). Must run for every
+# postinst call, before the "configure" check below.
+dpkg-maintscript-helper rm_conffile /etc/systemd/system/jane.service 1.5.5~ -- "$@"
+
 [ "$1" = "configure" ] || exit 0
 PREVIOUS="$2"
 
@@ -31,8 +35,10 @@ fi
 # change them; jane reads its configuration and keys through its group and
 # owns only its log. /opt/jane and /etc/opt/jane are shared with the tarzan
 # package, so only Jane's own files are changed. /etc/opt/jane is 751: others
-# may open files they know the name of (e.g. jp reading the element ID file)
-# but cannot list the directory; secrets are protected by their own modes.
+# may open files they know the name of (e.g. jp reading the element ID file or
+# its API key) but cannot list the directory; secrets are protected by their
+# own modes. /opt/jane stays root:root: it also holds tarzan and jp, which run
+# as root.
 chown root:root /opt/jane
 chmod 755 /opt/jane
 for f in /opt/jane/janeserver /opt/jane/addjaneuser; do
@@ -44,42 +50,136 @@ done
 
 chown root:jane /etc/opt/jane
 chmod 751 /etc/opt/jane
-for f in /etc/opt/jane/config.yaml /etc/opt/jane/jane.env /etc/opt/jane/*.key /etc/opt/jane/*.pem; do
-    if [ -f "$f" ]; then
-        chown root:jane "$f"
-        chmod 640 "$f"
-    fi
-done
-for f in /etc/opt/jane/*.crt /etc/opt/jane/standardintents.json; do
-    if [ -f "$f" ]; then
-        chown root:jane "$f"
-        chmod 644 "$f"
-    fi
-done
+# Keys, certificates and configuration in /etc/opt/jane and its subdirectories
+# (#96). jp's API key file (jp.key, see docs/authentication.md) and tarzan's
+# files belong to the tarzan side and are left alone.
+find /etc/opt/jane -mindepth 1 -type d -exec chown root:jane {} + -exec chmod 750 {} +
+find /etc/opt/jane -type f \( -name config.yaml -o -name jane.env -o -name '*.key' -o -name '*.pem' \) \
+    ! -name jp.key ! -name tarzan.env -exec chown root:jane {} + -exec chmod 640 {} +
+find /etc/opt/jane -type f \( -name '*.crt' -o -name standardintents.json \) \
+    -exec chown root:jane {} + -exec chmod 644 {} +
 
 mkdir -p /var/log/jane
 chown -R jane:jane /var/log/jane
 chmod 750 /var/log/jane
 find /var/log/jane -type f -exec chmod 640 {} +
 
-if [ -f /etc/systemd/system/jane.service ]; then
-    chown root:root /etc/systemd/system/jane.service
-    chmod 644 /etc/systemd/system/jane.service
+# Only one unit file per service (#96). The unit now lives in /lib/systemd/system.
+# A jane.service left in /etc/systemd/system (edited before 1.5.5, or made by
+# hand) would override it, so on a first install or an upgrade from before
+# 1.5.5 it is moved to /etc/opt/jane, where systemd does not look. dpkg's
+# leftovers are removed. Drop-ins in /etc/systemd/system/jane.service.d stay.
+UNIT=/etc/systemd/system/jane.service
+if [ -z "$PREVIOUS" ] || dpkg --compare-versions "$PREVIOUS" lt 1.5.5~; then
+    for f in "$UNIT.dpkg-bak" "$UNIT"; do
+        [ -e "$f" ] || [ -L "$f" ] || continue
+        # a mask (systemctl mask jane) is a link to /dev/null: leave it
+        [ -L "$f" ] && [ "$(readlink "$f")" = /dev/null ] && continue
+        BACKUP=/etc/opt/jane/jane.service.pre-1.5.5
+        [ -e "$BACKUP" ] && BACKUP="$BACKUP.$(date +%Y%m%d%H%M%S)"
+        mv "$f" "$BACKUP"
+        chown root:root "$BACKUP"
+        chmod 600 "$BACKUP"
+        echo
+        echo "WARNING: $UNIT was locally modified (or not installed by this package)."
+        echo "         It has been moved to $BACKUP and is no longer used."
+        echo "         Jane now runs with the packaged unit /lib/systemd/system/jane.service."
+        echo "         Move any local changes into a drop-in:  systemctl edit jane"
+        echo "         Compare:  diff $BACKUP /lib/systemd/system/jane.service"
+        echo
+    done
 fi
+rm -f "$UNIT.dpkg-dist" "$UNIT.dpkg-old" "$UNIT.dpkg-bak"
 
 systemctl daemon-reload
-systemctl enable jane.service >/dev/null 2>&1 || true
+# reenable also replaces a boot-time link that still points at the old /etc unit
+systemctl reenable jane.service >/dev/null 2>&1 || true
+
+# Check that Jane can read and write what config.yaml names (#96). Nothing
+# outside /etc/opt/jane and /var/log/jane is changed; problems are reported.
+CONF=/etc/opt/jane/config.yaml
+
+# cfgval SECTION KEY: the value of "KEY:" under the top-level "SECTION:" of
+# config.yaml (simple layout as shipped; commented-out sections are skipped).
+cfgval() {
+    awk -v sec="$1" -v key="$2" '
+        /^[A-Za-z0-9_]+:/ { cur = $0; sub(/:.*/, "", cur); next }
+        cur == sec && $0 ~ "^[ \t]+" key ":" {
+            v = $0
+            sub("^[ \t]+" key ":[ \t]*", "", v)
+            sub(/[ \t]+#.*$/, "", v)
+            gsub(/^["\047]|["\047]$/, "", v)
+            print v
+            exit
+        }' "$CONF" 2>/dev/null
+}
+
+PROBLEMS=0
+problem() {
+    [ "$PROBLEMS" -eq 0 ] && echo && echo "Jane may not be able to use some files named in $CONF:"
+    PROBLEMS=$((PROBLEMS + 1))
+    echo "  - $1"
+}
+
+# check_read PATH WHAT
+check_read() {
+    p="$1"
+    [ -n "$p" ] || return 0
+    case "$p" in
+        /*) ;;
+        *) problem "$2 '$p' is a relative path; Jane runs from /, so give the full path"; return 0 ;;
+    esac
+    case "$p" in
+        /home/*|/root/*|/run/user/*) problem "$2 '$p' is under a home directory, which jane.service hides (ProtectHome); move it to /etc/opt/jane"; return 0 ;;
+    esac
+    if [ ! -e "$p" ]; then
+        problem "$2 '$p' does not exist"
+    elif command -v runuser >/dev/null 2>&1 && ! runuser -u jane -- test -r "$p" 2>/dev/null; then
+        problem "$2 '$p' is not readable by the jane user (e.g. chown root:jane and chmod 640, or a drop-in)"
+    fi
+}
+
+if [ -r "$CONF" ]; then
+    for sec in rest web; do
+        check_read "$(cfgval $sec crt)" "$sec: crt"
+        check_read "$(cfgval $sec key)" "$sec: key"
+    done
+    check_read "$(cfgval signing keyfile)" "signing: keyfile"
+
+    LOG=$(cfgval logging logfilelocation)
+    if [ -n "$LOG" ]; then
+        case "$LOG" in
+            /var/log/jane/*)
+                if command -v runuser >/dev/null 2>&1 && ! runuser -u jane -- test -w "$(dirname "$LOG")" 2>/dev/null; then
+                    problem "logging: logfilelocation '$LOG': the jane user cannot write to $(dirname "$LOG")"
+                fi
+                ;;
+            *)
+                problem "logging: logfilelocation '$LOG' is outside /var/log/jane; jane.service may only write there, unless a drop-in allows it (ReadWritePaths=)"
+                ;;
+        esac
+    fi
+fi
+if [ "$PROBLEMS" -gt 0 ]; then
+    echo "  See $DOCS/docs/deb.md#running-under-systemd"
+    echo
+fi
 
 if [ -n "$PREVIOUS" ]; then
-    # Upgrade: restart Jane only if it was running.
-    systemctl try-restart jane.service || true
-    echo "Jane upgraded from $PREVIOUS (restarted if it was running). Changes: $DOCS/CHANGELOG.md"
+    # Upgrade: Jane is never restarted by the package (#96); a running Jane
+    # carries on as the old version until the administrator restarts it.
+    VERSION=$(dpkg-query -W -f='${Version}' janeattestationengine 2>/dev/null || true)
+    echo "Jane upgraded from $PREVIOUS to ${VERSION:-the new version}. Changes: $DOCS/CHANGELOG.md"
+    if systemctl is-active --quiet jane.service; then
+        echo "Jane is still running the old version. Restart it to use the new one: systemctl restart jane"
+    else
+        echo "Jane is not running. Start it with: systemctl start jane"
+    fi
     exit 0
 fi
 
 # First install: say how to start Jane, and point out missing local services.
 # Only a local MongoDB/MQTT broker is checked; a remote one gets no message.
-CONF=/etc/opt/jane/config.yaml
 is_local() {
     case "$1" in
         *127.0.0.1*|*localhost*|*::1*) return 0 ;;

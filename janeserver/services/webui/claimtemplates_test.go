@@ -58,4 +58,15 @@ func TestCapabilitiesTemplate(t *testing.T) {
 			t.Errorf("page lacks %q", want)
 		}
 	}
+	if strings.Contains(html, "Commands (") {
+		t.Errorf("Commands section shown for a claim without commands (tarzan before 1.5.5)")
+	}
+
+	html = renderPartial(t, "claim_tpm2capabilities.html", `{"summary":{},"properties":{},"pcrbanks":{},
+		"commands":["TPM_CC_Quote (0x158)","vendor command (0x20000002)"]}`)
+	for _, want := range []string{"Commands (2 implemented)", "TPM_CC_Quote (0x158)", "vendor command (0x20000002)"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
 }

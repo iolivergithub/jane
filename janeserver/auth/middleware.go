@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	"a10/configuration"
 )
@@ -49,6 +47,19 @@ func WebUIMiddleware() echo.MiddlewareFunc {
 			}
 
 			if user, ok := sessionUser(c); ok {
+				// A user deleted since logging in is logged off at the next request (#89).
+				// A database error does not log anybody off.
+				if exists, err := users.Exists(user); err == nil && !exists {
+					if cookie, err := c.Cookie(CookieName); err == nil {
+						sessions.Delete(cookie.Value)
+					}
+					clearSessionCookie(c)
+					LogLogoff(user, "web", c.RealIP(), "user no longer exists")
+					if m := c.Request().Method; m == http.MethodGet || m == http.MethodHead {
+						return c.Redirect(http.StatusSeeOther, loginPath)
+					}
+					return echo.NewHTTPError(http.StatusUnauthorized, "login required")
+				}
 				c.Set(contextUserKey, user)
 				if !authoriser.Allowed(user, c.Request().Method, c.Path()) {
 					return echo.NewHTTPError(http.StatusForbidden, "not permitted")
@@ -63,42 +74,6 @@ func WebUIMiddleware() echo.MiddlewareFunc {
 			default:
 				return echo.NewHTTPError(http.StatusUnauthorized, "login required")
 			}
-		}
-	}
-}
-
-// RESTMiddleware protects the REST API with HTTP Basic authentication against the same user store.
-//
-// CORS preflight (OPTIONS) and /health are left open so browsers and health checks keep working.
-// If REST authentication is disabled this middleware does nothing.
-func RESTMiddleware() echo.MiddlewareFunc {
-	basic := middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Realm: "Jane",
-		Skipper: func(c echo.Context) bool {
-			return c.Request().Method == http.MethodOptions || c.Request().URL.Path == "/health"
-		},
-		Validator: func(username, password string, c echo.Context) (bool, error) {
-			if !users.Authenticate(username, password) {
-				// Failed REST logins are logged like Web UI and x3270 ones (#46).
-				// Successes are not: every REST request carries the password.
-				logEntry("AUTH", "login/FAIL", username, "user", fmt.Sprintf("failed rest login from %s", c.RealIP()))
-				return false, nil
-			}
-			c.Set(contextUserKey, username)
-			if !authoriser.Allowed(username, c.Request().Method, c.Path()) {
-				return false, echo.NewHTTPError(http.StatusForbidden, "not permitted")
-			}
-			return true, nil
-		},
-	})
-
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		protected := basic(next)
-		return func(c echo.Context) error {
-			if !cfg.Rest {
-				return next(c)
-			}
-			return protected(c)
 		}
 	}
 }

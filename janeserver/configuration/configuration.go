@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -79,6 +80,26 @@ type ConfigurationStruct struct {
 	Signing struct {
 		KeyFile string // PEM private key for claim/result/session footers; empty = ephemeral key
 	}
+	Sessions struct {
+		LongSession int // seconds; attestation sessions longer than this are flagged LONG SESSION (#98)
+	}
+}
+
+// Attestation sessions lasting longer than the configured sessions: longsession
+// (seconds) are flagged LONG SESSION in the Web UI and x3270 (#98). Missing or 0
+// means the default; anything under the minimum is raised to it.
+const (
+	defaultLongSession = 60
+	minLongSession     = 30
+)
+
+// LongSession is the duration after which an attestation session counts as long.
+func LongSession() time.Duration {
+	n := defaultLongSession
+	if ConfigData != nil && ConfigData.Sessions.LongSession != 0 {
+		n = max(ConfigData.Sessions.LongSession, minLongSession)
+	}
+	return time.Duration(n) * time.Second
 }
 
 // The exported variable for accessing the configuration structure
@@ -99,6 +120,9 @@ func SetupConfiguration(f string) {
 	err = yaml.Unmarshal(configFile, &ConfigData)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to parse configuration file. Exiting with error %v", err.Error()))
+	}
+	if n := ConfigData.Sessions.LongSession; n != 0 && n < minLongSession {
+		fmt.Printf("JANE: WARNING: sessions: longsession: %d is below the minimum; using %d seconds\n", n, minLongSession)
 	}
 }
 

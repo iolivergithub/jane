@@ -52,6 +52,13 @@ logging:
   sessionupdatelogging: false
 
 
+#Attestation sessions
+#longsession: sessions open (or that were open) longer than this many seconds are flagged
+#LONG SESSION in the Web UI and x3270; minimum 30, default 60
+sessions:
+  longsession: 60
+
+
 #Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
 #and footers on claims, results and sessions cannot be verified once Jane stops)
 #The key is a PEM private key: PKCS#8, PKCS#1 or SEC1; RSA (PS256), ECDSA P-256/384/521 (ES256/384/512) or Ed25519 (EdDSA)
@@ -62,11 +69,12 @@ logging:
 
 
 #Authentication (optional - if this section is missing, no login is required)
-#Users are held in the "users" collection; add them or reset passwords with /opt/jane/addjaneuser, e.g.
+#Users are held in the "users" collection; add them, reset passwords or make REST API keys with /opt/jane/addjaneuser, e.g.
 #  /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
+#  /opt/jane/addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr
 #(needs python3-argon2 and python3-pymongo; see /usr/share/doc/janeattestationengine/addjaneuser.md)
 auth:
   web: false           # require a login for the Web UI
-  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
+  rest: false          # require an API key for the REST API (jp/scripts send Authorization: Bearer jane_...; keys from addjaneuser --apikey)
   x3270: false         # require a logon on the x3270 interface (passwords travel unencrypted; see x3270: above)
   sessiontimeout: 30m  # Web UI login, or x3270 logon, expires after this long without use

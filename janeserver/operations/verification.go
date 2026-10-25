@@ -130,7 +130,7 @@ func Verify(claim structures.Claim, rule structures.Rule, session structures.Ses
 
 	sderr := AddResultToSession(sid, rid)
 	if sderr != nil {
-		return rid, returnedRV, fmt.Errorf("Error adding result %v to session %v. Claim added, session may be still open: %v", rid, sid, err)
+		return rid, returnedRV, fmt.Errorf("Result %v stored but not added to session %v: %w", rid, sid, sderr)
 	}
 
 	// Step 8 ******************************************************

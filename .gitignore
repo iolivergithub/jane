@@ -11,8 +11,6 @@
 
 # Stray build outputs and old tool binaries
 /janeserver/utilities/janeserver
-/etc/deprecated/rima/rima
-/etc/scripts/tpmtest/tpmtest
 
 
 

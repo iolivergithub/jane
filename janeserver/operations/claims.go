@@ -77,7 +77,7 @@ func GetClaimsByElementID(eid string, maximumAmount int64) ([]structures.Claim, 
 	return claims, dbcursorerror
 }
 
-// GetElementByItemID returns a single element or error
+// GetClaimByItemID returns a single claim or error
 func GetClaimByItemID(itemid string) (structures.Claim, error) {
 	var claim structures.Claim
 

@@ -5,6 +5,10 @@ set -e
 
 DOCS=https://github.com/iolivergithub/jane/blob/main
 
+# Retire the pre-1.5.5 conffile unit (see preinst, #96). Must run for every
+# postinst call, before the "configure" check below.
+dpkg-maintscript-helper rm_conffile /etc/systemd/system/tarzan.service 1.5.5~ -- "$@"
+
 [ "$1" = "configure" ] || exit 0
 PREVIOUS="$2"
 
@@ -24,14 +28,42 @@ if [ -f /etc/opt/jane/provisioning.yaml.example ]; then
     chown root:root /etc/opt/jane/provisioning.yaml.example
     chmod 644 /etc/opt/jane/provisioning.yaml.example
 fi
-if [ -f /etc/systemd/system/tarzan.service ]; then
-    chown root:root /etc/systemd/system/tarzan.service
-    chmod 644 /etc/systemd/system/tarzan.service
+# Only one unit file per service (#96). The unit now lives in /lib/systemd/system.
+# A tarzan.service left in /etc/systemd/system (edited before 1.5.5, or made by
+# hand) would override it, so on a first install or an upgrade from before
+# 1.5.5 it is moved to /etc/opt/jane, where systemd does not look. dpkg's
+# leftovers are removed. Drop-ins in /etc/systemd/system/tarzan.service.d stay.
+UNIT=/etc/systemd/system/tarzan.service
+if [ -z "$PREVIOUS" ] || dpkg --compare-versions "$PREVIOUS" lt 1.5.5~; then
+    for f in "$UNIT.dpkg-bak" "$UNIT"; do
+        [ -e "$f" ] || [ -L "$f" ] || continue
+        # a mask (systemctl mask tarzan) is a link to /dev/null: leave it
+        [ -L "$f" ] && [ "$(readlink "$f")" = /dev/null ] && continue
+        mkdir -p /etc/opt/jane
+        BACKUP=/etc/opt/jane/tarzan.service.pre-1.5.5
+        [ -e "$BACKUP" ] && BACKUP="$BACKUP.$(date +%Y%m%d%H%M%S)"
+        mv "$f" "$BACKUP"
+        chown root:root "$BACKUP"
+        chmod 600 "$BACKUP"
+        echo
+        echo "WARNING: $UNIT was locally modified (or not installed by this package)."
+        echo "         It has been moved to $BACKUP and is no longer used."
+        echo "         tarzan now runs with the packaged unit /lib/systemd/system/tarzan.service."
+        echo "         Move any local changes into a drop-in:  systemctl edit tarzan"
+        echo "         Compare:  diff $BACKUP /lib/systemd/system/tarzan.service"
+        echo
+    done
 fi
+rm -f "$UNIT.dpkg-dist" "$UNIT.dpkg-old" "$UNIT.dpkg-bak"
 
 systemctl daemon-reload
-systemctl enable tarzan.service >/dev/null 2>&1 || true
+# reenable also replaces a boot-time link that still points at the old /etc unit
+systemctl reenable tarzan.service >/dev/null 2>&1 || true
 systemctl restart tarzan.service || true
+if ! systemctl is-active --quiet tarzan.service; then
+    echo
+    echo "WARNING: tarzan did not start. See: journalctl -u tarzan -n 50"
+fi
 
 if [ -n "$PREVIOUS" ]; then
     echo "tarzan upgraded from $PREVIOUS and restarted. Changes: $DOCS/CHANGELOG.md"

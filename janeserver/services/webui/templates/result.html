@@ -1,4 +1,4 @@
-{{define "content"}}
+{{define "title"}}Result {{ .R.RuleName }} · {{end}}{{define "content"}}
 {{ if not .R.ItemID }}
 <div class="alert alert-warning">Result not found. <a href="/results">All results</a></div>
 {{ else }}
@@ -8,7 +8,7 @@
    <div class="me-auto">
       <h3 class="mb-1"><span class="j-cell oc-{{ resultClass .R.Result }} me-2" style="width: 18px; height: 18px"></span>{{ .R.RuleName }}
          <span class="fs-6 align-middle">{{ template "resultvalue.html" .R.Result }}</span></h3>
-      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .R.ItemID }}</div>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap"><span data-copy>{{ .R.ItemID }}</span> <button type="button" class="btn btn-link btn-sm p-0 align-baseline j-copy" title="Copy the ID" aria-label="Copy the ID"><i class="fa fa-clipboard"></i></button></div>
       <div class="small text-body-secondary">Verified {{ epochToUTCdetailed .R.VerifiedAt }} UTC</div>
    </div>
 </div>

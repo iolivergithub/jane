@@ -1,4 +1,4 @@
-{{define "content"}}
+{{define "title"}}Expected value {{ .EV.Name }} · {{end}}{{define "content"}}
 {{ if not .EV.ItemID }}
 <div class="alert alert-warning">Expected value not found. <a href="/expectedvalues">All expected values</a></div>
 {{ else }}
@@ -7,7 +7,7 @@
 <div class="d-flex flex-wrap align-items-start gap-3 mb-3">
    <div class="me-auto">
       <h3 class="mb-1"><i class="fa fa-crosshairs me-2 text-body-secondary"></i>{{ if .EV.Name }}{{ .EV.Name }}{{ else }}Expected value{{ end }}</h3>
-      <div class="small text-body-secondary font-monospace mb-1 j-wrap">{{ .EV.ItemID }}</div>
+      <div class="small text-body-secondary font-monospace mb-1 j-wrap"><span data-copy>{{ .EV.ItemID }}</span> <button type="button" class="btn btn-link btn-sm p-0 align-baseline j-copy" title="Copy the ID" aria-label="Copy the ID"><i class="fa fa-clipboard"></i></button></div>
       {{ if .EV.Description }}<div class="mb-2 j-wrap">{{ .EV.Description }}</div>{{ end }}
       <div class="d-flex flex-wrap gap-3 small">
          <span><i class="fa fa-server me-1 text-body-secondary"></i>{{ if .E.ItemID }}<a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a>{{ else }}<span class="text-body-secondary">{{ .EV.ElementID }}</span>{{ end }}{{ if .EV.EndpointName }} <span class="text-body-secondary">· {{ .EV.EndpointName }}</span>{{ end }}</span>

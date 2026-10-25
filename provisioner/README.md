@@ -29,11 +29,15 @@ missing.
 
 ### Credentials
 
-If Jane's REST API requires a login (`auth: rest: true`), jp sends HTTP Basic
-credentials from `JANE_USERNAME` and `JANE_PASSWORD`, or from `--user NAME
---pass PASSWORD` (both together; they override the variables). `sudo` drops
-the environment, so use `sudo -E` (or `--preserve-env=JANE_USERNAME,JANE_PASSWORD`)
-for `create` and `update`. An HTTP 401 answer gives a message saying so. For a
+If Jane's REST API requires an API key (`auth: rest: true`), jp sends it as
+`Authorization: Bearer <key>` on every request, from `JANE_API_KEY` or from
+the file given with `--apikeyfile PATH` (the key alone; it overrides the
+variable). Keys are made with `addjaneuser --apikey` and look like `jane_`
+plus 43 characters; jp refuses anything else before contacting Jane. `sudo`
+drops the environment, so use `sudo -E` (or `--preserve-env=JANE_API_KEY`) or
+`--apikeyfile` for `create` and `update`. HTTP 401 and 429 answers give a
+message saying what to do. The old `--user`/`--pass` and
+`JANE_USERNAME`/`JANE_PASSWORD` (1.5.4) are refused with a message. For a
 Jane on HTTPS with a self-signed certificate, set `SSL_CERT_FILE` to it
 (Linux/BSD).
 

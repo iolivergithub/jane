@@ -160,12 +160,23 @@ func (it listItem) open(back go3270.Tx) go3270.Tx {
 
 // detail is the content of a detail screen.
 type detail struct {
-	Title string
-	Lines []string
-	Err   error
+	Title   string
+	Lines   []string
+	Err     error
+	Message string // shown on the message line when there is no Err
 	// Links makes lines selectable: put the cursor on the line and press
 	// Enter to open what it refers to. Keyed by line index.
 	Links map[int]link
+	// Action, if set, is one extra key for this screen (e.g. F9 to close a
+	// session, #98). Do returns the screen to show afterwards.
+	Action *detailAction
+}
+
+// detailAction is a key offered on one detail screen.
+type detailAction struct {
+	Key   go3270.AID
+	Label string // e.g. "F9=Close session", added to the key line
+	Do    func(conn net.Conn) detail
 }
 
 // link is what a selectable line opens. Spans narrow it: a span covering the
@@ -325,7 +336,7 @@ func listTx(src listSource, back go3270.Tx) go3270.Tx {
 func textTx(d detail, back go3270.Tx) go3270.Tx {
 	var self go3270.Tx
 	top := 0
-	message := ""
+	message := d.Message
 	if d.Err != nil {
 		message = d.Err.Error()
 	}
@@ -334,6 +345,9 @@ func textTx(d detail, back go3270.Tx) go3270.Tx {
 	keys := "F3=Back  F7=Up  F8=Down  F12=Cancel"
 	if len(d.Links) > 0 {
 		keys = "F3=Back  F7=Up  F8=Down  Enter=Open the white line under the cursor"
+	}
+	if d.Action != nil {
+		keys = "F3=Back  F7=Up  F8=Down  " + d.Action.Label
 	}
 	self = func(conn net.Conn, dev go3270.DevInfo, _ any) (go3270.Tx, any, error) {
 		end := min(top+textRows, len(d.Lines))
@@ -357,6 +371,9 @@ func textTx(d detail, back go3270.Tx) go3270.Tx {
 		curRow, curCol = cmdRow, cmdCol+1
 		if err != nil {
 			return nil, nil, err
+		}
+		if d.Action != nil && resp.AID == d.Action.Key {
+			return textTx(d.Action.Do(conn), back), nil, nil
 		}
 		switch resp.AID {
 		case go3270.AIDPF3, go3270.AIDPF12:

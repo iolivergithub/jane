@@ -48,6 +48,7 @@ func (emptyStore) LogEntries(int64) ([]structures.LogEntry, error) { return nil,
 func (emptyStore) System() systemInfo                              { return systemInfo{LogSize: -1} }
 func (emptyStore) Rules() []structures.Rule                        { return nil }
 func (emptyStore) Attest(attestRequest) (string, error)            { return "", nil }
+func (emptyStore) CloseSession(string, string) error               { return nil }
 
 // fakeAuth accepts ian/secret and records what would be logged.
 type fakeAuth struct {

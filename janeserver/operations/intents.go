@@ -89,7 +89,7 @@ func GetIntentsAll() ([]structures.Intent, error) {
 	return elems, dbcursorerror
 }
 
-// GetElementByItemID returns a single element or error
+// GetIntentByItemID returns a single intent or error
 func GetIntentByItemID(itemid string) (structures.Intent, error) {
 	var pol structures.Intent
 

@@ -3,4 +3,3 @@
 /etc/opt/jane/REPLACE_ME.crt
 /etc/opt/jane/standardintents.json
 /etc/opt/jane/jane.env
-/etc/systemd/system/jane.service

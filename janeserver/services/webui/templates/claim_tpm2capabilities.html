@@ -36,6 +36,13 @@
    </div>
 </div>
 
+{{ with .commands }}
+<details class="mb-2">
+   <summary class="small text-body-secondary">Commands ({{ len . }} implemented)</summary>
+   <ul class="list-unstyled font-monospace small mb-0" style="columns: 18rem;">{{ range . }}<li>{{ . }}</li>{{ end }}</ul>
+</details>
+{{ end }}
+
 <details>
    <summary class="small text-body-secondary">All properties</summary>
    <table class="table table-sm table-striped mb-0">

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"a10/configuration"
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -40,6 +41,8 @@ type store interface {
 
 	Rules() []structures.Rule
 	Attest(req attestRequest) (sessionID string, err error)
+	// CloseSession closes an open session for the logged-on user by (#98).
+	CloseSession(id, by string) error
 }
 
 // systemInfo is what the configuration screen shows (cf. the web home page).
@@ -145,6 +148,16 @@ func (dbStore) System() systemInfo {
 }
 
 func (dbStore) Rules() []structures.Rule { return operations.GetRules() }
+
+// CloseSession is the normal close (signed footer, "S close" log entry) and
+// one more log entry recording who forced it, as in the Web UI (#98).
+func (dbStore) CloseSession(id, by string) error {
+	if err := operations.CloseSession(id); err != nil {
+		return err
+	}
+	logging.MakeLogEntry("S", "close/FORCED", id, "session", fmt.Sprintf("session forcibly closed by %s from x3270", by))
+	return nil
+}
 
 // Attest runs an attestation the same way as the web UI's attest form: open
 // a session, collect the claim, apply each rule (unless attesting only) and

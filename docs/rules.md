@@ -95,10 +95,9 @@ The Rules page shows each one's description.
 | `chares_validNonce` | `ratsd/chares` | the `eat_nonce` returned by ratsd equals the `ratsd/nonce` Jane sent (compared as bytes) |
 | `chares_validAttesterNonces` | `ratsd/chares` | each leaf attester's evidence contains the nonce ratsd derived for it (TSM reports, NVIDIA GPU evidence) |
 
-## Veraison, tests and null rules
+## Test and null rules
 
 | Rule | Checks |
 |---|---|
-| `veraisin_psa_token_verify` | placeholder for PSA token verification: needs an expected value, always passes (the spelling is as registered) |
 | `testcontainer_LIFE`, `testcontainer_43`, `testcontainer_FOOBAR` | fixed checks on the test container protocol's claims |
 | `null_success`, `null_fail`, `null_noresult`, `null_verifycallfail`, `null_verifycallerrorattempt`, `null_missingEV`, `null_rulecallfailure`, `null_unsetresultvalue` | always return the result in their name, without looking at the claim; for testing result handling |

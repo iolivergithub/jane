@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 680" width="1260" height="680" role="img" aria-label="Class diagram of Jane's data model">
+<title>Jane: data model</title>
+<style>
+  svg { --panel:#f7f9f8; --ink:#1b2a2e; --ink2:#33464b; --muted:#607378; --line:#2f4449;
+        --node:#dde5e2; --nodetop:#ccd7d3; --comp:#fbfcfc; --pkg:#f2f6f5; --accent:#0d6f78; }
+  @media (prefers-color-scheme: dark) {
+    svg { --panel:#172124; --ink:#dde7e5; --ink2:#b9c8c5; --muted:#8fa3a7; --line:#a3b8bc;
+          --node:#1d2a2d; --nodetop:#26363a; --comp:#1a2528; --pkg:#1f2c2f; --accent:#5ec4cd; }
+  }
+  .bg { fill: var(--panel); }
+  text { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace; fill: var(--ink); }
+  .n3d { fill: var(--node); stroke: var(--line); stroke-width: 1.2; }
+  .n3dt { fill: var(--nodetop); stroke: var(--line); stroke-width: 1.2; }
+  .cmp { fill: var(--comp); stroke: var(--line); stroke-width: 1.3; }
+  .pkg { fill: var(--pkg); stroke: var(--line); stroke-width: 1.1; }
+  .hdrline { stroke: var(--line); stroke-width: 1.1; }
+  .nm { font-size: 13px; font-weight: 600; }
+  .nm12 { font-size: 12px; font-weight: 600; }
+  .sm { font-size: 11px; fill: var(--ink2); }
+  .st { font-size: 10.5px; fill: var(--muted); font-style: italic; }
+  .tab { font-size: 11px; font-weight: 600; }
+  .lbl { font-size: 10.5px; fill: var(--muted); }
+  .call { stroke: var(--line); stroke-width: 1.3; fill: none; marker-end: url(#ah); }
+  .flow { stroke: var(--accent); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; marker-end: url(#ahA); }
+  .ret { stroke: var(--line); stroke-width: 1.2; fill: none; stroke-dasharray: 5 4; marker-end: url(#ah); }
+  .plain { stroke: var(--line); stroke-width: 1.3; fill: none; }
+  .mk { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .mkA { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .mkf { fill: var(--line); stroke: var(--line); }
+  .note { fill: var(--pkg); stroke: var(--muted); stroke-width: 1; }
+  .icon { fill: var(--comp); stroke: var(--line); stroke-width: 1.1; }
+  .actor { fill: none; stroke: var(--line); stroke-width: 1.3; }
+</style>
+<rect class="bg" x="0" y="0" width="1260" height="680"/>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10" class="mk"/></marker>
+        <marker id="dia" viewBox="0 0 14 10" refX="1" refY="5" markerWidth="13" markerHeight="9" orient="auto"><path d="M1,5 L7,1 L13,5 L7,9 Z" class="mkf"/></marker>
+      </defs>
+
+      <!-- Element -->
+      <rect x="20" y="20" width="290" height="174" class="cmp"/><line x1="20" y1="52" x2="310" y2="52" class="hdrline"/>
+      <text x="165" y="41" class="nm" text-anchor="middle">Element</text>
+      <text x="32" y="70" class="sm">itemid</text>
+      <text x="32" y="86" class="sm">name · description</text>
+      <text x="32" y="102" class="sm">endpoints : map[name]Endpoint</text>
+      <text x="32" y="118" class="sm">tags : []string</text>
+      <text x="32" y="134" class="sm">tpm2 : device, ekcerthandle, ek, ak</text>
+      <text x="32" y="150" class="sm">uefi · ima · txt : log locations</text>
+      <text x="32" y="166" class="sm">host : os, arch, hostname, machineid</text>
+      <text x="32" y="182" class="sm">recordhistory</text>
+
+      <!-- Endpoint -->
+      <rect x="360" y="20" width="210" height="78" class="cmp"/><line x1="360" y1="52" x2="570" y2="52" class="hdrline"/>
+      <text x="465" y="41" class="nm" text-anchor="middle">Endpoint</text>
+      <text x="372" y="70" class="sm">endpoint : URL</text>
+      <text x="372" y="86" class="sm">protocol : name</text>
+      <path d="M310,72 H359" style="stroke: var(--line); stroke-width: 1.3; fill: none; marker-start: url(#dia)"/>
+      <text x="316" y="66" class="lbl">1</text><text x="330" y="88" class="lbl">0..*</text>
+
+      <!-- Intent -->
+      <rect x="620" y="20" width="270" height="110" class="cmp"/><line x1="620" y1="52" x2="890" y2="52" class="hdrline"/>
+      <text x="755" y="41" class="nm" text-anchor="middle">Intent</text>
+      <text x="632" y="70" class="sm">itemid</text>
+      <text x="632" y="86" class="sm">name · description</text>
+      <text x="632" y="102" class="sm">function : e.g. tpm2/quote</text>
+      <text x="632" y="118" class="sm">parameters : map</text>
+
+      <!-- User -->
+      <rect x="950" y="20" width="290" height="100" class="cmp"/><line x1="950" y1="58" x2="1240" y2="58" class="hdrline"/>
+      <text x="1095" y="35" class="st" text-anchor="middle">«auth · users collection»</text>
+      <text x="1095" y="51" class="nm" text-anchor="middle">User</text>
+      <text x="962" y="76" class="sm">username</text>
+      <text x="962" y="92" class="sm">password : Argon2id hash</text>
+      <text x="962" y="108" class="sm">apikey : SHA-256 of key</text>
+
+      <!-- ExpectedValue -->
+      <rect x="360" y="170" width="250" height="158" class="cmp"/><line x1="360" y1="202" x2="610" y2="202" class="hdrline"/>
+      <text x="485" y="191" class="nm" text-anchor="middle">ExpectedValue</text>
+      <text x="372" y="220" class="sm">itemid</text>
+      <text x="372" y="236" class="sm">name · description</text>
+      <text x="372" y="252" class="sm">elementid</text>
+      <text x="372" y="268" class="sm">endpointname</text>
+      <text x="372" y="284" class="sm">intentid</text>
+      <text x="372" y="300" class="sm">evs : map (expected values)</text>
+      <text x="372" y="316" class="sm">recordhistory</text>
+      <path d="M465,170 V99" class="ret" style="marker-end: url(#ah)"/><text x="471" y="140" class="lbl">endpointname</text>
+      <path d="M610,250 H755 V131" class="ret" style="marker-end: url(#ah)"/><text x="616" y="244" class="lbl">intentid</text>
+      <path d="M359,300 H190 V195" class="ret" style="marker-end: url(#ah)"/><text x="200" y="294" class="lbl">elementid</text>
+
+      <!-- Session -->
+      <rect x="950" y="150" width="290" height="142" class="cmp"/><line x1="950" y1="182" x2="1240" y2="182" class="hdrline"/>
+      <text x="1095" y="171" class="nm" text-anchor="middle">Session</text>
+      <text x="962" y="200" class="sm">itemid</text>
+      <text x="962" y="216" class="sm">timing : opened, closed</text>
+      <text x="962" y="232" class="sm">claimlist : []claim itemid</text>
+      <text x="962" y="248" class="sm">resultlist : []result itemid</text>
+      <text x="962" y="264" class="sm">message</text>
+      <text x="962" y="280" class="sm">footer : Footer (on close)</text>
+
+      <!-- Claim -->
+      <rect x="20" y="380" width="330" height="206" class="cmp"/><line x1="20" y1="412" x2="350" y2="412" class="hdrline"/>
+      <text x="185" y="401" class="nm" text-anchor="middle">Claim</text>
+      <text x="32" y="430" class="sm">itemid</text>
+      <text x="32" y="446" class="sm">bodytype</text>
+      <text x="32" y="462" class="sm">header.element : Element (copy)</text>
+      <text x="32" y="478" class="sm">header.intent : Intent (copy)</text>
+      <text x="32" y="494" class="sm">header.endpointname · endpoint</text>
+      <text x="32" y="510" class="sm">header.session : Session (copy)</text>
+      <text x="32" y="526" class="sm">header.timing : requested, received</text>
+      <text x="32" y="542" class="sm">header.aps · cps : parameters</text>
+      <text x="32" y="558" class="sm">body : evidence (map)</text>
+      <text x="32" y="574" class="sm">footer : Footer</text>
+
+      <!-- Result -->
+      <rect x="400" y="400" width="330" height="206" class="cmp"/><line x1="400" y1="432" x2="730" y2="432" class="hdrline"/>
+      <text x="565" y="421" class="nm" text-anchor="middle">Result</text>
+      <text x="412" y="450" class="sm">itemid</text>
+      <text x="412" y="466" class="sm">claimid</text>
+      <text x="412" y="482" class="sm">claimfooter : Footer (copy)</text>
+      <text x="412" y="498" class="sm">session : Session (copy)</text>
+      <text x="412" y="514" class="sm">elementid</text>
+      <text x="412" y="530" class="sm">expectedvalue : ExpectedValue (copy)</text>
+      <text x="412" y="546" class="sm">rulename · parameters · message</text>
+      <text x="412" y="562" class="sm">verifiedat</text>
+      <text x="412" y="578" class="sm">result : 0 Success · 9001 Fail · 99xx</text>
+      <text x="412" y="594" class="sm">footer : Footer</text>
+      <path d="M400,500 H351" class="ret" style="marker-end: url(#ah)"/><text x="354" y="494" class="lbl">claimid</text>
+
+      <!-- session lists -->
+      <path d="M980,292 V350 H375 V460 H351" class="ret" style="marker-end: url(#ah)"/>
+      <path d="M600,350 V399" class="ret" style="marker-end: url(#ah)"/>
+      <text x="830" y="344" class="lbl">claimlist</text>
+      <text x="606" y="382" class="lbl">resultlist</text>
+
+      <!-- Footer -->
+      <rect x="780" y="430" width="190" height="114" class="cmp"/><line x1="780" y1="466" x2="970" y2="466" class="hdrline"/>
+      <text x="875" y="446" class="st" text-anchor="middle">«datatype»</text>
+      <text x="875" y="461" class="nm" text-anchor="middle">Footer</text>
+      <text x="792" y="484" class="sm">hash</text>
+      <text x="792" y="500" class="sm">signature</text>
+      <text x="792" y="516" class="sm">kid · alg</text>
+      <text x="792" y="534" class="st">on Claim, Result, Session</text>
+
+      <!-- OpaqueObject -->
+      <rect x="780" y="570" width="190" height="94" class="cmp"/><line x1="780" y1="602" x2="970" y2="602" class="hdrline"/>
+      <text x="875" y="591" class="nm" text-anchor="middle">OpaqueObject</text>
+      <text x="792" y="620" class="sm">value</text>
+      <text x="792" y="636" class="sm">type</text>
+      <text x="792" y="652" class="sm">short/long description</text>
+
+      <!-- LogEntry -->
+      <rect x="1000" y="330" width="240" height="142" class="cmp"/><line x1="1000" y1="362" x2="1240" y2="362" class="hdrline"/>
+      <text x="1120" y="351" class="nm" text-anchor="middle">LogEntry</text>
+      <text x="1012" y="380" class="sm">itemid · timestamp</text>
+      <text x="1012" y="396" class="sm">channel · operation</text>
+      <text x="1012" y="412" class="sm">refid · reftype → any item</text>
+      <text x="1012" y="428" class="sm">message</text>
+      <text x="1012" y="444" class="sm">hash</text>
+      <text x="1012" y="460" class="st">also to MQTT and the log file</text>
+
+      <!-- note -->
+      <path d="M1000,500 H1224 L1240,516 V630 H1000 Z" class="note"/><path d="M1224,500 V516 H1240" class="plain" style="stroke: var(--muted)"/>
+      <text x="1012" y="522" class="nm12">Forensic snapshots</text>
+      <text x="1012" y="540" class="sm">Claims and results copy the</text>
+      <text x="1012" y="555" class="sm">Element, Intent, Session and</text>
+      <text x="1012" y="570" class="sm">ExpectedValue as they were.</text>
+      <text x="1012" y="587" class="sm">Together: a history of how</text>
+      <text x="1012" y="602" class="sm">each element changed.</text>
+      <text x="1012" y="620" class="sm">Other links are by itemid.</text>
+    </svg>

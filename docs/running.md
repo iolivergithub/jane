@@ -115,10 +115,10 @@ Every operation is logged three ways: to the `log` collection in MongoDB, to MQT
 
 ## addjaneuser
 
-Adds a Jane user, or sets a new password for an existing one. The password is stored as an Argon2id hash. Installed as `/opt/jane/addjaneuser`; in the source tree `etc/addjaneuser/addjaneuser`. Needs Python 3 with `argon2-cffi` and `pymongo` (`apt install python3-argon2 python3-pymongo`).
+Adds a Jane user, sets a new password for an existing one, or makes or revokes a user's REST API key. Passwords are stored as Argon2id hashes, API keys as SHA-256. Installed as `/opt/jane/addjaneuser`; in the source tree `etc/addjaneuser/addjaneuser`. Needs Python 3 with `argon2-cffi` and `pymongo` (`apt install python3-argon2 python3-pymongo`).
 
 ```
-addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
+addjaneuser [--apikey | --revokeapikey] [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 ```
 
 `MONGODB_URL` and `DATABASE` are Jane's `database: connection` and `database: name` (`asvr` in the packaged configuration).
@@ -126,6 +126,8 @@ addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 ```bash
 sudo /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr       # asks for the password twice
 echo 'secret' | /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr   # from a script
+KEY=$(/opt/jane/addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr)   # new REST API key, printed once
+/opt/jane/addjaneuser --revokeapikey cluster-a mongodb://127.0.0.1:27017 asvr    # remove it
 ```
 
 If MongoDB requires an account, addjaneuser reads `JANE_MONGODB_USERNAME`, `JANE_MONGODB_PASSWORD` and `JANE_MONGODB_AUTHSOURCE`, like Jane. On a deb install, as root:
@@ -198,10 +200,10 @@ rc_cmd $1
 jp registers this machine with Jane, provisions its TPM keys, records its expected values, and attests it. Its modes, flags, when to use each, the provisioning file and exit codes are described in **[jp, the provisioner](jp.md)**.
 
 ```
-jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] create|update|attest PROVISIONINGFILE
+jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
 ```
 
-In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_USERNAME`, `JANE_PASSWORD`, `JANE_TPM_ENDORSEMENT_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
+In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
 
 ## All environment variables
 
@@ -213,7 +215,6 @@ In short: `create` (first registration) and `update` (after firmware or OS updat
 | `JANE_MQTT_USERNAME` | janeserver | MQTT account | anonymous |
 | `JANE_MQTT_PASSWORD` | janeserver | its password | none |
 | `JANE_X3270_DEBUG` | janeserver | log the x3270 data stream | off |
-| `JANE_USERNAME` | jp | Jane user for the REST API | no credentials |
-| `JANE_PASSWORD` | jp | its password | empty |
+| `JANE_API_KEY` | jp | Jane REST API key (`jane_...`); `--apikeyfile` overrides it | no key sent |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | tarzan, jp | TPM endorsement hierarchy password | empty password |
 | `SSL_CERT_FILE` | jp (Go) | extra trusted certificates for HTTPS | system store |

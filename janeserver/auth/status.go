@@ -8,13 +8,14 @@ import (
 // Status summarises the authentication set-up, for display (e.g. on the Web UI home page).
 type Status struct {
 	Web            bool   // Web UI requires a login
-	Rest           bool   // REST API requires HTTP Basic authentication
+	Rest           bool   // REST API requires an API key
 	X3270          bool   // x3270 interface requires a logon
 	SessionTimeout string // e.g. "8h", "30m"
 	Users          int64  // number of users; -1 if the users collection could not be read
+	APIKeys        int64  // number of users with an API key; -1 if unknown
 	ActiveSessions int    // Web UI logins that have not expired
 	PasswordHash   string // how passwords are stored
-	UserTool       string // how users are added or their passwords reset
+	UserTool       string // how users are added, their passwords reset and API keys made
 }
 
 // CurrentStatus returns the current authentication status.
@@ -25,12 +26,16 @@ func CurrentStatus() Status {
 		X3270:          cfg.X3270,
 		SessionTimeout: shortDuration(cfg.SessionTimeout),
 		Users:          -1,
+		APIKeys:        -1,
 		PasswordHash:   "Argon2id",
 		UserTool:       "/opt/jane/addjaneuser (deb package) or etc/addjaneuser/addjaneuser (source)",
 	}
 	if users != nil {
 		if n, err := users.Count(); err == nil {
 			st.Users = n
+		}
+		if n, err := users.CountAPIKeys(); err == nil {
+			st.APIKeys = n
 		}
 	}
 	if sessions != nil {

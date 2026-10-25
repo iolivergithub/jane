@@ -4,6 +4,7 @@ import (
 	"html/template"
 
 	"a10/auth"
+	"a10/configuration"
 )
 
 // templateFunctions are the functions available to every template.
@@ -14,6 +15,7 @@ func templateFunctions() template.FuncMap {
 		"opaqueObject": GetOpaqueObjectByValue,
 		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription, "eventlog": EventLogBody,
 		"resultClass": ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
+		"longSession": func() string { return configuration.LongSession().String() },
 	}
 	// authEnabled and currentUser, used by base.html for the username and logout button
 	for name, f := range auth.TemplateFuncs() {

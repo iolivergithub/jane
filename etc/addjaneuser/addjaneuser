@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Add a Jane user, or set a new password for an existing one.
+"""Add a Jane user, set a new password, or make or revoke a REST API key.
 
 Usage:
     addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
+    addjaneuser --apikey       [--dbuser ...] USERNAME MONGODB_URL DATABASE
+    addjaneuser --revokeapikey [--dbuser ...] USERNAME MONGODB_URL DATABASE
 
 Example:
     addjaneuser ian mongodb://127.0.0.1:27017 asvr
@@ -18,7 +20,20 @@ input:
 
 If USERNAME does not exist it is created; if it does, its password is replaced
 (the old password is not needed). Passwords are stored as Argon2id hashes in
-PHC format, which is what Jane's login checks against.
+PHC format, which is what Jane's login checks against. Passwords are for the
+Web UI and the x3270 interface.
+
+API keys are for the REST API (jp, scripts). --apikey makes a new random key
+for USERNAME and prints it once, on standard output alone, so it can be
+captured:
+
+    KEY=$(addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr)
+
+The user is created if it does not exist (a user with only a key cannot log
+in to the Web UI). A user has at most one key: a new one replaces the old,
+which stops working at once. Only the key's SHA-256 is stored; the key
+cannot be shown again. --revokeapikey removes the key; the user stays.
+Clients send the key as "Authorization: Bearer jane_...".
 
 If MongoDB itself requires a login, addjaneuser uses the same environment
 variables as Jane: JANE_MONGODB_USERNAME, JANE_MONGODB_PASSWORD and
@@ -39,7 +54,9 @@ Requires: argon2-cffi and pymongo
 
 import argparse
 import getpass
+import hashlib
 import os
+import secrets
 import sys
 
 try:
@@ -53,6 +70,7 @@ except ImportError as e:
 
 USERS_COLLECTION = "users"
 MAX_PASSWORD_BYTES = 1024  # Jane rejects longer passwords
+API_KEY_PREFIX = "jane_"   # Jane accepts only "jane_" + 43 base64url characters
 
 # OWASP-recommended Argon2id parameters: 19 MiB memory, 2 iterations, 1 lane.
 HASHER = PasswordHasher(time_cost=2, memory_cost=19456, parallelism=1,
@@ -84,13 +102,46 @@ def set_user(collection, username, password):
     return result.upserted_id is not None
 
 
+def new_api_key():
+    """A new key: "jane_" and 32 random bytes as unpadded base64url (43 characters)."""
+    return API_KEY_PREFIX + secrets.token_urlsafe(32)
+
+
+def api_key_hash(key):
+    """The form stored in the users collection, as Jane computes it."""
+    return "sha256:" + hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def set_api_key(collection, username, key):
+    """Create the user if needed and set (replace) its API key. Returns True if the user was created."""
+    result = collection.update_one(
+        {"username": username},
+        {"$set": {"username": username, "apikey": api_key_hash(key)}},
+        upsert=True,
+    )
+    return result.upserted_id is not None
+
+
+def revoke_api_key(collection, username):
+    """Remove the user's API key. Returns "revoked", "nokey" or "nouser"."""
+    result = collection.update_one({"username": username}, {"$unset": {"apikey": ""}})
+    if result.matched_count == 0:
+        return "nouser"
+    return "revoked" if result.modified_count else "nokey"
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         prog="addjaneuser",
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        usage="addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE",
+        usage="addjaneuser [--apikey | --revokeapikey] [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE",
     )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--apikey", action="store_true",
+                      help="make a new REST API key for USERNAME (replacing any old one) and print it")
+    mode.add_argument("--revokeapikey", action="store_true",
+                      help="remove USERNAME's REST API key")
     parser.add_argument("username", metavar="USERNAME", help="the Jane user to create or update")
     parser.add_argument("url", metavar="MONGODB_URL", help="database: connection from config.yaml")
     parser.add_argument("database", metavar="DATABASE", help="database: name from config.yaml")
@@ -130,16 +181,34 @@ def main(argv):
     if not username:
         sys.exit("addjaneuser: empty username")
 
-    password = read_password()
+    password = None if (args.apikey or args.revokeapikey) else read_password()
+    where = f"{args.database}.{USERS_COLLECTION}"
 
     try:
         client = MongoClient(args.url, serverSelectionTimeoutMS=5000,
                              **db_credentials(args, os.environ))
-        created = set_user(client[args.database][USERS_COLLECTION], username, password)
+        collection = client[args.database][USERS_COLLECTION]
+        if args.apikey:
+            key = new_api_key()
+            created = set_api_key(collection, username, key)
+        elif args.revokeapikey:
+            outcome = revoke_api_key(collection, username)
+        else:
+            created = set_user(collection, username, password)
     except PyMongoError as e:
         sys.exit(f"addjaneuser: database error: {e}")
 
-    print(f"{'Created user' if created else 'Updated password for'} {username!r} in {args.database}.{USERS_COLLECTION}")
+    if args.apikey:
+        # The key alone on standard output; everything else on standard error.
+        print(key)
+        print(f"{'Created user' if created else 'New API key for'} {username!r} in {where}. "
+              "This key is shown only once; any previous key no longer works.", file=sys.stderr)
+    elif args.revokeapikey:
+        if outcome == "nouser":
+            sys.exit(f"addjaneuser: no user {username!r} in {where}")
+        print(f"{'Revoked the API key of' if outcome == 'revoked' else 'No API key to revoke for'} {username!r} in {where}")
+    else:
+        print(f"{'Created user' if created else 'Updated password for'} {username!r} in {where}")
 
 
 if __name__ == "__main__":

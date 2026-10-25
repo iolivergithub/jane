@@ -57,6 +57,9 @@ func StartWebUI(ctx context.Context) {
 	router := echo.New()
 
 	router.HideBanner = true
+	// Client addresses (logs, login limits) come from the connection itself, not
+	// from X-Forwarded-For/X-Real-IP headers, which any client can set (#89).
+	router.IPExtractor = echo.ExtractIPDirect()
 	router.Renderer = &TemplateRegistry{
 		templates: templates,
 	}
@@ -164,6 +167,7 @@ func setUpDisplayEndpoints(router *echo.Echo) {
 	// sessions
 	router.GET(PREFIX+"/sessions", showSessions)
 	router.GET(PREFIX+"/session/:itemid", showSession)
+	router.POST(PREFIX+"/session/:itemid/close", processSessionClose)
 
 	// protocols
 

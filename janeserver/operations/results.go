@@ -70,7 +70,7 @@ func GetResultsByElementID(eid string, maximumAmount int64) ([]structures.Result
 	return Results, dbcursorerror
 }
 
-// GetElementByItemID returns a single element or error
+// GetResultByItemID returns a single result or error
 func GetResultByItemID(itemid string) (structures.Result, error) {
 	var Result structures.Result
 

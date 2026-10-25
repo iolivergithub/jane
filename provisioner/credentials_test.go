@@ -8,66 +8,84 @@ import (
 	"testing"
 )
 
-// #46: jp sends HTTP Basic credentials when it has a user.
-func TestNoCredentialsSendsNoHeader(t *testing.T) {
+const testAPIKey = "jane_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ"
+
+// #89: jp sends its API key as a Bearer token when it has one, and nothing otherwise.
+func TestNoKeySendsNoHeader(t *testing.T) {
 	h := newHarness(t, "create")
 	if _, err := h.pv.ProcessWorklist(); err != nil {
 		t.Fatal(err)
 	}
 	for _, a := range h.jane.authSeen {
 		if a != "" {
-			t.Fatalf("Authorization header sent without credentials: %q", a)
+			t.Fatalf("Authorization header sent without a key: %q", a)
 		}
 	}
 }
 
-func TestCredentialsAreSent(t *testing.T) {
+func TestKeyIsSent(t *testing.T) {
 	h := newHarness(t, "create")
-	h.jane.wantUser, h.jane.wantPass = "ian", "secret"
-	h.pv.Client.User, h.pv.Client.Pass = "ian", "secret"
+	h.jane.wantKey = testAPIKey
+	h.pv.Client.APIKey = testAPIKey
 	if _, err := h.pv.ProcessWorklist(); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.jane.authSeen) == 0 || !strings.HasPrefix(h.jane.authSeen[0], "Basic ") {
-		t.Fatalf("no Basic credentials sent: %q", h.jane.authSeen)
+	if len(h.jane.authSeen) == 0 || h.jane.authSeen[0] != "Bearer "+testAPIKey {
+		t.Fatalf("no Bearer key sent: %q", h.jane.authSeen)
 	}
 }
 
-func TestWrongCredentialsGiveClearError(t *testing.T) {
+func TestWrongKeyGivesClearError(t *testing.T) {
 	h := newHarness(t, "create")
-	h.jane.wantUser, h.jane.wantPass = "ian", "secret"
-	h.pv.Client.User, h.pv.Client.Pass = "ian", "wrong"
+	h.jane.wantKey = testAPIKey
+	h.pv.Client.APIKey = "jane_" + strings.Repeat("x", 43)
 	_, err := h.pv.ProcessWorklist()
 	if !errors.Is(err, errUnauthorized) {
 		t.Fatalf("err = %v, want errUnauthorized", err)
 	}
-	if !strings.Contains(err.Error(), "JANE_USERNAME") {
-		t.Errorf("message does not say how to give credentials: %v", err)
+	if !strings.Contains(err.Error(), "JANE_API_KEY") || !strings.Contains(err.Error(), "1.5.5") {
+		t.Errorf("message does not say how to give a key: %v", err)
 	}
 }
 
-func TestCredentialsPrecedence(t *testing.T) {
-	env := map[string]string{"JANE_USERNAME": "envuser", "JANE_PASSWORD": "envpass"}
+func TestAPIKeySources(t *testing.T) {
+	env := map[string]string{"JANE_API_KEY": testAPIKey}
 	getenv := func(k string) string { return env[k] }
-	if u, p := credentials(nil, nil, getenv); u != "envuser" || p != "envpass" {
-		t.Errorf("from env: %q %q", u, p)
+	other := "jane_" + strings.Repeat("Q", 43)
+	files := map[string]string{"/k": other + "\n", "/bad": "cluster-a-2026\n"}
+	readFile := func(p string) ([]byte, error) {
+		if s, ok := files[p]; ok {
+			return []byte(s), nil
+		}
+		return nil, os.ErrNotExist
 	}
-	fu, fp := "flaguser", "flagpass"
-	if u, p := credentials(&fu, &fp, getenv); u != "flaguser" || p != "flagpass" {
-		t.Errorf("flags should override env: %q %q", u, p)
+	if k, err := apiKey(nil, getenv, readFile); err != nil || k != testAPIKey {
+		t.Errorf("from env: %q %v", k, err)
 	}
-	if u, _ := credentials(nil, nil, func(string) string { return "" }); u != "" {
-		t.Errorf("no credentials expected, got %q", u)
+	f := "/k"
+	if k, err := apiKey(&f, getenv, readFile); err != nil || k != other {
+		t.Errorf("file should override env (and be trimmed): %q %v", k, err)
+	}
+	if k, err := apiKey(nil, func(string) string { return "" }, readFile); err != nil || k != "" {
+		t.Errorf("no key expected: %q %v", k, err)
+	}
+	bad := "/bad"
+	if _, err := apiKey(&bad, getenv, readFile); err == nil {
+		t.Error("a malformed key was accepted")
+	}
+	missing := "/missing"
+	if _, err := apiKey(&missing, getenv, readFile); err == nil {
+		t.Error("an unreadable key file was accepted")
 	}
 }
 
-func TestUserAndPassMustBeGivenTogether(t *testing.T) {
+func TestOldCredentialOptionsRefused(t *testing.T) {
 	f := "testdata/examplecreateprovisioningfile.yaml"
 	for _, args := range [][]string{
-		{"attest", f, "--user", "ian"},
-		{"attest", f, "--pass", "secret"},
+		{"attest", f, "--user", "ian", "--pass", "secret"},
 		{"attest", f, "--user=ian"},
-		{"attest", f, "--user"},
+		{"attest", f, "--pass", "secret"},
+		{"attest", f, "--apikeyfile"},
 	} {
 		if code := run(args); code != exitUsage {
 			t.Errorf("run(%v) = %d, want %d", args, code, exitUsage)

@@ -1,10 +1,16 @@
 package webui
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
+	"a10/auth"
+	"a10/configuration"
+	"a10/logging"
 	"a10/operations"
 	"a10/structures"
 )
@@ -22,7 +28,12 @@ func showSessions(c echo.Context) error {
 	cs, _ := operations.GetClaimsBySessionIDs(ids)
 	rs, _ := operations.GetResultsBySessionIDs(ids)
 
-	return c.Render(http.StatusOK, "sessions.html", buildSessionsPage(p, ss, cs, rs))
+	page := buildSessionsPage(p, ss, cs, rs)
+	now := time.Now()
+	for i := range page.Rows {
+		page.Rows[i].Long = isLongSession(page.Rows[i].S.Timing, now)
+	}
+	return c.Render(http.StatusOK, "sessions.html", page)
 }
 
 func showSession(c echo.Context) error {
@@ -31,7 +42,44 @@ func showSession(c echo.Context) error {
 	cs, _ := operations.GetClaimsBySessionIDs([]string{s.ItemID})
 	rs, _ := operations.GetResultsBySessionIDs([]string{s.ItemID})
 
-	return c.Render(http.StatusOK, "session.html", buildSessionPage(s, cs, rs, dbLookups()))
+	page := buildSessionPage(s, cs, rs, dbLookups())
+	page.Long = isLongSession(s.Timing, time.Now())
+	return c.Render(http.StatusOK, "session.html", page)
+}
+
+// isLongSession reports whether a session lasted, or if still open has so far
+// lasted, longer than sessions: longsession in config.yaml (#98).
+func isLongSession(t structures.SessionTiming, now time.Time) bool {
+	if t.Opened == 0 {
+		return false
+	}
+	end := time.Unix(0, int64(t.Closed))
+	if t.Closed == 0 {
+		end = now
+	}
+	return end.Sub(time.Unix(0, int64(t.Opened))) > configuration.LongSession()
+}
+
+// processSessionClose closes an open session from the sessions list or the
+// session page (#98), e.g. one left open by a client that crashed. The close
+// is the normal one (signed footer, "S close" log entry); one more log entry
+// records who forced it. back is "list" to return to the sessions list,
+// otherwise the session page.
+func processSessionClose(c echo.Context) error {
+	id := c.Param("itemid")
+	if err := operations.CloseSession(id); err != nil {
+		return echo.NewHTTPError(http.StatusConflict, "Session not closed: "+err.Error())
+	}
+	by := auth.CurrentUser(c)
+	if by == "" {
+		by = "(auth off)"
+	}
+	logging.MakeLogEntry("S", "close/FORCED", id, "session", fmt.Sprintf("session forcibly closed by %s from the Web UI (%s)", by, c.RealIP()))
+
+	if c.FormValue("back") == "list" {
+		return c.Redirect(http.StatusSeeOther, "/sessions")
+	}
+	return c.Redirect(http.StatusSeeOther, "/session/"+url.PathEscape(id))
 }
 
 // dbLookups resolves related items from the database.
