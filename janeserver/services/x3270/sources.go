@@ -3,13 +3,29 @@ package x3270
 import (
 	"encoding/base64"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/racingmars/go3270"
 
+	"a10/configuration"
 	"a10/structures"
 )
+
+// isLongSession reports whether a session lasted, or if still open has so far
+// lasted, longer than sessions: longsession in config.yaml (#98).
+func isLongSession(t structures.SessionTiming, now time.Time) bool {
+	if t.Opened == 0 {
+		return false
+	}
+	end := time.Unix(0, int64(t.Closed))
+	if t.Closed == 0 {
+		end = now
+	}
+	return end.Sub(time.Unix(0, int64(t.Opened))) > configuration.LongSession()
+}
 
 // page returns the part of a fully loaded list that a page shows.
 func page[T any](all []T, skip, limit int64) []T {
@@ -326,9 +342,16 @@ func sessionsList(s store, back go3270.Tx) go3270.Tx {
 				if x.Timing.Closed == 0 {
 					dur = "open"
 				}
+				msg := x.Message
+				var color go3270.Color
+				if isLongSession(x.Timing, time.Now()) {
+					msg = "LONG SESSION  " + msg
+					color = go3270.Red
+				}
 				items = append(items, listItem{
 					Text: fmt.Sprintf("%s %s %6d %7d %s", when(x.Timing.Opened), fit(dur, 9),
-						len(x.ClaimList), len(x.ResultList), x.Message),
+						len(x.ClaimList), len(x.ResultList), msg),
+					Color:  color,
 					Detail: func() detail { return sessionDetail(s, x.ItemID) },
 				})
 			}
@@ -355,6 +378,26 @@ func sessionDetail(s store, id string) detail {
 	} else {
 		add(labelled("Closed", when(x.Timing.Closed))...)
 		add(labelled("Took", took(x.Timing.Opened, x.Timing.Closed))...)
+	}
+	if isLongSession(x.Timing, time.Now()) {
+		add(labelled("Warning", fmt.Sprintf("LONG SESSION (over %v)", configuration.LongSession()))...)
+	}
+	if x.Timing.Closed == 0 {
+		// F9 closes a session left open, e.g. by a client that crashed (#98).
+		d.Action = &detailAction{Key: go3270.AIDPF9, Label: "F9=Close session", Do: func(conn net.Conn) detail {
+			by := "(auth off)"
+			if sess := sessionOf(conn); sess != nil && sess.user != "" {
+				by = sess.user
+			}
+			err := s.CloseSession(id, by)
+			nd := sessionDetail(s, id)
+			if err != nil {
+				nd.Message = "Not closed: " + err.Error()
+			} else {
+				nd.Message = "Session closed"
+			}
+			return nd
+		}}
 	}
 	add(labelled("Message", x.Message)...)
 	p, f, o := countResults(rs)

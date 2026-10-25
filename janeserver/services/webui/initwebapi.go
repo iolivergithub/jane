@@ -167,6 +167,7 @@ func setUpDisplayEndpoints(router *echo.Echo) {
 	// sessions
 	router.GET(PREFIX+"/sessions", showSessions)
 	router.GET(PREFIX+"/session/:itemid", showSession)
+	router.POST(PREFIX+"/session/:itemid/close", processSessionClose)
 
 	// protocols
 

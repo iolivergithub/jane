@@ -16,9 +16,11 @@
          <div class="j-num-sm">{{ epochToUTC .S.Timing.Opened }}</div>
          <div class="small text-body-secondary">{{ if .Open }}<span class="badge bg-warning">Still open</span>{{ else }}closed {{ epochToUTC .S.Timing.Closed }}{{ end }}</div>
       </div></div>
-      <div class="card j-tile"><div class="card-body py-2">
+      <div class="card j-tile{{ if .Long }} border-danger{{ end }}"><div class="card-body py-2">
          <div class="small text-body-secondary">Duration</div>
          <div class="j-num">{{ if .Duration }}{{ .Duration }}{{ else }}–{{ end }}</div>
+         {{ if .Long }}<div class="small text-danger fw-semibold" title="Longer than sessions: longsession in config.yaml">LONG SESSION</div>{{ end }}
+         {{ if .Open }}<form method="post" action="/session/{{ .S.ItemID }}/close" class="mt-1"><button type="submit" class="btn btn-sm btn-warning py-0" title="Close this session now, e.g. if its client crashed. Logged with your name."><i class="fa fa-stop-circle me-1"></i>Close session</button></form>{{ end }}
       </div></div>
       <div class="card j-tile"><div class="card-body py-2">
          <div class="small text-body-secondary">Claims</div>

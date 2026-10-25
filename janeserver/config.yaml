@@ -42,6 +42,10 @@ logging:
   logfilelocation: /tmp/ga10.log
   sessionupdatelogging: false
 
+#Attestation sessions longer than this many seconds are flagged LONG SESSION (minimum 30, default 60)
+#sessions:
+#  longsession: 60
+
 #Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
 #and footers on claims, results and sessions cannot be verified once Jane stops)
 #The key is a PEM private key: PKCS#8, PKCS#1 or SEC1; RSA (PS256), ECDSA P-256/384/521 (ES256/384/512) or Ed25519 (EdDSA)

@@ -133,6 +133,7 @@
                   <tr><td>Web</td><td><b>{{ .Cfg.Web.ListenOn }}:{{ .Cfg.Web.Port }}</b>
                      {{ if .Cfg.Web.UseHTTP }}<span class="badge bg-danger">http</span>{{ else }}<span class="badge bg-success">https</span>{{ end }}</td></tr>
                   <tr><td>X3270</td><td><b>{{ .Cfg.X3270.ListenOn }}:{{ .Cfg.X3270.Port }}</b> <span class="badge bg-danger">tn3270, unencrypted</span></td></tr>
+                  <tr><td>Sessions</td><td>flagged <span class="text-danger fw-semibold">LONG SESSION</span> after <b>{{ longSession }}</b> <span class="small text-body-secondary">(sessions: longsession)</span></td></tr>
                </tbody>
             </table>
          </div>

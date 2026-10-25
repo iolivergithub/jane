@@ -175,6 +175,7 @@ type sessionRow struct {
 	S           structures.Session
 	Duration    string
 	Open        bool
+	Long        bool // lasted (or, if open, has lasted) longer than sessions: longsession (#98); set by the handler
 	Results     resultCounts
 	Claims      int
 	ClaimErrors int
@@ -232,6 +233,7 @@ type sessionPage struct {
 	S            structures.Session
 	Duration     string
 	Open         bool
+	Long         bool                // see sessionRow.Long
 	Claims       []structures.Claim  // newest first
 	Results      []structures.Result // newest first
 	Counts       resultCounts
