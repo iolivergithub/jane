@@ -184,7 +184,7 @@
             <table class="table table-sm mb-0">
                <tbody>
                   <tr><td>Web UI login</td><td>{{ if .Auth.Web }}<span class="badge bg-success">required</span>{{ else }}<span class="badge bg-warning">not required</span>{{ end }}</td></tr>
-                  <tr><td>REST API</td><td>{{ if .Auth.Rest }}<span class="badge bg-success">HTTP Basic required</span>{{ else }}<span class="badge bg-warning">open</span>{{ end }}</td></tr>
+                  <tr><td>REST API</td><td>{{ if .Auth.Rest }}<span class="badge bg-success">API key required</span>{{ if eq .Auth.APIKeys 0 }} <span class="badge bg-danger">no user has an API key</span>{{ end }}{{ else }}<span class="badge bg-warning">open</span>{{ end }}</td></tr>
                   <tr><td>X3270 logon</td><td>{{ if .Auth.X3270 }}<span class="badge bg-success">required</span> <span class="small text-body-secondary">passwords are sent unencrypted</span>{{ else }}<span class="badge bg-warning">not required</span>{{ end }}</td></tr>
                   {{ if .Auth.Web }}
                   <tr><td>Logged in as</td><td><b>{{ currentUser }}</b></td></tr>
@@ -192,7 +192,8 @@
                   <tr><td>Active sessions</td><td><b>{{ .Auth.ActiveSessions }}</b></td></tr>
                   {{ end }}
                   <tr><td>Users</td><td>{{ if lt .Auth.Users 0 }}<span class="badge bg-danger">users collection unreadable</span>{{ else }}<b>{{ .Auth.Users }}</b>{{ if and (eq .Auth.Users 0) (or .Auth.Web .Auth.Rest .Auth.X3270) }} <span class="badge bg-danger">nobody can log in</span>{{ end }}{{ end }}</td></tr>
-                  <tr><td>Password storage</td><td><b>{{ .Auth.PasswordHash }}</b> hashes</td></tr>
+                  <tr><td>API keys</td><td>{{ if lt .Auth.APIKeys 0 }}<span class="text-body-secondary">unknown</span>{{ else }}<b>{{ .Auth.APIKeys }}</b> user{{ if ne .Auth.APIKeys 1 }}s{{ end }} with a REST API key{{ end }}</td></tr>
+                  <tr><td>Password storage</td><td><b>{{ .Auth.PasswordHash }}</b> hashes; API keys as SHA-256</td></tr>
                </tbody>
             </table>
          </div>

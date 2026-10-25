@@ -23,6 +23,9 @@ func StartRESTInterface(ctx context.Context) {
 	router := echo.New()
 
 	router.HideBanner = true
+	// Client addresses (logs, login limits) come from the connection itself, not
+	// from X-Forwarded-For/X-Real-IP headers, which any client can set (#89).
+	router.IPExtractor = echo.ExtractIPDirect()
 
 	//not necessary, but I will keep this here because this is now my example of how to use middlewares
 	//in echo, plus the import declaration above
@@ -34,7 +37,7 @@ func StartRESTInterface(ctx context.Context) {
 	}))
 	//router.Use(middleware.Logger())
 
-	// HTTP Basic authentication, only active if auth.rest is true in the configuration
+	// API key authentication (auth/restkeys.go), only active if auth.rest is true in the configuration
 	router.Use(auth.RESTMiddleware())
 
 	//setup endpoints

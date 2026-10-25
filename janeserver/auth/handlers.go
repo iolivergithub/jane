@@ -53,8 +53,14 @@ func processLogin(c echo.Context) error {
 	password := c.FormValue("password")
 	next := safeNext(c.FormValue("next"))
 
-	if !users.Authenticate(username, password) {
-		logEntry("AUTH", "login/FAIL", username, "user", "failed login from "+c.RealIP())
+	// Too many recent failures from this address, or a wrong password, both give
+	// the usual message; the log records which (#89).
+	allowed := loginAllowed(username, "web", c.RealIP())
+	if !allowed || !users.Authenticate(username, password) {
+		if allowed {
+			failures.fail(c.RealIP())
+			logEntry("AUTH", "login/FAIL", username, "user", "failed login from "+c.RealIP())
+		}
 		return renderLogin(c, http.StatusUnauthorized, loginPageData{
 			Next:     next,
 			Username: username,

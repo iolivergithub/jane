@@ -62,11 +62,12 @@ logging:
 
 
 #Authentication (optional - if this section is missing, no login is required)
-#Users are held in the "users" collection; add them or reset passwords with /opt/jane/addjaneuser, e.g.
+#Users are held in the "users" collection; add them, reset passwords or make REST API keys with /opt/jane/addjaneuser, e.g.
 #  /opt/jane/addjaneuser ian mongodb://127.0.0.1:27017 asvr
+#  /opt/jane/addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr
 #(needs python3-argon2 and python3-pymongo; see /usr/share/doc/janeattestationengine/addjaneuser.md)
 auth:
   web: false           # require a login for the Web UI
-  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
+  rest: false          # require an API key for the REST API (jp/scripts send Authorization: Bearer jane_...; keys from addjaneuser --apikey)
   x3270: false         # require a logon on the x3270 interface (passwords travel unencrypted; see x3270: above)
   sessiontimeout: 30m  # Web UI login, or x3270 logon, expires after this long without use

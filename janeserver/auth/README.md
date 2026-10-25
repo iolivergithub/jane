@@ -20,7 +20,7 @@ Add to `config.yaml` (no `auth:` section means no login, exactly as before):
 ```yaml
 auth:
   web: true            # require a login for the Web UI
-  rest: false          # require HTTP Basic auth for the REST API
+  rest: false          # require an API key for the REST API
   x3270: false         # require a logon on the x3270 interface
   sessiontimeout: 30m  # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 ```
@@ -42,15 +42,23 @@ Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t
 - The cookie is HttpOnly and SameSite=Lax, and Secure when the Web UI runs over HTTPS (`web.usehttp: false`).
 - Sessions are held in memory, so restarting Jane logs everyone out.
 
-**REST API.** HTTP Basic auth against the same users, active only when `rest: true`.
+**REST API** (`restkeys.go`, #89). API keys, active only when `rest: true`: `Authorization: Bearer jane_<43 base64url characters>`.
+- The format is checked first; then the key's SHA-256 (`sha256:<hex>`) is looked up in the users' `apikey` field (`UserStore.UserForAPIKey`). Keys are made by addjaneuser; one per user.
+- HTTP Basic gets 401 with a message that it is no longer supported.
 - `OPTIONS` (CORS preflight) and `/health` stay open.
-- The provisioner and any scripts must send credentials once this is on.
+- REST and Web UI are separate in code; they share only the user store and the failed-attempt limiter.
+
+**Failed attempts** (`ratelimit.go`). One counter per client address for all three interfaces: 5 failures in 5 minutes block the address for 5 minutes (REST 429; Web UI and x3270 the usual failure, the log says why). Routers use `echo.ExtractIPDirect()`, so `X-Forwarded-For` is ignored.
+
+**Password checks** (`password.go`). At most 2 Argon2id checks at once (5 s wait, then they fail and log `login/BUSY`); stored hashes may ask for at most 64 MiB.
+
+**Users** (`users.go`). `UserStore` is the only code that reads the `users` collection (`username`, `password`, `apikey`). Another identity source (#48) would be another implementation. The Web UI ends a login whose user has been deleted.
 
 **x3270.** With `x3270: true` a terminal starts at a logon screen and needs a user ID and password from the same users collection.
 - `auth.Authenticate` checks them and logs the attempt; after 3 failures the connection is closed.
 - A logged-on terminal idle for `sessiontimeout` is disconnected. Logoff, exit, disconnection and timeout are logged with `auth.LogLogoff`.
 - tn3270 is not encrypted, so the password crosses the network in clear.
-- `auth.Initialise` warns when `web: true` but `x3270: false`.
+- `auth.Initialise` warns when `web: true` but `x3270: false`, when REST needs a key but no user has one, and when logins or keys go over plain HTTP.
 
 **Logging.** Logins, failed logins and logouts go to Jane's normal log under channel `AUTH`.
 
@@ -60,6 +68,6 @@ Passwords are stored as Argon2id hashes in PHC format (`$argon2id$v=19$m=19456,t
 
 - The `/live` page talks directly to the MQTT broker over WebSockets, so that stream is protected only by broker credentials.
 - The x3270 interface is unencrypted; bind it to `127.0.0.1` (`x3270: listenon:`) and reach it through an SSH tunnel if passwords matter.
-- jp sends REST credentials from `JANE_USERNAME`/`JANE_PASSWORD` or `--user`/`--pass` (since 1.5.4).
-- A failed REST login is logged with `logEntry("AUTH", "login/FAIL", ...)` and the client address, as for the Web UI and x3270; successful requests are not logged.
+- jp sends its key from `JANE_API_KEY` or `--apikeyfile` (since 1.5.5).
+- Failed REST requests are logged with `logEntry("AUTH", "login/FAIL", ...)` and the client address; successful key use once an hour per user and address.
 - There is no CSRF token. SameSite=Lax cookies stop cross-site POSTs in current browsers.

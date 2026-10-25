@@ -14,8 +14,8 @@
 // If that section is missing, authentication is disabled and Jane behaves exactly as before.
 //
 //	auth:
-//	  web: true            # protect the Web UI
-//	  rest: false          # protect the REST API with HTTP Basic auth
+//	  web: true            # protect the Web UI (username and password)
+//	  rest: false          # protect the REST API with API keys (restkeys.go)
 //	  x3270: false         # require a logon on the x3270 (tn3270) interface
 //	  sessiontimeout: 30m  # sliding expiry of a Web UI login; idle timeout of an x3270 logon
 package auth
@@ -81,8 +81,21 @@ func startupWarnings(c Config, u UserStore) []string {
 			warns = append(warns, fmt.Sprintf("Authentication is enabled but the %q collection has no users (err=%v); nobody will be able to log in", usersCollection, err))
 		}
 	}
+	if c.Rest {
+		if n, err := u.CountAPIKeys(); err != nil || n == 0 {
+			warns = append(warns, "REST auth is on but no user has an API key: the REST API is unusable; create one with addjaneuser --apikey")
+		}
+	}
 	if c.Web && !c.X3270 {
 		warns = append(warns, "The Web UI requires a login but the x3270 interface does not (auth: x3270: false); anyone who can reach its port can use it")
+	}
+	if cd := configuration.ConfigData; cd != nil {
+		if c.Rest && cd.Rest.UseHTTP {
+			warns = append(warns, "REST auth is on but the REST API uses plain HTTP (rest: usehttp: true): API keys are sent unencrypted")
+		}
+		if c.Web && cd.Web.UseHTTP {
+			warns = append(warns, "Web UI logins are on but the Web UI uses plain HTTP (web: usehttp: true): passwords and session cookies are sent unencrypted")
+		}
 	}
 	return warns
 }
@@ -116,7 +129,7 @@ func readConfig(configFile string) Config {
 // It is exposed to the Web UI templates so that the logout button only appears when it means something.
 func WebEnabled() bool { return cfg.Web }
 
-// RESTEnabled reports whether the REST API requires credentials.
+// RESTEnabled reports whether the REST API requires an API key.
 func RESTEnabled() bool { return cfg.Rest }
 
 // SetAuthoriser replaces the authorisation policy. The default allows any authenticated user to do anything.
@@ -131,12 +144,26 @@ func SessionTimeout() time.Duration { return cfg.SessionTimeout }
 // Authenticate checks a username and password for an interface other than the
 // Web UI (which has its own handlers), and logs the attempt as the Web UI does.
 // via names the interface ("x3270") and remote the client's address.
+// An address with too many recent failures is refused without checking (#89).
 func Authenticate(username, password, via, remote string) bool {
+	if !loginAllowed(username, via, remote) {
+		return false
+	}
 	if users == nil || !users.Authenticate(username, password) {
+		failures.fail(remote)
 		logEntry("AUTH", "login/FAIL", username, "user", fmt.Sprintf("failed %s login from %s", via, remote))
 		return false
 	}
 	logEntry("AUTH", "login/OK", username, "user", fmt.Sprintf("%s login from %s", via, remote))
+	return true
+}
+
+// loginAllowed reports whether remote may try a password now, logging a refusal.
+func loginAllowed(username, via, remote string) bool {
+	if isBlocked, _ := failures.blocked(remote); isBlocked {
+		logEntry("AUTH", "login/BLOCKED", username, "user", fmt.Sprintf("%s login from %s refused: too many failed attempts", via, remote))
+		return false
+	}
 	return true
 }
 

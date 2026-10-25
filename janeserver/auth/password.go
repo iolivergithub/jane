@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -24,7 +25,7 @@ import (
 // Limits on what a stored hash may ask for, so a corrupted or tampered record cannot make
 // a login attempt consume excessive memory or time.
 const (
-	maxMemoryKiB    = 1 << 20 // 1 GiB
+	maxMemoryKiB    = 64 << 10 // 64 MiB (#89); addjaneuser writes 19 MiB
 	maxIterations   = 16
 	maxParallelism  = 16
 	minSaltLen      = 8
@@ -55,6 +56,17 @@ var dummyHash = func() string {
 	return fmt.Sprintf("$argon2id$v=%d$m=19456,t=2,p=1$%s$%s", argon2.Version, b64.EncodeToString(salt), b64.EncodeToString(h))
 }()
 
+// At most maxConcurrentChecks Argon2id checks run at once (#89). Each costs
+// about 40 MiB in practice; without a limit, many simultaneous Web UI or x3270
+// logins could exhaust memory. A check waits up to checkWait for a slot, then
+// fails like a wrong password (the log records why).
+const maxConcurrentChecks = 2
+
+var (
+	checkSlots = make(chan struct{}, maxConcurrentChecks)
+	checkWait  = 5 * time.Second // a variable so tests can shorten it
+)
+
 // checkPassword reports whether the given password matches the stored Argon2id hash.
 // Anything that is not a well-formed Argon2id PHC string (including plain text) never matches.
 //
@@ -67,6 +79,17 @@ func checkPassword(stored, given string) bool {
 	if err != nil {
 		return false
 	}
+
+	timer := time.NewTimer(checkWait)
+	select {
+	case checkSlots <- struct{}{}:
+		timer.Stop()
+		defer func() { <-checkSlots }()
+	case <-timer.C:
+		logEntry("AUTH", "login/BUSY", "", "user", "password check not done: too many logins at once")
+		return false
+	}
+
 	computed := argon2.IDKey([]byte(given), p.salt, p.iterations, p.memory, p.parallelism, uint32(len(p.hash)))
 	return subtle.ConstantTimeCompare(computed, p.hash) == 1
 }

@@ -54,6 +54,6 @@ logging:
 #  etc/addjaneuser/addjaneuser ian mongodb://127.0.0.1:27017 testasvrlocal
 #auth:
 #  web: true            # require a login for the Web UI
-#  rest: false          # require HTTP Basic auth for the REST API (provisioner/scripts must then send credentials)
+#  rest: false          # require an API key for the REST API (jp/scripts send Authorization: Bearer jane_...; see docs/authentication.md)
 #  x3270: false         # require a logon on the x3270 interface (passwords travel unencrypted)
 #  sessiontimeout: 30m  # Web UI login, or x3270 logon, expires after this long without use
