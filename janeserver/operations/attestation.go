@@ -96,7 +96,7 @@ func Attest(element structures.Element, endpointname string, intent structures.I
 
 	sderr := AddClaimToSession(sid, cid)
 	if sderr != nil {
-		return "", fmt.Errorf("Error adding claim %v to session %v. Claim added, session may be still open: %w", cid, sid, err)
+		return "", fmt.Errorf("Claim %v stored but not added to session %v: %w", cid, sid, sderr)
 	}
 
 	// Step 8
