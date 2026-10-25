@@ -92,23 +92,32 @@ auth:
 
 A Web UI login, or an x3270 logon, expires after `sessiontimeout` without use. Failed logins on all three interfaces are logged on the `AUTH` channel. [Authentication](authentication.md) has the details.
 
-Without HTTPS (step 3), Web UI and REST passwords cross the network in clear.
+Without HTTPS (step 3), Web UI passwords and REST API keys cross the network in clear.
 
 **Check:** the Web UI asks for a login; `curl http://127.0.0.1:8520/elements` gets 401.
 
-## 5. jp with REST credentials
+## 5. jp with an API key
 
-With `auth: rest: true`, give jp a Jane user, either from the environment (preferred) or on the command line:
+With `auth: rest: true`, the REST API needs an API key. Make one per cluster of machines (or per machine) on the Jane host and give it to jp:
 
 ```bash
-export JANE_USERNAME=ian JANE_PASSWORD='...'
-/opt/jane/jp attest /etc/opt/jane/provisioning.yaml
-sudo -E /opt/jane/jp update /etc/opt/jane/provisioning.yaml     # -E keeps the variables
+KEY=$(sudo /opt/jane/addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr)
 ```
 
-`--user NAME --pass PASSWORD` (both together) override the variables, but a password on the command line is visible to other users.
+On each machine, either in the environment or in a file only jp's users can read (preferred for unattended runs):
 
-**Check:** `jp attest` passes; with a wrong password it says Jane refused the credentials (HTTP 401).
+```bash
+export JANE_API_KEY="$KEY"
+/opt/jane/jp attest /etc/opt/jane/provisioning.yaml
+sudo -E /opt/jane/jp update /etc/opt/jane/provisioning.yaml          # -E keeps the variable
+
+echo "$KEY" | sudo install -m 640 -o root -g jpusers /dev/stdin /etc/opt/jane/jp.key
+/opt/jane/jp attest --apikeyfile /etc/opt/jane/jp.key /etc/opt/jane/provisioning.yaml
+```
+
+Use HTTPS (step 3): the key travels with every request. A leaked key is replaced with `addjaneuser --apikey` (the old one stops working at once) or removed with `--revokeapikey`; see [Authentication](authentication.md#rest-api) for sharing keys across machines.
+
+**Check:** `jp attest` passes; with a wrong key it says Jane refused it (HTTP 401); `curl -u ian:x https://127.0.0.1:8520/elements` gets 401 "HTTP Basic is no longer supported".
 
 ## 6. The footer signing key
 
