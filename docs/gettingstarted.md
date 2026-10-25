@@ -19,7 +19,7 @@ Open `http://<jane-host>:8540`. The home page shows what is in the database and 
 > **📷 SCREENSHOT NEEDED — `images/gs-home.png`**
 > Web UI home page straight after the quick start (one element, standard intents loaded, one session). Show the counts at the top and the configuration tabs below, with the **Services** tab open. Browser width about 1400 px; full page.
 
-The menu bar has **Elements**, **Attest** and **Sessions** for everyday use, **Structures** for every kind of item (intents, expected values, claims, results, objects, protocols, rules, the log), **New** for creating items, **Help**, and the **Live** page (screen icon).
+The menu bar has **Elements**, **Attest** and **Sessions** for everyday use, **Structures** for every kind of item (intents, expected values, claims, results, objects, protocols, rules, the log), **New** for creating items, **Help**, the **Live** page (screen icon), and the theme button: the Web UI follows your system's light or dark setting, and the button switches between automatic, light and dark (remembered in your browser). Each page has its own title in the browser tab, and the IDs at the top of element, intent, expected value, claim, result and session pages have a copy button next to them.
 
 ## The element
 
@@ -54,7 +54,7 @@ and one of its results:
 
 **Attest** does by hand what `jp attest` does for every intent in its file.
 
-1. Select the element and its endpoint (`tarzan`).
+1. Select the element and its endpoint (`tarzan`). **Attest now** on an element's page opens this page with the element already selected.
 2. Select an intent, e.g. *System Information*.
 3. Choose **Attest and Verify** and select rules, e.g. `sys_taRunningSafely`, `sys_machineID_Agent` and `sys_machineID_CrossRef`; or **Attest Only** to just collect a claim.
 4. Press **Submit**. With Attest Only you go to the claim; otherwise to the session with its results.

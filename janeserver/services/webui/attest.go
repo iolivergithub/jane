@@ -16,6 +16,10 @@ type atteststr struct {
 	ES []structures.Element
 	IS []structures.Intent
 	RS []structures.Rule
+
+	// The element to preselect, from ?eid= (e.g. "Attest now" on an element's page, #111);
+	// empty if none was given or it is unknown.
+	EID, EName string
 }
 
 func showAttest(c echo.Context) error {
@@ -23,7 +27,15 @@ func showAttest(c echo.Context) error {
 	is, _ := operations.GetIntentsAll()
 	rs := operations.GetRules()
 
-	as := atteststr{es, is, rs}
+	as := atteststr{ES: es, IS: is, RS: rs}
+	if eid := c.QueryParam("eid"); eid != "" {
+		for _, e := range es {
+			if e.ItemID == eid {
+				as.EID, as.EName = e.ItemID, e.Name
+				break
+			}
+		}
+	}
 
 	return c.Render(http.StatusOK, "attest.html", as)
 }

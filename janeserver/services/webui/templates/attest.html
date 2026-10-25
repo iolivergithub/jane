@@ -1,4 +1,4 @@
-{{define "content"}}
+{{define "title"}}Attest · {{end}}{{define "content"}}
 <h3>Attest</h3>
 
 <br/>
@@ -19,7 +19,7 @@
       <div class="col-md-4">
          <label for="elementid"><b>Elements</b> <i>select one</i></label>
          <input type="search" class="form-control form-control-sm mb-1 list-filter" data-for="elementid" placeholder="Filter elements" aria-label="Filter elements">
-         <select class="form-select" size="15"  id="elementid" name="eid">
+         <select class="form-select" size="15"  id="elementid" name="eid" data-preselect="{{ .EID }}" data-preselect-name="{{ .EName }}">
             {{ range $i,$e := .ES }}
                 {{ range $j,$ep := $e.Endpoints }}
                      <option value="{{ $e.ItemID }},{{ $j }}">{{ $e.Name}} - {{ $j }} : {{ $ep.Endpoint }}</option>
@@ -422,6 +422,22 @@
       // Enter in a filter box must not submit the form
       input.addEventListener("keydown", e => { if (e.key === "Enter") e.preventDefault(); });
    });
+
+   // Preselect the element given as ?eid= (#111): its first endpoint is selected;
+   // with several endpoints the list is filtered to that element's.
+   const pre = elements.dataset.preselect;
+   if (pre) {
+      const mine = Array.from(elements.options).filter(o => o.value.startsWith(pre + ","));
+      if (mine.length > 0) {
+         mine[0].selected = true;
+         if (mine.length > 1) {
+            const box = document.querySelector('.list-filter[data-for="elementid"]');
+            box.value = elements.dataset.preselectName;
+            applyFilter(elements, box.value);
+         }
+         mine[0].scrollIntoView({ block: "nearest" });
+      }
+   }
 
    const count = document.getElementById("rulecount");
    const updateCount = () => { count.textContent = rules.selectedOptions.length; };

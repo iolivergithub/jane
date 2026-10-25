@@ -1,8 +1,31 @@
 <!DOCTYPE html>
-<html lang="en"  data-bs-theme="dark">
+<html lang="en">
   <head>
-    <title>JANE User Interface</title>
+    <!-- Each page defines "title" (e.g. "Element web01 · "), most specific first (#110). -->
+    <title>{{ block "title" . }}{{ end }}Jane</title>
     <meta charset="utf-8">
+    <script>
+      // Light or dark (#112): "auto" follows the browser/OS setting, also when it
+      // changes; the navbar button switches auto -> light -> dark, remembered in
+      // this browser only. Set here, before anything is drawn, so there is no flash.
+      (function () {
+        var KEY = "jane-theme";
+        var dark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+        function stored() { try { return localStorage.getItem(KEY) || "auto"; } catch (e) { return "auto"; } }
+        function apply(mode) {
+          var isDark = mode === "dark" || (mode === "auto" && dark !== null && dark.matches);
+          document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
+        }
+        apply(stored());
+        if (dark !== null && dark.addEventListener) {
+          dark.addEventListener("change", function () { if (stored() === "auto") { apply("auto"); } });
+        }
+        window.janeTheme = {
+          stored: stored,
+          set: function (mode) { try { localStorage.setItem(KEY, mode); } catch (e) {} apply(mode); }
+        };
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="JANE Web User Interface">
     <meta name="keywords" content="Attestation">
@@ -129,6 +152,10 @@
             <a class="nav-link" href="/live"><i class="fa fa-desktop"></i></a>
           </li>
 
+          <li class="nav-item">
+            <button type="button" class="nav-link" id="j-theme" title="Theme: follows your system" aria-label="Theme"><i class="fa fa-adjust"></i></button>
+          </li>
+
           {{ if authEnabled }}
           <li class="nav-item">
             <span class="nav-link" title="Logged in as {{ currentUser }}"><i class="fa fa-user"></i> {{ currentUser }}</span>
@@ -148,5 +175,61 @@
     <div class="container-fluid godown-60">
       {{block "content" .}}{{end}}
     </div>
+
+    <script>
+      // Copy buttons next to item IDs (#113): the button copies the text of the
+      // [data-copy] element before it. Where the browser refuses the clipboard
+      // (e.g. plain HTTP), the text is selected instead, ready for Ctrl+C.
+      document.querySelectorAll(".j-copy").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var src = btn.previousElementSibling;
+          if (!src || !src.hasAttribute("data-copy")) { return; }
+          var text = src.textContent.trim();
+          var icon = btn.firstElementChild;
+          function done(ok) {
+            icon.className = ok ? "fa fa-check" : "fa fa-clipboard";
+            btn.title = ok ? "Copied" : "Selected: press Ctrl+C to copy";
+            setTimeout(function () { icon.className = "fa fa-clipboard"; btn.title = "Copy the ID"; }, 1500);
+          }
+          function selectIt() {
+            var r = document.createRange();
+            r.selectNodeContents(src);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+            done(false);
+          }
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, selectIt);
+          } else {
+            selectIt();
+          }
+        });
+      });
+    </script>
+
+    <script>
+      // The theme button (#112): auto -> light -> dark -> auto.
+      (function () {
+        var btn = document.getElementById("j-theme");
+        if (!btn || !window.janeTheme) { return; }
+        var next = { auto: "light", light: "dark", dark: "auto" };
+        var look = {
+          auto: ["fa-adjust", "Theme: follows your system (click for light)"],
+          light: ["fa-sun-o", "Theme: light (click for dark)"],
+          dark: ["fa-moon-o", "Theme: dark (click to follow your system)"]
+        };
+        function show(mode) {
+          btn.firstElementChild.className = "fa " + look[mode][0];
+          btn.title = look[mode][1];
+        }
+        show(window.janeTheme.stored());
+        btn.addEventListener("click", function () {
+          var mode = next[window.janeTheme.stored()] || "auto";
+          window.janeTheme.set(mode);
+          show(mode);
+        });
+      })();
+    </script>
   </body>
 </html>
