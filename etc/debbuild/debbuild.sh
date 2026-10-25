@@ -34,13 +34,13 @@ mkdir -p $JANEBASE/DEBIAN
 mkdir -p $JANEBASE/opt/jane
 mkdir -p $JANEBASE/var/log/jane
 mkdir -p $JANEBASE/etc/opt/jane
-mkdir -p $JANEBASE/etc/systemd/system
+mkdir -p $JANEBASE/lib/systemd/system
 mkdir -p $JANEBASE/usr/share/doc/janeattestationengine
 
 mkdir -p $TARZANBASE
 mkdir -p $TARZANBASE/DEBIAN
 mkdir -p $TARZANBASE/opt/jane
-mkdir -p $TARZANBASE/etc/systemd/system
+mkdir -p $TARZANBASE/lib/systemd/system
 mkdir -p $TARZANBASE/etc/opt/jane
 
 #constructing control files
@@ -92,8 +92,8 @@ cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
 # Backup copy of the standard intents matching this version (#67)
 cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintents.json
 
-cp jane.service $JANEBASE/etc/systemd/system/jane.service
-cp tarzan.service $TARZANBASE/etc/systemd/system/tarzan.service
+cp jane.service $JANEBASE/lib/systemd/system/jane.service
+cp tarzan.service $TARZANBASE/lib/systemd/system/tarzan.service
 cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example
 cp jane.env $JANEBASE/etc/opt/jane/jane.env
 cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
@@ -109,12 +109,12 @@ chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.k
 chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json
 chmod 600 $TARZANBASE/etc/opt/jane/tarzan.env
 chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example
-chmod 644 $JANEBASE/etc/systemd/system/jane.service $TARZANBASE/etc/systemd/system/tarzan.service
+chmod 644 $JANEBASE/lib/systemd/system/jane.service $TARZANBASE/lib/systemd/system/tarzan.service
 
 
 
 #Copy control files
-echo "${BLUE}Copying Debian control, conffile and postinst files${NC}"
+echo "${BLUE}Copying Debian control, conffile and maintainer scripts${NC}"
 cp control_jane $JANEBASE/DEBIAN/control
 cp control_tarzan $TARZANBASE/DEBIAN/control
 
@@ -122,7 +122,12 @@ cp postinst_jane $JANEBASE/DEBIAN/postinst
 cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
 cp prerm_jane $JANEBASE/DEBIAN/prerm
 cp prerm_tarzan $TARZANBASE/DEBIAN/prerm
+cp preinst_jane $JANEBASE/DEBIAN/preinst
+cp preinst_tarzan $TARZANBASE/DEBIAN/preinst
+cp postrm_jane $JANEBASE/DEBIAN/postrm
+cp postrm_tarzan $TARZANBASE/DEBIAN/postrm
 chmod 755 $JANEBASE/DEBIAN/postinst $TARZANBASE/DEBIAN/postinst $JANEBASE/DEBIAN/prerm $TARZANBASE/DEBIAN/prerm
+chmod 755 $JANEBASE/DEBIAN/preinst $TARZANBASE/DEBIAN/preinst $JANEBASE/DEBIAN/postrm $TARZANBASE/DEBIAN/postrm
 
 cp conffiles_jane $JANEBASE/DEBIAN/conffiles
 cp conffiles_tarzan $TARZANBASE/DEBIAN/conffiles

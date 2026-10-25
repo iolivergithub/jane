@@ -1,7 +1,7 @@
 #!/bin/sh
 # prerm for the jane package: on removal stop and disable the service, so systemd
 # does not keep trying to start a binary that is no longer there. Nothing is
-# done on upgrade (postinst restarts it).
+# done on upgrade: Jane is not restarted by the package (#96).
 set -e
 
 case "$1" in

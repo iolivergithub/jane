@@ -44,7 +44,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/etc/opt/jane/jane.env` | environment for janeserver (MongoDB and MQTT accounts), all commented out |
 | `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate, only used when you switch to HTTPS; replace them (see [Hardening](hardening.md#3-your-own-tls-key-and-certificate)) |
 | `/etc/opt/jane/standardintents.json` | the standard intents matching this version, for loading by hand if downloading them fails |
-| `/etc/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
+| `/lib/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
 
@@ -56,9 +56,9 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/opt/jane/jp` | the provisioner (see [jp](jp.md)) |
 | `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy |
 | `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
-| `/etc/systemd/system/tarzan.service` | runs tarzan as root |
+| `/lib/systemd/system/tarzan.service` | runs tarzan as root |
 
-`config.yaml`, `jane.env`, `tarzan.env`, the keys, the provisioning example and both units are dpkg conffiles: an upgrade never overwrites your changes without asking.
+`config.yaml`, `jane.env`, `tarzan.env`, the keys and the provisioning example are dpkg conffiles: an upgrade never overwrites your changes without asking. The two systemd units are ordinary package files (since 1.5.5): an upgrade always installs the new unit, and your changes go in drop-ins (see [Running under systemd](#running-under-systemd)).
 
 ## Owners and permissions
 
@@ -69,15 +69,17 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | `/opt/jane` (directory) | `root:root` | 755 |
 | `/opt/jane/janeserver`, `addjaneuser`, `tarzan`, `jp` | `root:root` | 755 |
 | `/etc/opt/jane` (directory) | `root:jane` | 751 |
-| `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` | `root:jane` | 640 |
-| `*.crt`, `standardintents.json` in `/etc/opt/jane` | `root:jane` | 644 |
+| directories inside `/etc/opt/jane` | `root:jane` | 750 |
+| `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` and its subdirectories (not `jp.key`) | `root:jane` | 640 |
+| `*.crt`, `standardintents.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
 | `/etc/opt/jane/provisioning.yaml.example` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
-| `/etc/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
+| `/lib/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 
 - `/etc/opt/jane` is 751: other users may open a file whose name they know (jp reading the element ID file) but cannot list the directory; secrets are protected by their own modes. The modes are already set inside the packages, so secrets are never readable by others, not even during installation.
-- Keys you add or replace (TLS, signing) must be readable by group `jane`: `chown root:jane FILE; chmod 640 FILE`. Files named `*.key` and `*.pem` are fixed on every upgrade; other names are left as you set them.
+- Keys you add or replace (TLS, signing) must be readable by group `jane`: `chown root:jane FILE; chmod 640 FILE`. Files named `*.key`, `*.pem` and `*.crt` in `/etc/opt/jane` and its subdirectories are fixed on every upgrade; other names are left as you set them. jp's API key file `/etc/opt/jane/jp.key` belongs to the users who run jp and is left alone (see [Authentication](authentication.md)).
+- Every install and upgrade also checks the files `config.yaml` names (the TLS certificates and keys, the signing key, the log file) as the `jane` user, and prints a warning for each one Jane cannot read or write: missing, unreadable, under a home directory (hidden by the sandbox), or a log outside `/var/log/jane`. Files outside `/etc/opt/jane` and `/var/log/jane` are never changed.
 - To read Jane's log as another user, add that user to group `jane`.
 - The element ID file `/etc/opt/jane/janeelementid` is written by jp as root, mode 444.
 
@@ -85,11 +87,12 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 
 | | jane | tarzan |
 |---|---|---|
-| Unit | `/etc/systemd/system/jane.service` | `/etc/systemd/system/tarzan.service` |
+| Unit | `/lib/systemd/system/jane.service` | `/lib/systemd/system/tarzan.service` |
 | Runs as | `jane` | `root` |
 | Command | `/opt/jane/janeserver --config=/etc/opt/jane/config.yaml` | `/opt/jane/tarzan -sys -tpm2 -uefi -ima` |
 | Environment file | `/etc/opt/jane/jane.env` | `/etc/opt/jane/tarzan.env` |
-| Started on install | no | yes |
+| Started on install | no (enabled) | yes |
+| Restarted on upgrade | no: restart it yourself | yes |
 | Restarts after failure | every 5 s | every 5 s |
 
 ```bash
@@ -101,7 +104,7 @@ journalctl -u jane                            # its output; -f to follow
 
 **Environment files.** systemd reads them (`EnvironmentFile=`), not Jane or tarzan; the programs only see the variables. Format: `KEY=value`, one per line, `#` for comments; quote values containing spaces or `#`. A missing file is fine. After editing: `systemctl restart jane` (or `tarzan`). The variables are listed in [Running](running.md#all-environment-variables).
 
-**Changing a unit.** Don't edit the packaged units; add a drop-in, which upgrades leave alone:
+**Changing a unit.** Don't edit the packaged units (an upgrade replaces them) and don't copy them to `/etc/systemd/system` (a copy there overrides the packaged unit and misses later changes). Add a drop-in, which upgrades leave alone; it lands in `/etc/systemd/system/<unit>.d/`:
 
 ```bash
 sudo systemctl edit tarzan
@@ -121,9 +124,21 @@ The empty `ExecStart=` clears the packaged command. Drop-ins also suit extra Jan
 
 Install the new packages the same way. Your changed conffiles are kept (dpkg asks if the packaged version changed too). Then:
 
-- jane is restarted if it was running, otherwise left stopped;
-- tarzan is restarted;
-- owners and modes are set again (table above).
+- **jane is not restarted**: a running Jane carries on as the old version until you restart it (`systemctl restart jane`); the package says so. It stays enabled.
+- tarzan is restarted; a warning is printed if it does not come up.
+- owners and modes are set again, and the files `config.yaml` names are checked (above).
+
+Jane and jp should be upgraded together, as the REST API and jp change together.
+
+### Upgrading from 1.5.4 or earlier
+
+Until 1.5.4 the units were conffiles in `/etc/systemd/system`. From 1.5.5 they are in `/lib/systemd/system`, and only that one unit file is used for each service:
+
+- an unchanged old unit in `/etc/systemd/system` is removed;
+- an **edited** old unit (or one made by hand) is moved to `/etc/opt/jane/jane.service.pre-1.5.5` (or `tarzan.service.pre-1.5.5`), readable by root only, and a warning is printed. Move what you still need into a drop-in: compare with `diff /etc/opt/jane/jane.service.pre-1.5.5 /lib/systemd/system/jane.service`, then `systemctl edit jane`;
+- dpkg's leftovers (`.dpkg-dist`, `.dpkg-old`, `.dpkg-bak`) are removed, the services are enabled again from the new location, and drop-ins you already have keep working. A masked unit stays masked.
+
+With a non-interactive upgrade (e.g. unattended-upgrades) nobody sees the warnings on screen; apt keeps them in `/var/log/apt/term.log`.
 
 Read the [changelog](../CHANGELOG.md) for each release; for example, load the standard intents again when a release adds intents.
 

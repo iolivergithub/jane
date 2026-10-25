@@ -1,0 +1,9 @@
+#!/bin/sh
+# preinst for the jane package. Until 1.5.4 the unit was shipped as a conffile in
+# /etc/systemd/system; from 1.5.5 it is an ordinary package file in
+# /lib/systemd/system (#96). dpkg-maintscript-helper retires the old conffile:
+# an unmodified copy is removed, an edited one ends up as jane.service.dpkg-bak,
+# which postinst then moves out of systemd's way.
+set -e
+dpkg-maintscript-helper rm_conffile /etc/systemd/system/jane.service 1.5.5~ -- "$@"
+exit 0

@@ -1,3 +1,2 @@
-/etc/systemd/system/tarzan.service
 /etc/opt/jane/provisioning.yaml.example
 /etc/opt/jane/tarzan.env
