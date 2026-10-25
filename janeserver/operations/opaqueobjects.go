@@ -59,7 +59,7 @@ func GetOpaqueObjects() ([]structures.OpaqueObject, error) {
 	return elems, dbcursorerror
 }
 
-// GetElementByItemID returns a single element or error
+// GetOpaqueObjectByValue returns a single opaque object or error
 func GetOpaqueObjectByValue(v string) (structures.OpaqueObject, error) {
 	var elem structures.OpaqueObject
 

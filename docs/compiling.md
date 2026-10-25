@@ -27,7 +27,7 @@ cd tarzan
 make build
 ```
 
-builds `tarzan` for linux/amd64 (`Makefile.arm64` and `Makefile.arm6` for ARM). tarzan runs on many systems; `go tool dist list` lists the possible `GOOS`/`GOARCH` pairs. For example:
+builds `tarzan` for linux/amd64 (`Makefile.arm64` for 64-bit ARM). tarzan runs on many systems; `go tool dist list` lists the possible `GOOS`/`GOARCH` pairs. For example:
 
 ```bash
 GOOS=linux   GOARCH=arm64 go build -o tarzan_arm64     # Raspberry Pi 4/5, 64-bit

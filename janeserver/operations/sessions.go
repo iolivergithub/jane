@@ -146,7 +146,7 @@ func AddResultToSession(sid string, rid string) error {
 	}
 }
 
-// GetElementByItemID returns a single element or error
+// GetSessionByItemID returns a single session or error
 func GetSessionByItemID(itemid string) (structures.Session, error) {
 	var elem structures.Session
 
