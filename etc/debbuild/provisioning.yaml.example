@@ -16,9 +16,10 @@
 #                                                                # TPM left unchanged, safe to automate
 #     /opt/jane/jp attest /etc/opt/jane/provisioning.yaml        # no root needed, never touches the TPM
 #
-# If Jane's REST API requires a login (auth: rest: true), give jp a Jane user:
-#     export JANE_USERNAME=... JANE_PASSWORD=...   (sudo -E keeps them for create/update)
-# or --user NAME --pass PASSWORD on the command line (both together).
+# If Jane's REST API requires an API key (auth: rest: true), give jp the key
+# (made on the Jane host with addjaneuser --apikey):
+#     export JANE_API_KEY=jane_...                 (sudo -E keeps it for create/update)
+# or --apikeyfile /etc/opt/jane/jp.key (a file holding the key alone).
 # Quick start: https://github.com/iolivergithub/jane/blob/main/docs/quickstart.md
 # Kept in step with provisioner/skeleton/examplecreateprovisioningfile.yaml.
 

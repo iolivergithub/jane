@@ -40,15 +40,14 @@ options:
   --recreate     create only: register a new element even though this
                  machine is already registered; the old element is left in
                  Jane, orphaned
-  --user NAME    Jane user, if Jane's REST API requires a login
-  --pass PASSWORD
-                 its password; --user and --pass must be given together and
-                 override JANE_USERNAME and JANE_PASSWORD. A password on the
-                 command line is visible to other users; prefer the variables
+  --apikeyfile PATH
+                 read the Jane REST API key from PATH (the key alone, e.g.
+                 /etc/opt/jane/jp.key); overrides JANE_API_KEY. Needed if
+                 Jane's REST API requires a key (auth: rest: true)
 
 environment:
-  JANE_USERNAME, JANE_PASSWORD
-                 Jane user and password for the REST API (sudo -E keeps them)
+  JANE_API_KEY   Jane REST API key, jane_... (sudo -E keeps it); keys are
+                 made with addjaneuser --apikey
   JANE_TPM_ENDORSEMENT_PASSWORD
                  the TPM's endorsement hierarchy password, if one is set
 
@@ -72,7 +71,7 @@ func run(argv []string) int {
 
 	// Flags may appear anywhere, as with the original argparse CLI.
 	reprovision, recreate := false, false
-	var user, pass *string
+	var keyFile *string
 	var pos []string
 	for i := 0; i < len(argv); i++ {
 		a := argv[i]
@@ -85,6 +84,9 @@ func run(argv []string) int {
 			fmt.Print(usage)
 			return exitOK
 		case a == "--user" || a == "--pass" || strings.HasPrefix(a, "--user=") || strings.HasPrefix(a, "--pass="):
+			fmt.Fprintf(os.Stderr, "jp: --user and --pass were removed in 1.5.5: Jane's REST API uses API keys; set JANE_API_KEY or give --apikeyfile\n%s", usage)
+			return exitUsage
+		case a == "--apikeyfile" || strings.HasPrefix(a, "--apikeyfile="):
 			name, val, hasVal := strings.Cut(a, "=")
 			if !hasVal {
 				if i+1 >= len(argv) {
@@ -94,11 +96,7 @@ func run(argv []string) int {
 				i++
 				val = argv[i]
 			}
-			if name == "--user" {
-				user = &val
-			} else {
-				pass = &val
-			}
+			keyFile = &val
 		default:
 			if len(a) > 1 && a[0] == '-' {
 				fmt.Fprintf(os.Stderr, "jp: unknown option %s\n%s", a, usage)
@@ -106,10 +104,6 @@ func run(argv []string) int {
 			}
 			pos = append(pos, a)
 		}
-	}
-	if (user == nil) != (pass == nil) {
-		fmt.Fprintf(os.Stderr, "jp: --user and --pass must be given together\n%s", usage)
-		return exitUsage
 	}
 	if len(pos) != 2 {
 		fmt.Fprint(os.Stderr, usage)
@@ -152,24 +146,54 @@ func run(argv []string) int {
 	if reprovision {
 		fmt.Println("--reprovisiontpm: tpmclear and tpmprovision in the worklist will change the TPM")
 	}
-	pv.Client.User, pv.Client.Pass = credentials(user, pass, os.Getenv)
-	if pass != nil {
-		fmt.Println("warning: --pass puts the password on the command line, where other users can see it; JANE_PASSWORD is safer")
+	key, err := apiKey(keyFile, os.Getenv, os.ReadFile)
+	if err != nil {
+		fmt.Println("jp:", err)
+		return exitUsage
 	}
-	if pv.Client.User != "" && insecureRemote(p.AttestationServer) {
-		fmt.Println("warning: sending Jane credentials over plain HTTP to", p.AttestationServer)
+	if key == "" && (os.Getenv("JANE_USERNAME") != "" || os.Getenv("JANE_PASSWORD") != "") {
+		fmt.Println("jp: JANE_USERNAME and JANE_PASSWORD are no longer used (1.5.5): Jane's REST API uses API keys; set JANE_API_KEY or give --apikeyfile")
+		return exitUsage
+	}
+	pv.Client.APIKey = key
+	if key != "" && insecureRemote(p.AttestationServer) {
+		fmt.Println("warning: sending the Jane API key over plain HTTP to", p.AttestationServer)
 	}
 	return pv.Run()
 }
 
-// credentials picks the Jane user and password for the REST API: --user and
-// --pass when given (always together), else JANE_USERNAME and JANE_PASSWORD.
-// An empty user means no credentials are sent.
-func credentials(user, pass *string, getenv func(string) string) (string, string) {
-	if user != nil {
-		return *user, *pass
+// apiKey picks the Jane REST API key: the contents of --apikeyfile when given,
+// else JANE_API_KEY. An empty result means no key is sent. A key that is not
+// "jane_" and 43 base64url characters is refused here, as Jane would refuse it.
+func apiKey(file *string, getenv func(string) string, readFile func(string) ([]byte, error)) (string, error) {
+	key := getenv("JANE_API_KEY")
+	from := "JANE_API_KEY"
+	if file != nil {
+		b, err := readFile(*file)
+		if err != nil {
+			return "", fmt.Errorf("cannot read the API key file: %v", err)
+		}
+		key, from = string(b), *file
 	}
-	return getenv("JANE_USERNAME"), getenv("JANE_PASSWORD")
+	key = strings.TrimSpace(key)
+	if key != "" && !validAPIKey(key) {
+		return "", fmt.Errorf("%s does not hold a Jane API key (jane_ followed by 43 characters, as printed by addjaneuser --apikey)", from)
+	}
+	return key, nil
+}
+
+// validAPIKey mirrors Jane's check (auth/restkeys.go): "jane_" and 43 base64url characters.
+func validAPIKey(k string) bool {
+	const prefix = "jane_"
+	if len(k) != len(prefix)+43 || !strings.HasPrefix(k, prefix) {
+		return false
+	}
+	for _, ch := range k[len(prefix):] {
+		if !(ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-' || ch == '_') {
+			return false
+		}
+	}
+	return true
 }
 
 // insecureRemote reports whether the attestation server URL is plain HTTP to

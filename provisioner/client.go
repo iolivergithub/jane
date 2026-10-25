@@ -16,15 +16,20 @@ import (
 type Client struct {
 	BaseURL string
 	HTTP    *http.Client
-	// User and Pass are sent as HTTP Basic credentials when User is set, for a
-	// Jane whose REST API requires a login (auth: rest: true) (#46).
-	User, Pass string
+	// APIKey is sent as "Authorization: Bearer <key>" on every request when
+	// set, for a Jane whose REST API requires one (auth: rest: true) (#89).
+	APIKey string
 }
 
-// errUnauthorized is returned for an HTTP 401 answer: Jane wants credentials,
-// or refused the ones given.
-var errUnauthorized = errors.New("Jane refused the request with HTTP 401 (login required or wrong credentials); " +
-	"set JANE_USERNAME and JANE_PASSWORD, or give --user and --pass")
+// errUnauthorized is returned for an HTTP 401 answer: Jane wants an API key,
+// or refused the one given.
+var errUnauthorized = errors.New("Jane refused the request with HTTP 401 (API key required, or not accepted); " +
+	"set JANE_API_KEY or give --apikeyfile. Jane and jp must both be 1.5.5 or later: older versions used a username and password")
+
+// errTooManyFailures is returned for an HTTP 429 answer: this address made too
+// many failed attempts and Jane refuses it for a few minutes.
+var errTooManyFailures = errors.New("Jane refused the request with HTTP 429: too many failed attempts from this address; " +
+	"check the API key and try again in a few minutes")
 
 func NewClient(base string) *Client {
 	return &Client{
@@ -68,8 +73,8 @@ func (c *Client) do(method, path string, body any) (int, []byte, error) {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if c.User != "" {
-		req.SetBasicAuth(c.User, c.Pass)
+	if c.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.APIKey)
 	}
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
@@ -79,6 +84,9 @@ func (c *Client) do(method, path string, body any) (int, []byte, error) {
 	rb, err := io.ReadAll(resp.Body)
 	if err == nil && resp.StatusCode == http.StatusUnauthorized {
 		err = errUnauthorized
+	}
+	if err == nil && resp.StatusCode == http.StatusTooManyRequests {
+		err = errTooManyFailures
 	}
 	return resp.StatusCode, rb, err
 }

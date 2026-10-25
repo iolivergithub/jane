@@ -1,6 +1,6 @@
 # addjaneuser
 
-Adds a user to Jane, or sets a new password for an existing one. Users are needed when the Web UI login (`auth: web: true`) or REST basic auth (`auth: rest: true`) is enabled in `config.yaml`; see [janeserver/auth/README.md](../../janeserver/auth/README.md).
+Adds a user to Jane, sets a new password for an existing one, or makes or revokes a user's REST API key. Users with passwords are needed when the Web UI login (`auth: web: true`) or x3270 logon (`auth: x3270: true`) is enabled in `config.yaml`; users with API keys when the REST API requires one (`auth: rest: true`). See [docs/authentication.md](../../docs/authentication.md).
 
 The Jane deb package installs it as `/opt/jane/addjaneuser`, with this README at `/usr/share/doc/janeattestationengine/addjaneuser.md`. The package only *recommends* the Python packages below, so install them if they were skipped. The packaged `config.yaml` uses the database name `asvr`.
 
@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```
-addjaneuser [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
+addjaneuser [--apikey | --revokeapikey] [--dbuser NAME --dbpass PASSWORD] USERNAME MONGODB_URL DATABASE
 ```
 
 `MONGODB_URL` and `DATABASE` are the `database: connection` and `database: name` values from Jane's `config.yaml`, for example:
@@ -40,6 +40,14 @@ The password is asked for twice and never appears on the command line. To run it
 ```
 echo 'secret' | ./addjaneuser ian mongodb://127.0.0.1:27017 asvr
 ```
+
+### API keys
+
+```
+KEY=$(./addjaneuser --apikey cluster-a mongodb://127.0.0.1:27017 asvr)
+```
+
+makes a new REST API key for `cluster-a` (creating the user if needed) and prints it once, alone on standard output. Only its SHA-256 is stored, so it cannot be shown again. A user has at most one key: a new one replaces the old, which stops working at once. `--revokeapikey` removes the key and keeps the user. Clients send it as `Authorization: Bearer jane_...`; jp reads it from `JANE_API_KEY` or `--apikeyfile`.
 
 `./addjaneuser -h` prints the full help.
 
