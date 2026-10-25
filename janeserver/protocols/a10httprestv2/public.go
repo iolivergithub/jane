@@ -60,7 +60,7 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 	// Then those supplied by the policy and finally the additional parameters
 	// Only certain intents supply parameters and these are dealt with on a case by case basis here
 	//
-	// First we construct "ips" which is the intial set of parameters
+	// First we construct "ips" which is the initial set of parameters
 	//
 	// For sanity reasons (and Go's strong typing, the parameters is a plain key,value list)
 	var ips map[string]interface{} = make(map[string]interface{})

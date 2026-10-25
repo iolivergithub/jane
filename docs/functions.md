@@ -14,7 +14,7 @@ This function requests a TPM 2.0 quote.
 | tpm2/akhandle | Y | String | The handle of the attestation signing key |
 | tpm2/device | Y | String | The TPM device to read from |
 
-Note, some parameters may be set in the element defintion or overridden by any explicitly supplied parameters.
+Note, some parameters may be set in the element definition or overridden by any explicitly supplied parameters.
 
 On Windows machines the tpm2/device parameter has no effect as the operating system decides which device to use.
 
@@ -28,7 +28,7 @@ The function returns the current state of all PCR banks on a TPM 2.0 device.
 | --- | --- | --- | --- |
 | tpm2/device | Y | String | The TPM device to read from |
 
-Note, some parameters may be set in the element defintion or overridden by any explicitly supplied parameters.
+Note, some parameters may be set in the element definition or overridden by any explicitly supplied parameters.
 
 On Windows machines the tpm2/device parameter has no effect as the operating system decides which device to use.
 
