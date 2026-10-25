@@ -53,13 +53,13 @@ builds and strips `jp` for linux/amd64 (`Makefile.arm64` for ARM). jp also build
 janeserver and tarzan show a version and build string at start-up and in the Web UI. The Makefiles set the build string from the date and `VERSION` (default `locally_compiled`):
 
 ```bash
-make build VERSION=1.5.4
+make build VERSION=1.5.5
 ```
 
 or, building directly:
 
 ```bash
-go build -ldflags="-X 'main.VERSION=1.5.4' -X 'main.BUILD=$(date)'" -o janeserver
+go build -ldflags="-X 'main.VERSION=1.5.5' -X 'main.BUILD=$(date)'" -o janeserver
 ```
 
 ## Tests
@@ -80,7 +80,7 @@ cd etc/debbuild
 ./debbuild.sh
 ```
 
-Check first that the last line of `versions.txt` is the version you want (`1.5.4 dd mis yyyy`, the month in Welsh). The script compiles janeserver, tarzan and jp, builds the two deb packages in `/tmp/janedebbuild` (`jane_<version>_amd64.deb`, `tarzan_<version>_amd64.deb`), sets the file modes inside them, converts them to RPMs with `alien`, lints them with `lintian`, and gzips the results.
+Check first that the last line of `versions.txt` is the version you want (`1.5.5 dd mis yyyy`, the month in Welsh). The script compiles janeserver, tarzan and jp, builds the two deb packages in `/tmp/janedebbuild` (`jane_<version>_amd64.deb`, `tarzan_<version>_amd64.deb`), sets the file modes inside them, converts them to RPMs with `alien`, lints them with `lintian`, and gzips the results.
 
 `alien` and `lintian` are optional: without them those steps print errors, but the deb files are still built. The RPMs are not tested (the install scripts assume Debian tools and systemd).
 
