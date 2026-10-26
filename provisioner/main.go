@@ -8,7 +8,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -225,15 +224,6 @@ func (pv *Provisioner) Run() int {
 	if err := pv.idFileUnreadable(); err != nil {
 		fmt.Println("Error:", err)
 		return exitError
-	}
-	if pv.Op == "update" || pv.Op == "attest" {
-		if err := pv.migrateIDFile(); err != nil {
-			fmt.Println("Error:", err)
-			if errors.Is(err, fs.ErrPermission) {
-				fmt.Printf("The element ID file moves from %s to %s once; run jp once with sudo to do that.\n", pv.LegacyIDFile, pv.IDFile)
-			}
-			return exitError
-		}
 	}
 	exists := pv.idFileExists()
 

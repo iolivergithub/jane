@@ -225,7 +225,7 @@ A variable must be defined earlier in the file; mistakes stop jp with exit 2 bef
 
 | File | Notes |
 |---|---|
-| `/etc/opt/jane/janeelementid` | the element's item ID, written by `create` (read-only, 444). Windows: `%ProgramData%\jane\janeelementid`. Before 1.5.3 it was `/etc/janeelementid`; `update` and `attest` copy it over once (this needs root once) |
+| `/etc/opt/jane/janeelementid` | the element's item ID, written by `create` (read-only, 444). Windows: `%ProgramData%\jane\janeelementid`. (Before 1.5.3 it was `/etc/janeelementid`; since 1.5.6 jp no longer moves it — move it by hand.) |
 | provisioning file | anywhere; `/etc/opt/jane/provisioning.yaml` by convention |
 | `ek.pub`, `ak.pub`, `ak.name` | written to the temporary directory by `tpmprovision` |
 

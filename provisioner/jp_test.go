@@ -200,7 +200,6 @@ func newHarness(t *testing.T, op string) *harness {
 	pv := NewProvisioner(p, op)
 	pv.ReprovisionTPM = op != "attest" // as if --reprovisiontpm were given
 	pv.IDFile = filepath.Join(t.TempDir(), "janeelementid")
-	pv.LegacyIDFile = filepath.Join(t.TempDir(), "legacy-janeelementid") // never the real /etc
 	pv.Out = io.Discard
 	pv.Now = func() time.Time { return time.Date(2026, 9, 29, 19, 53, 12, 123456000, time.UTC) }
 	pv.KeyDir = t.TempDir()
@@ -230,8 +229,8 @@ func TestLoadExampleFile(t *testing.T) {
 	if p.EVS[1].IntentID != "std::intent::sha256::crtm::pcr0" {
 		t.Errorf("ev order not kept: %s", p.EVS[1].IntentID)
 	}
-	if got := p.ProvisionWorklist[len(p.ProvisionWorklist)-1]; got != "processevs_withrules" {
-		t.Errorf("last worklist item = %s (commented-out processevs should be skipped)", got)
+	if got := p.ProvisionWorklist[len(p.ProvisionWorklist)-1]; got != "processevs" {
+		t.Errorf("last worklist item = %s (the commented-out step should be skipped)", got)
 	}
 	if p.Endpoints["tarzan"].Protocol != "A10HTTPRESTv2" {
 		t.Errorf("endpoints = %+v", p.Endpoints)
@@ -677,11 +676,9 @@ func TestAttestNoIntents(t *testing.T) {
 	}
 }
 
-func TestDeprecatedWithRulesRunsNoRules(t *testing.T) {
+func TestProcessEVsRunsNoRules(t *testing.T) {
 	h := newHarness(t, "create")
-	var out bytes.Buffer
-	h.pv.Out = &out
-	h.pv.P.ProvisionWorklist = []string{"processelement", "processevs_withrules"}
+	h.pv.P.ProvisionWorklist = []string{"processelement", "processevs"}
 	if _, err := h.pv.ProcessWorklist(); err != nil {
 		t.Fatal(err)
 	}
@@ -689,10 +686,25 @@ func TestDeprecatedWithRulesRunsNoRules(t *testing.T) {
 		t.Errorf("verify called %d times; create/update run no rules (#72)", n)
 	}
 	if h.jane.count("POST /expectedValue") == 0 {
-		t.Error("expected values should still be recorded")
+		t.Error("expected values should be recorded")
 	}
-	if !strings.Contains(out.String(), "processevs_withrules: deprecated, using processevs") {
+}
+
+// processevs_withrules, a deprecated alias since 1.5.3, was removed in 1.5.6
+// (#81): it is now an unknown step, so no expected values are recorded.
+func TestWithRulesAliasRemoved(t *testing.T) {
+	h := newHarness(t, "create")
+	var out bytes.Buffer
+	h.pv.Out = &out
+	h.pv.P.ProvisionWorklist = []string{"processelement", "processevs_withrules"}
+	if _, err := h.pv.ProcessWorklist(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "Unknown provision work command processevs_withrules") {
 		t.Errorf("output:\n%s", out.String())
+	}
+	if n := h.jane.count("POST /expectedValue") + h.jane.count("PUT /expectedValue"); n != 0 {
+		t.Errorf("%d expected values written by a removed step", n)
 	}
 }
 
