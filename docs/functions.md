@@ -79,6 +79,8 @@ Runs TPM2_GetCapability and reports which TPM the element has and how it is conf
 
 The claim body has `summary` (manufacturer, vendorstring, firmwareversion, family, level, revision, fips140_2), `properties` (every fixed and variable TPM property by its TCG name, e.g. `TPM_PT_MANUFACTURER`), `pcrbanks` (bank: number of PCRs allocated), `algorithms`, `ecccurves`, `persistenthandles` and `commands` (each command the TPM implements, by TCG name and code, e.g. `TPM_CC_Quote (0x158)`; a command not in tarzan's table, newer or vendor-specific, is given by its code; tarzan 1.5.5 and later).
 
+`algorithms`, `ecccurves` and `commands` are optional (tarzan 1.5.6 and later, #124): if the TPM refuses one of these queries, that list is empty and `unavailable` gives the reason, e.g. `"unavailable": {"commands": "TPM2_GetCapability(...) failed: TPM_RC_VALUE"}`; the rest of the claim is still returned. A TPM whose algorithm list has no `TPM_ALG_ECC` is not asked for its ECC curves (some older TPMs, e.g. an Infineon SLB 9665 with firmware 5.0, refuse that query instead of returning an empty list): `ecccurves` is empty and `unavailable.ecccurves` says "ECC not supported by this TPM". The claim page shows these reasons. `unavailable` is absent when everything could be read.
+
 ## uefi/eventlog
 This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; the `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim.
 
