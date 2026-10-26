@@ -10,7 +10,7 @@ Since 1.5.6 (#102) there is a published set, like the [standard intents](standar
 ]
 ```
 
-The published list starts empty; entries are added over time.
+The published list starts small (VirtualBox 7 UEFI CRTM values in 1.5.6); entries are added over time.
 
 ## Loading
 

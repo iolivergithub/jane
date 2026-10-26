@@ -1,1 +1,14 @@
-[]
+[
+    {
+        "value": "c4b0dc9f0f6185483ec8b40c3a8c06fdef7187e0",
+        "type": "pcr",
+        "shortdescription": "VBOX 7 UEFI CRTM SHA1",
+        "longdescription": "VirtualBox 7 UEFI firmware: CRTM (PCR 0) value in the SHA-1 bank"
+    },
+    {
+        "value": "fcf4d7b42f073a5cf8fa5929cc2f5ac07039ca7a999b7e078faa2af6870a1250",
+        "type": "pcr",
+        "shortdescription": "VBOX 7 UEFI CRTM SHA256",
+        "longdescription": "VirtualBox 7 UEFI firmware: CRTM (PCR 0) value in the SHA-256 bank"
+    }
+]
