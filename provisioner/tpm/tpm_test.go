@@ -207,3 +207,19 @@ func TestProvisioning(t *testing.T) {
 		t.Errorf("handles still persistent after evict: %v", hs)
 	}
 }
+
+// The owner hierarchy password comes from JANE_TPM_OWNER_PASSWORD; unset or
+// empty means the empty password (#86).
+func TestOwnerPassword(t *testing.T) {
+	t.Setenv(OwnerPasswordVar, "")
+	if p := ownerPassword(); len(p) != 0 {
+		t.Errorf("empty variable: password %q, want empty", p)
+	}
+	t.Setenv(OwnerPasswordVar, "s3cret")
+	if p := ownerPassword(); string(p) != "s3cret" {
+		t.Errorf("password %q, want s3cret", p)
+	}
+	if h := ownerAuth().Handle; h != tpm2.TPMRHOwner {
+		t.Errorf("owner auth handle %v, want TPM_RH_OWNER", h)
+	}
+}

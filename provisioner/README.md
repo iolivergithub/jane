@@ -42,7 +42,8 @@ Jane on HTTPS with a self-signed certificate, set `SSL_CERT_FILE` to it
 (Linux/BSD).
 
 If the TPM's endorsement hierarchy has a password, set
-`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads).
+`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads); if its
+owner hierarchy has one, set `JANE_TPM_OWNER_PASSWORD` (jp only).
 
 | | Unix-likes | Windows |
 |---|---|---|
@@ -214,9 +215,9 @@ hooks) without any risk to the TPM keys.
   the section as written.
 
 Handles must be persistent handles (0x81xxxxxx), in hex or decimal.
-The owner hierarchy is authorised with the empty password, as with tpm2-tools'
-defaults; the endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`
-(empty if unset).
+The owner hierarchy is authorised with `JANE_TPM_OWNER_PASSWORD` and the
+endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`; each is the empty
+password if unset, as with tpm2-tools' defaults.
 
 ## Tests
 

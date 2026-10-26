@@ -49,6 +49,9 @@ environment:
                  made with addjaneuser --apikey
   JANE_TPM_ENDORSEMENT_PASSWORD
                  the TPM's endorsement hierarchy password, if one is set
+  JANE_TPM_OWNER_PASSWORD
+                 the TPM's owner hierarchy password, if one is set (used to
+                 make the EK and AK persistent and to evict them)
 
 jp never asks questions: anything destructive needs its own flag
 (--reprovisiontpm, --recreate). create and update need root (the TPM and

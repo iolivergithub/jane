@@ -203,7 +203,7 @@ jp registers this machine with Jane, provisions its TPM keys, records its expect
 jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
 ```
 
-In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
+In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD`, `JANE_TPM_OWNER_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
 
 ## All environment variables
 
@@ -217,4 +217,5 @@ In short: `create` (first registration) and `update` (after firmware or OS updat
 | `JANE_X3270_DEBUG` | janeserver | log the x3270 data stream | off |
 | `JANE_API_KEY` | jp | Jane REST API key (`jane_...`); `--apikeyfile` overrides it | no key sent |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | tarzan, jp | TPM endorsement hierarchy password | empty password |
+| `JANE_TPM_OWNER_PASSWORD` | jp | TPM owner hierarchy password (persisting and evicting the EK/AK) | empty password |
 | `SSL_CERT_FILE` | jp (Go) | extra trusted certificates for HTTPS | system store |

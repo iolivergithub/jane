@@ -255,7 +255,7 @@ Environment variables can be read by root and by the same user (`/proc/<pid>/env
 
 - Never add `-unsafe`: it lets any caller read any file as root.
 - tarzan has no authentication (issue #58): firewall port 8530 so only Jane's machine can reach it.
-- If the TPM's endorsement hierarchy has a password (`tpm2_changeauth -c e ...`), put it in `/etc/opt/jane/tarzan.env` as `JANE_TPM_ENDORSEMENT_PASSWORD`, and give jp the same variable (`sudo -E`). tarzan's `tpm2/gettime` cannot use it (a limitation of the TPM library) and fails while a password is set; `tpm2/activatecredential` and jp do use it. `tpm2_changeauth -c e -p <old>` clears it.
+- If the TPM's endorsement hierarchy has a password (`tpm2_changeauth -c e ...`), put it in `/etc/opt/jane/tarzan.env` as `JANE_TPM_ENDORSEMENT_PASSWORD`, and give jp the same variable (`sudo -E`). tarzan's `tpm2/gettime` cannot use it (a limitation of the TPM library) and fails while a password is set; `tpm2/activatecredential` and jp do use it. `tpm2_changeauth -c e -p <old>` clears it. Likewise, if the owner hierarchy has a password (`tpm2_changeauth -c o ...`), give it to jp as `JANE_TPM_OWNER_PASSWORD` (`sudo -E`); tarzan does not use the owner hierarchy.
 
 **Check:** from another machine, port 8530 is closed (except from Jane's machine); tarzan's start-up output lists only the APIs you want.
 

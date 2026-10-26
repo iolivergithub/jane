@@ -128,8 +128,19 @@ type TPM struct {
 	T transport.TPM
 }
 
+// OwnerPasswordVar names the environment variable holding the TPM's owner
+// hierarchy password (#86), used when making the EK and AK persistent and
+// when evicting them (EvictControl). Unset or empty means the empty password,
+// as before. tarzan does not use the owner hierarchy. Run jp with sudo -E (or
+// sudo --preserve-env=JANE_TPM_OWNER_PASSWORD) to keep it.
+const OwnerPasswordVar = "JANE_TPM_OWNER_PASSWORD"
+
+func ownerPassword() []byte {
+	return []byte(os.Getenv(OwnerPasswordVar))
+}
+
 func ownerAuth() tpm2.AuthHandle {
-	return tpm2.AuthHandle{Handle: tpm2.TPMRHOwner, Auth: tpm2.PasswordAuth(nil)}
+	return tpm2.AuthHandle{Handle: tpm2.TPMRHOwner, Auth: tpm2.PasswordAuth(ownerPassword())}
 }
 
 // EndorsementPasswordVar names the environment variable holding the TPM's

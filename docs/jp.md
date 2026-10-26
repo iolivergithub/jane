@@ -108,9 +108,10 @@ sudo -E /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 |---|---|
 | `JANE_API_KEY` | the Jane REST API key (`jane_...`, made with `addjaneuser --apikey`), when Jane's `auth: rest: true` |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, only if one is set (`tpm2_changeauth -c e`); used when creating the EK. Unset means the empty password |
+| `JANE_TPM_OWNER_PASSWORD` | the TPM's owner hierarchy password, only if one is set (`tpm2_changeauth -c o`); used when making the EK and AK persistent and when `tpmclear` evicts them. Unset means the empty password. tarzan does not need it |
 | `SSL_CERT_FILE` | (Linux/BSD) a certificate to trust for Jane's HTTPS, e.g. Jane's self-signed certificate |
 
-`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_API_KEY,JANE_TPM_ENDORSEMENT_PASSWORD`, or give the key with `--apikeyfile`.
+`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_API_KEY,JANE_TPM_ENDORSEMENT_PASSWORD,JANE_TPM_OWNER_PASSWORD`, or give the key with `--apikeyfile`.
 
 `JANE_USERNAME`, `JANE_PASSWORD`, `--user` and `--pass` were removed in 1.5.5: jp stops with a message if it is given them without a key. Jane and jp must both be 1.5.5 or later.
 
