@@ -42,3 +42,8 @@ require (
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 )
+
+// localnames: multicast DNS for <name>.local (#127), in this repository
+require localnames v0.0.0
+
+replace localnames => ../localnames

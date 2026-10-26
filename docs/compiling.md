@@ -1,6 +1,6 @@
 # Compiling
 
-janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`. Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
+janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`; janeserver and jp also use the small library module `localnames/` (multicast DNS for `.local` names, #127, see [Running](running.md#host-names-ending-in-local)) through a `replace` in their `go.mod` (nothing to install separately). Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
 
 - [Building one component](#building-one-component)
 - [Architectures](#architectures)
@@ -91,6 +91,8 @@ In each module:
 go vet -composites=false ./...      # janeserver; plain go vet ./... for tarzan and provisioner (make vet does the right one)
 go test ./...
 ```
+
+and in `localnames/`, `go mod tidy && go test ./...`.
 
 Tests that need a real TPM are skipped unless an environment variable names the device: `JANE_TEST_TPM` (janeserver), `TARZAN_TEST_TPM` (tarzan), `JP_TEST_TPM` (jp), e.g. `TARZAN_TEST_TPM=/dev/tpmrm0 go test ./tpm2`. They create only transient objects. Some jp tests check behaviour without root and are skipped when run as root.
 

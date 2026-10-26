@@ -3,6 +3,7 @@
 This is the reference for every option, flag and environment variable of the programs, and for running them by hand or on systems other than Debian. For a first installation follow the [Quick start](quickstart.md); for securing an installation see [Hardening](hardening.md); for what the deb packages install and how systemd runs them see [Installing with dpkg/apt](deb.md).
 
 - [What runs where](#what-runs-where)
+- [Host names ending in .local](#host-names-ending-in-local)
 - [MongoDB and Mosquitto](#mongodb-and-mosquitto)
 - [janeserver](#janeserver)
 - [addjaneuser](#addjaneuser)
@@ -20,6 +21,14 @@ This is the reference for every option, flag and environment variable of the pro
 | jp | each element | janeserver's REST API; the local TPM |
 
 Installed from the deb packages, the programs are in `/opt/jane` and their configuration in `/etc/opt/jane`. Built from source (see [Compiling](compiling.md)) they can live anywhere.
+
+## Host names ending in .local
+
+janeserver, tarzan and jp are built without cgo (pure Go, so that every architecture builds on one machine). They therefore use Go's own name resolver, which reads `/etc/hosts` and asks the DNS servers in `/etc/resolv.conf`, but not avahi's nss-mdns, which resolves `<name>.local` for programs using glibc (#127).
+
+Since 1.5.6b, janeserver and jp resolve `.local` names themselves with multicast DNS, in pure Go (package `localnames`): every name is looked up as before, and **only if that fails** and the name ends in `.local` is it asked for by multicast DNS (up to 3 s). DNS, `/etc/hosts` and IP addresses behave exactly as before. This covers all their HTTP requests: jp to Jane (`attestationserver:`), Jane to trust agents (element endpoints, e.g. `http://pi.local:8530`), the EK certificate `issuerurl`, and the standard intents and objects downloads. It does **not** cover the MongoDB and MQTT broker addresses in `config.yaml`; give those as IP addresses or names in `/etc/hosts` or DNS (the shipped `127.0.0.1` is fine).
+
+Multicast DNS needs multicast on the local network: it works on most home and office LANs, not across routers, in clouds or in Kubernetes overlay networks. Anyone on the LAN can answer a multicast DNS query, as with avahi; where that matters use IP addresses, `/etc/hosts`, DNS, or HTTPS with a verified certificate. jp and janeserver open UDP port 5353 for the queries when they first need one; avahi keeps working alongside.
 
 ## MongoDB and Mosquitto
 
