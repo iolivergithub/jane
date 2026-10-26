@@ -1,0 +1,27 @@
+{{define "claim_tpm2getcert.html"}}
+<p class="small text-body-secondary mb-2">Read from the TPM's NV storage and not signed: run <span class="font-monospace">tpm2_ekCertMatchesEK</span> and <span class="font-monospace">tpm2_ekCertIssuer</span> to check it.</p>
+
+{{ with .summary }}
+{{ if .parseerror }}<div class="alert alert-warning py-1 small">The certificate could not be parsed: <span class="font-monospace">{{ .parseerror }}</span></div>{{ end }}
+<table class="table table-sm table-striped">
+   <tbody>
+      <tr><td>Subject</td><td class="font-monospace">{{ if .subject }}{{ .subject }}{{ else }}<span class="text-body-secondary">(empty, as usual for EK certificates)</span>{{ end }}</td></tr>
+      <tr><td>Issuer</td><td class="font-monospace">{{ .issuer }}</td></tr>
+      <tr><td>Serial</td><td class="font-monospace">{{ .serial }}</td></tr>
+      <tr><td>Valid</td><td class="font-monospace">{{ .notbefore }} &ndash; {{ .notafter }}</td></tr>
+      <tr><td>Key</td><td>{{ .keytype }}{{ with .keybits }} {{ . }} bits{{ end }}</td></tr>
+      {{ if or .tpmmanufacturer .tpmmodel .tpmversion }}
+      <tr><td>TPM (SAN)</td><td class="font-monospace">manufacturer {{ .tpmmanufacturer }}, model {{ .tpmmodel }}, version {{ .tpmversion }}</td></tr>
+      {{ end }}
+      <tr><td>Issuer certificate (AIA)</td><td class="font-monospace small">{{ range .issuingcertificateurl }}<a href="{{ . }}">{{ . }}</a><br>{{ else }}<span class="text-body-secondary">none</span>{{ end }}</td></tr>
+      {{ with .ocsp }}<tr><td>OCSP</td><td class="font-monospace small">{{ range . }}{{ . }}<br>{{ end }}</td></tr>{{ end }}
+      <tr><td>SHA-256</td><td class="font-monospace small text-break">{{ .sha256 }}</td></tr>
+   </tbody>
+</table>
+{{ end }}
+
+<details>
+   <summary class="small text-body-secondary">Certificate (DER, base64): {{ .size }} bytes from NV index {{ .handle }}</summary>
+   <pre class="font-monospace small text-break" style="white-space: pre-wrap;">{{ .certificate }}</pre>
+</details>
+{{end}}

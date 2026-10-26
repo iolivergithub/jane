@@ -1,0 +1,88 @@
+# Jane all-in-one (Jane, MongoDB, Mosquitto) on Kubernetes: a QUICK START,
+# for kubectl apply -f etc/dockerfiles/jane-k8s.yaml (#93).
+#
+# NOT HARDENED, like the image: no Secrets, no TLS, no NetworkPolicy,
+# anonymous MQTT, MongoDB without an account. MongoDB's data is on an emptyDir
+# and is lost when the pod goes (see the PersistentVolumeClaim below).
+# linux/amd64 only: a template anywhere else. See docs/containers.md.
+#
+# Build the image from etc/dockerfiles/Dockerfile, push it to your registry
+# (on K3s: k3s ctr images import instead) and change the image line below.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jane
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jane
+  namespace: jane
+  labels:
+    app: jane
+spec:
+  replicas: 1                      # one: MongoDB and Mosquitto are inside the pod
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jane
+  template:
+    metadata:
+      labels:
+        app: jane
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: jane
+          image: registry.example.org/jane/jane-allinone:1.5.6   # CHANGE: your image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: rest,   containerPort: 8520 }
+            - { name: webui,  containerPort: 8540 }
+            - { name: x3270,  containerPort: 3270 }
+            - { name: mqtt,   containerPort: 1883 }
+            - { name: mqttws, containerPort: 8081 }
+          readinessProbe:
+            tcpSocket:
+              port: 8540
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+      volumes:
+        - name: mongodb-data
+          emptyDir: {}
+          # to keep the data, use the PersistentVolumeClaim below instead:
+          #persistentVolumeClaim:
+          #  claimName: jane-mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jane
+  namespace: jane
+spec:
+  type: LoadBalancer               # cloud clusters, K3s (ServiceLB), minikube tunnel; or NodePort
+  selector:
+    app: jane
+  ports:
+    - { name: rest,   port: 8520, targetPort: 8520 }
+    - { name: webui,  port: 8540, targetPort: 8540 }
+    - { name: x3270,  port: 3270, targetPort: 3270 }
+    - { name: mqtt,   port: 1883, targetPort: 1883 }
+    - { name: mqttws, port: 8081, targetPort: 8081 }
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: jane-mongodb
+#   namespace: jane
+# spec:
+#   accessModes: [ReadWriteOnce]
+#   resources:
+#     requests:
+#       storage: 5Gi

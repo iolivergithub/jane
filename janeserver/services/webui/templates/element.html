@@ -55,6 +55,7 @@
       <div class="small text-body-secondary font-monospace mb-1"><span data-copy>{{ .E.ItemID }}</span> <button type="button" class="btn btn-link btn-sm p-0 align-baseline j-copy" title="Copy the ID" aria-label="Copy the ID"><i class="fa fa-clipboard"></i></button></div>
       {{ if .E.Description }}<div class="mb-2">{{ .E.Description }}</div>{{ end }}
       <div class="d-flex flex-wrap gap-1">
+         {{ if .E.ElementType }}<span class="badge bg-body-secondary text-body-emphasis border" title="Element type">{{ .E.ElementType }}</span>{{ end }}
          {{ range .E.Tags }}<span class="badge bg-secondary">{{ . }}</span>{{ end }}
          {{ if .E.TPM2.Device }}<span class="badge text-bg-success">TPM2</span>{{ end }}
          {{ if .E.UEFI.Eventlog }}<span class="badge text-bg-info">UEFI</span>{{ end }}
@@ -113,6 +114,9 @@
          </li>
          <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-tpm2" type="button" role="tab"><i class="fa fa-microchip me-1"></i> TPM2</button>
+         </li>
+         <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-relationships" type="button" role="tab"><i class="fa fa-sitemap me-1"></i> Relationships <span class="badge bg-secondary">{{ len .Related }}{{ if .RelatedFrom }}+{{ len .RelatedFrom }}{{ end }}</span></button>
          </li>
          <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-history" type="button" role="tab"><i class="fa fa-history me-1"></i> Record history</button>
@@ -178,6 +182,43 @@
             </div>
          </div>
          {{ else }}<i class="text-body-secondary">No TPM device present</i>{{ end }}
+      </div>
+
+      <div class="tab-pane fade" id="det-relationships" role="tabpanel">
+         {{/* display only; changed through the REST API (#118) */}}
+         <div class="row g-3">
+            <div class="col-lg-6">
+               <h6 class="text-body-secondary">This element</h6>
+               {{ if .Related }}
+               <table class="table table-sm mb-0">
+                  <tbody>
+                     {{ range .Related }}
+                     <tr>
+                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary-emphasis">{{ .RelationshipType }}</span></td>
+                        <td>{{ if .Missing }}<span class="font-monospace small">{{ .ItemID }}</span> <span class="text-body-secondary">(missing)</span>{{ else }}<a href="/element/{{ .ItemID }}">{{ .Name }}</a>{{ end }}</td>
+                     </tr>
+                     {{ end }}
+                  </tbody>
+               </table>
+               {{ else }}<i class="text-body-secondary">No relationships</i>{{ end }}
+            </div>
+            <div class="col-lg-6">
+               <h6 class="text-body-secondary">Related from</h6>
+               {{ if .RelatedFrom }}
+               <table class="table table-sm mb-0">
+                  <tbody>
+                     {{ range .RelatedFrom }}
+                     <tr>
+                        <td><a href="/element/{{ .ItemID }}">{{ .Name }}</a></td>
+                        <td class="text-nowrap"><span class="badge bg-primary-subtle text-primary-emphasis">{{ .RelationshipType }}</span> this element</td>
+                     </tr>
+                     {{ end }}
+                  </tbody>
+               </table>
+               {{ else }}<i class="text-body-secondary">No other element relates to this one</i>{{ end }}
+            </div>
+         </div>
+         <div class="small text-body-secondary mt-2">Relationships are changed through the REST API (<span class="font-monospace">/element/&lt;itemid&gt;/relationships</span>).</div>
       </div>
 
       <div class="tab-pane fade" id="det-history" role="tabpanel">

@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/go-tpm/tpm2"
-	_ "github.com/google/go-tpm/tpm2/transport"
-	_ "github.com/google/go-tpm/tpm2/transport/linuxtpm"
 )
 
 type tpm2taErrorReturn struct {

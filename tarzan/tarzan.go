@@ -18,7 +18,7 @@ import (
 )
 
 // Version number. A var rather than a const so it can be overridden at build time with
-// -ldflags "-X 'main.VERSION=...'"; the Makefiles set only BUILD.
+// -ldflags "-X 'main.VERSION=...'"; the Makefile sets it when given VERSION=, and always sets BUILD.
 var VERSION string = "v0.2"
 
 var BUILD string = "not set"
@@ -84,6 +84,9 @@ func startRESTInterface(sys, tpm2, uefi, ima, txt bool, p *string) {
 	}
 	if ima == true {
 		fmt.Println("   +-- IMA attestation API enabled")
+		if runtime.GOOS == "windows" {
+			fmt.Println("   +-- WARNING: there is no IMA on Windows; ima/asciilog will answer \"not supported\"")
+		}
 		setupIMAendpoints(router)
 	}
 
@@ -143,6 +146,7 @@ func setupTPM2endpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/tpm2/activatecredential", tpm2.ActivateCredential)
 	router.POST(PREFIX+"/tpm2/gettime", tpm2.GetTime)
 	router.POST(PREFIX+"/tpm2/capabilities", tpm2.Capabilities)
+	router.POST(PREFIX+"/tpm2/getcert", tpm2.GetCert)
 
 	//router.POST(PREFIX+"/tpm2/pcrs", tpm2.PCRs)
 	//router.POST(PREFIX+"/tpm2/quote", tpm2.Quote)

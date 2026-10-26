@@ -6,7 +6,9 @@ Go port of `provisioner/jp.py`. It registers the machine as an element with a
 Jane attestation server, can clear and provision the TPM, and records
 expected values for the intents listed in the provisioning file. It can
 then attest the registered element, running the rules listed for each
-intent. The provisioning file format is unchanged; see
+intent. The provisioning file format is unchanged; see the skeletons in
+`skeleton/` (`full.yaml`, `full-vm.yaml`, `tpm2-nouefi.yaml`, `sysonly.yaml`;
+[docs/jp.md](../docs/jp.md#skeletons)) and the tests' fixture
 `testdata/examplecreateprovisioningfile.yaml`.
 
 TPM operations use [go-tpm](https://github.com/google/go-tpm) directly
@@ -42,22 +44,22 @@ Jane on HTTPS with a self-signed certificate, set `SSL_CERT_FILE` to it
 (Linux/BSD).
 
 If the TPM's endorsement hierarchy has a password, set
-`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads).
+`JANE_TPM_ENDORSEMENT_PASSWORD` (the same variable tarzan reads); if its
+owner hierarchy has one, set `JANE_TPM_OWNER_PASSWORD` (jp only).
 
 | | Unix-likes | Windows |
 |---|---|---|
 | TPM | `tpm2.device`, default `/dev/tpmrm0` then `/dev/tpm0` | TPM Base Services |
-| Element ID file | `/etc/opt/jane/janeelementid` (before 1.5.3: `/etc/janeelementid`, see below) | `%ProgramData%\jane\janeelementid` |
+| Element ID file | `/etc/opt/jane/janeelementid` | `%ProgramData%\jane\janeelementid` |
 | Machine ID | `/etc/machine-id`, `/var/lib/dbus/machine-id`, `/etc/hostid`; on BSD/macOS then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
 | Key files | `$TMPDIR` or `/tmp` | `%TEMP%` |
 
 The element ID file is written read-only (`-r--r--r--`) by `create`, and is
 not rewritten by `update` unless the ID changed (only `create --recreate`
-replaces it). Before 1.5.3 it was `/etc/janeelementid`: `update` and `attest`
-copy that file to `/etc/opt/jane/janeelementid` if the new one does not exist
-yet, and stop (exit 1) if both exist with different IDs; the old file is left
-in place. `create` refuses if either exists. This migration will be removed
-in a future release.
+replaces it). Before 1.5.3 it was `/etc/janeelementid`; jp 1.5.3 to 1.5.5
+moved it, and since 1.5.6 the old location is no longer looked at. A machine
+that still has only `/etc/janeelementid` must have it moved by hand (or be
+run once with jp 1.5.5).
 
 ## Operations
 
@@ -76,9 +78,10 @@ in a future release.
   changes what is measured, e.g. a firmware update (fwupd) or a shim, SBAT or
   kernel update (apt).
 - `create` and `update` do not run rules (since 1.5.3): run `jp attest`
-  afterwards to check the element. The worklist step `processevs_withrules`
-  is a deprecated alias of `processevs` (it prints
-  `processevs_withrules: deprecated, using processevs`) and will be removed.
+  afterwards to check the element. The old worklist step
+  `processevs_withrules` was removed in 1.5.6: it is now reported as
+  "Unknown provision work command" and no expected values are recorded, so
+  use `processevs`.
 - `attest` attests the element whose ID is in the element ID file against
   every intent under `evs`, and verifies every rule listed for each, in one
   Jane session. It does not run `provisionworklist`, touch the TPM, or change
@@ -214,9 +217,9 @@ hooks) without any risk to the TPM keys.
   the section as written.
 
 Handles must be persistent handles (0x81xxxxxx), in hex or decimal.
-The owner hierarchy is authorised with the empty password, as with tpm2-tools'
-defaults; the endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`
-(empty if unset).
+The owner hierarchy is authorised with `JANE_TPM_OWNER_PASSWORD` and the
+endorsement hierarchy with `JANE_TPM_ENDORSEMENT_PASSWORD`; each is the empty
+password if unset, as with tpm2-tools' defaults.
 
 ## Tests
 

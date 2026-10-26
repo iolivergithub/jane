@@ -2,20 +2,19 @@
 // an element with a Jane attestation server and, optionally, provisions the
 // TPM and records expected values; it can then attest the element.
 //
-//	jp create|update|attest <provisioning file> [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD]
+//	jp create|update|attest <provisioning file> [--reprovisiontpm] [--recreate] [--apikeyfile PATH]
 package main
 
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] operation pfile
+const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile
 
 Jane Element Configurator
 
@@ -50,6 +49,9 @@ environment:
                  made with addjaneuser --apikey
   JANE_TPM_ENDORSEMENT_PASSWORD
                  the TPM's endorsement hierarchy password, if one is set
+  JANE_TPM_OWNER_PASSWORD
+                 the TPM's owner hierarchy password, if one is set (used to
+                 make the EK and AK persistent and to evict them)
 
 jp never asks questions: anything destructive needs its own flag
 (--reprovisiontpm, --recreate). create and update need root (the TPM and
@@ -62,12 +64,18 @@ exit status:
   3  attest only: a rule did not pass or an intent could not be attested
 `
 
+// VERSION and BUILD are set at build time by the Makefile
+// (-ldflags "-X 'main.VERSION=...' -X 'main.BUILD=...'"), as for janeserver
+// and tarzan.
+var VERSION string = "not set"
+var BUILD string = "not set"
+
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
 
 func run(argv []string) int {
-	fmt.Println("Jane Element Configuration")
+	fmt.Printf("Jane Element Configuration (jp version %s, build %s)\n", VERSION, BUILD)
 
 	// Flags may appear anywhere, as with the original argparse CLI.
 	reprovision, recreate := false, false
@@ -225,15 +233,6 @@ func (pv *Provisioner) Run() int {
 	if err := pv.idFileUnreadable(); err != nil {
 		fmt.Println("Error:", err)
 		return exitError
-	}
-	if pv.Op == "update" || pv.Op == "attest" {
-		if err := pv.migrateIDFile(); err != nil {
-			fmt.Println("Error:", err)
-			if errors.Is(err, fs.ErrPermission) {
-				fmt.Printf("The element ID file moves from %s to %s once; run jp once with sudo to do that.\n", pv.LegacyIDFile, pv.IDFile)
-			}
-			return exitError
-		}
 	}
 	exists := pv.idFileExists()
 

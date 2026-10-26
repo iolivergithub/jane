@@ -301,7 +301,7 @@ func TestUpdateIgnoresRegistrationChecks(t *testing.T) {
 
 // The skeletons list one UEFI_ rule per variable the uefiefivars type records.
 func TestSkeletonUEFIRulesMatchVariables(t *testing.T) {
-	for _, f := range []string{"skeleton/examplecreateprovisioningfile.yaml", "skeleton/examplecreatetestvm.yaml"} {
+	for _, f := range []string{"skeleton/full.yaml", "skeleton/full-vm.yaml"} {
 		p, err := loadProvisioningFile(f)
 		if err != nil {
 			t.Fatalf("%s: %v", f, err)

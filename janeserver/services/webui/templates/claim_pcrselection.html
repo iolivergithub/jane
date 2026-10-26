@@ -1,0 +1,15 @@
+{{define "claim_pcrselection.html"}}
+{{/* the PCRs a quote covers, with their names; given (dict "Scheme" <element's tpm2.pcrnaming> "Selection" <intent's pcrSelection>) (#101) */}}
+{{ $scheme := .Scheme }}{{ $sv := pcrscheme $scheme }}
+{{ with splitList .Selection }}
+<h5>PCRs in this quote</h5>
+<table class="table table-sm table-striped">
+   <tbody>
+      {{ range . }}
+      <tr><td class="text-nowrap" style="width: 1%"><b>{{ . }}</b></td><td>{{ with pcrname $scheme . }}<span title="{{ .Long }}">{{ .Short }}</span>{{ else }}<span class="text-body-secondary">—</span>{{ end }}</td></tr>
+      {{ end }}
+   </tbody>
+</table>
+<p class="small text-body-secondary">PCR names: <a href="/pcrname/{{ $sv.Key }}">{{ $sv.Title }}</a>{{ if $sv.Unknown }} (the element names <span class="font-monospace">{{ $sv.Requested }}</span>, not a known scheme; the default is used){{ end }}. The selection is the intent's <span class="font-monospace">pcrSelection</span> parameter.</p>
+{{ end }}
+{{end}}

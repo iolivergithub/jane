@@ -1,5 +1,3 @@
-//go:build !windows
-
 package tpm2
 
 import (
@@ -18,6 +16,12 @@ import (
 // algorithms, ECC curves, persistent handles (#69) and the commands the TPM
 // implements (#103). Nothing is signed, so
 // this describes the TPM rather than proves anything about it.
+//
+// The algorithm, ECC curve and command queries are optional (#124): if the
+// TPM refuses one, its section is left empty and the reason is reported under
+// "unavailable"; the rest of the claim is still returned. On a TPM without
+// ECC the curves are not queried at all (some, e.g. an Infineon SLB 9665 with
+// firmware 5.0, answer that query with TPM_RC_VALUE instead of an empty list).
 //
 // Parameters:
 //
@@ -63,6 +67,31 @@ type tpm2capabilitiesReturn struct {
 	ECCCurves         []string            `json:"ecccurves"`
 	PersistentHandles []string            `json:"persistenthandles"`
 	Commands          []string            `json:"commands"` // e.g. "TPM_CC_Quote (0x158)"
+
+	// Unavailable gives, for an optional section (algorithms, ecccurves,
+	// commands) that could not be read, the reason (#124).
+	Unavailable map[string]string `json:"unavailable,omitempty"`
+}
+
+// eccNotSupported is the reason given when the ECC curves are not queried.
+const eccNotSupported = "ECC not supported by this TPM (TPM_ALG_ECC is not in its algorithm list)"
+
+// unavailable records why an optional section could not be read.
+func (r *tpm2capabilitiesReturn) unavailable(section, reason string) {
+	if r.Unavailable == nil {
+		r.Unavailable = map[string]string{}
+	}
+	r.Unavailable[section] = reason
+}
+
+// hasAlgorithm reports whether a is in the TPM's algorithm list.
+func hasAlgorithm(algs []tpm2.TPMAlgID, a tpm2.TPMAlgID) bool {
+	for _, x := range algs {
+		if x == a {
+			return true
+		}
+	}
+	return false
 }
 
 // capabilitiesSummary picks out the properties that identify the TPM.
@@ -157,7 +186,9 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		return rtn, err
 	}
 
-	// algorithms, from TPM_ALG_FIRST (0x0001): some TPMs reject 0 (#105)
+	// algorithms, from TPM_ALG_FIRST (0x0001): some TPMs reject 0 (#105);
+	// optional (#124)
+	var algIDs []tpm2.TPMAlgID
 	err = getCapability(tpm, tpm2.TPMCapAlgs, 0x0001, func(d tpm2.TPMUCapabilities) (uint32, error) {
 		algs, err := d.Algorithms()
 		if err != nil {
@@ -165,34 +196,45 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		}
 		next := uint32(0)
 		for _, a := range algs.AlgProperties {
+			algIDs = append(algIDs, a.Alg)
 			rtn.Algorithms = append(rtn.Algorithms, algName(a.Alg))
 			next = uint32(a.Alg) + 1
 		}
 		return next, nil
 	})
+	algsKnown := err == nil
 	if err != nil {
-		return rtn, err
+		rtn.Algorithms = nil
+		rtn.unavailable("algorithms", err.Error())
 	}
 
 	// ECC curves, from TPM_ECC_NIST_P192 (0x0001): Intel PTT rejects
-	// TPM_ECC_NONE (0) with TPM_RC_VALUE (#105)
-	err = getCapability(tpm, tpm2.TPMCapECCCurves, 0x0001, func(d tpm2.TPMUCapabilities) (uint32, error) {
-		curves, err := d.ECCCurves()
+	// TPM_ECC_NONE (0) with TPM_RC_VALUE (#105). Not asked of a TPM without
+	// ECC, which may refuse the query (#124); asked if the algorithm list
+	// could not be read. Optional.
+	if algsKnown && !hasAlgorithm(algIDs, tpm2.TPMAlgECC) {
+		rtn.ECCCurves = []string{}
+		rtn.unavailable("ecccurves", eccNotSupported)
+	} else {
+		err = getCapability(tpm, tpm2.TPMCapECCCurves, 0x0001, func(d tpm2.TPMUCapabilities) (uint32, error) {
+			curves, err := d.ECCCurves()
+			if err != nil {
+				return 0, err
+			}
+			next := uint32(0)
+			for _, c := range curves.ECCCurves {
+				rtn.ECCCurves = append(rtn.ECCCurves, curveName(c))
+				next = uint32(c) + 1
+			}
+			return next, nil
+		})
 		if err != nil {
-			return 0, err
+			rtn.ECCCurves = nil
+			rtn.unavailable("ecccurves", err.Error())
 		}
-		next := uint32(0)
-		for _, c := range curves.ECCCurves {
-			rtn.ECCCurves = append(rtn.ECCCurves, curveName(c))
-			next = uint32(c) + 1
-		}
-		return next, nil
-	})
-	if err != nil {
-		return rtn, err
 	}
 
-	// implemented commands, from TPM_CC_FIRST (0x011F) (#103)
+	// implemented commands, from TPM_CC_FIRST (0x011F) (#103); optional (#124)
 	err = getCapability(tpm, tpm2.TPMCapCommands, 0x011F, func(d tpm2.TPMUCapabilities) (uint32, error) {
 		cmds, err := d.Command()
 		if err != nil {
@@ -207,7 +249,8 @@ func capabilities(tpm transport.TPM) (tpm2capabilitiesReturn, error) {
 		return next, nil
 	})
 	if err != nil {
-		return rtn, err
+		rtn.Commands = nil
+		rtn.unavailable("commands", err.Error())
 	}
 
 	// persistent handles (0x81xxxxxx)

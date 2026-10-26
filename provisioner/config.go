@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ProvisioningFile is the YAML provisioning file (see examplecreateprovisioningfile.yaml).
+// ProvisioningFile is the YAML provisioning file (see skeleton/full.yaml).
 type ProvisioningFile struct {
 	AttestationServer string              `yaml:"attestationserver"`
 	Element           ElementConfig       `yaml:"element"`
@@ -23,6 +23,8 @@ type ElementConfig struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description"`
 	Tags        []string `yaml:"tags"`
+	// ElementType, e.g. physical-machine or virtual-machine (#118); optional
+	ElementType string `yaml:"elementtype"`
 }
 
 // Endpoint matches janeserver's structures.Endpoint.
@@ -38,6 +40,9 @@ type TPM2 struct {
 	EKCertHandle string `yaml:"ekcerthandle" json:"ekcerthandle"`
 	EK           TPMKey `yaml:"ek" json:"ek"`
 	AK           TPMKey `yaml:"ak" json:"ak"`
+	// PCRNaming: the register naming scheme for this TPM's PCRs, e.g.
+	// tcg-pcclient-uefi (the default), linux-uefi, windows-bitlocker (#101)
+	PCRNaming string `yaml:"pcrnaming,omitempty" json:"pcrnaming,omitempty"`
 }
 
 type TPMKey struct {
@@ -53,6 +58,10 @@ type EVSpec struct {
 	Type     string     `yaml:"type"`
 	CID      string     `yaml:"cid"`
 	Rules    []RuleSpec `yaml:"rules"`
+	// IssuerURL, for type tpm2ekcert, is where the EK certificate's issuer
+	// certificates are (https, http or file); it overrides the certificate's
+	// own AIA URL (#63).
+	IssuerURL string `yaml:"issuerurl"`
 }
 
 // RuleNames lists the names of the entry's rules.

@@ -27,6 +27,43 @@ Each *Endpoint* has:
 An element may have several endpoints, e.g. tarzan and ratsd; each attestation names the one to use. jp creates elements from a provisioning file (see the [Quick start](quickstart.md)); they can also be created in the Web UI or over REST.
 
 
+## Element type and relationships
+
+Since 1.5.6 (#118), for documentation as attestation targets become more varied. Both fields are optional and independent of the tags.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| elementtype | String | What the element is. A free string; by convention `physical-machine` or `virtual-machine`. jp takes it from `elementtype:` in the provisioning file's `element:` section |
+| relationships | List of Relationship | This element's relationships to other elements, a set (no duplicates) |
+
+Each *Relationship* has:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| relationshiptype | String | `hosted-on` (a VM runs on the target element) or `runs-on` (software runs on the target element) |
+| itemid | UUID4 | The target element |
+
+A relationship is stored on its source element: a VM is `hosted-on` its host. The only checks are that both elements exist, the type is one of the two above, and an element is not related to itself; there are no other rules (e.g. `hosted-on` is not limited to VMs).
+
+**Relationships are changed only through these REST endpoints.** `PUT /element` (which `jp update` uses) keeps the stored relationships, whatever the request carries, and a new element starts with none.
+
+| Request | Body | Result |
+|---|---|---|
+| `GET /element/<itemid>/relationships` | | `{"itemid", "relationships": [...], "length", "relatedfrom": [{"itemid", "name", "relationshiptype"}]}`: this element's relationships, and other elements' relationships to it |
+| `POST /element/<itemid>/relationships` | `{"relationshiptype": "hosted-on", "itemid": "<target>"}` | 201; 400 unknown type or self-relationship, 404 an element does not exist, 409 already present |
+| `DELETE /element/<itemid>/relationships/<relationshiptype>/<target>` | | 200; 404 element or relationship not found |
+
+For example, with REST authentication on:
+
+```bash
+curl -X POST -H "Authorization: Bearer $JANE_API_KEY" -H "Content-Type: application/json" \
+     -d '{"relationshiptype": "hosted-on", "itemid": "<host itemid>"}' \
+     http://jane:8520/element/<vm itemid>/relationships
+```
+
+Additions and removals are logged. The Web UI shows the type on the element's card and page, and a **Relationships** tab with the element's relationships and the elements related to it (display only); x3270 shows them on the element screen. A relationship to an element that has since been deleted is shown as "(missing)". Claims keep a snapshot of the element, so its type and relationships at the time are part of each claim.
+
+
 ## Optional Fields
 There are a number of individual structures to describe particular properties, eg: of TPMs, UEFI records etc.  Not all combinations are valid together, but this very much depends  upon the nature of the element in question.
 
@@ -85,9 +122,10 @@ The following fields are part of the *tpm2* entry
 | Field | Type | Description |
 | --- | --- | --- |
 | device | String | The location of the TPM2.0 device, eg: `/dev/tpmrm0` |
-| ekcerthandle | String | The handle of the EK Certificate in the TPM NVRAM |
+| ekcerthandle | String | The NV index of the EK certificate, read by `tpm2/getcert`: normally `0x01C00002` (RSA 2048; ECC P-256: `0x01C0000A`), the default if empty. Before 1.5.6 the examples wrongly gave `0x1C000002`, which tarzan refuses as not an NV index: correct it with `jp update` |
 | ek | TPMKey | The structure describing the TPM 2.0 Endorsement Key |
 | ak | TPMKey | The structure describing an attestation key |
+| pcrnaming | String | The [register naming scheme](registernames.md) for this TPM's PCRs, e.g. `linux-uefi` (optional; default `tcg-pcclient-uefi`; since 1.5.6) |
 
 The *TPMKey* structure is defined:
 
@@ -114,7 +152,7 @@ An element as jp registers it (keys shortened):
   },
   "tags": [ "linux", "x86", "tpm2", "uefi" ],
   "tpm2": { "device": "/dev/tpmrm0",
-            "ekcerthandle": "0x1C000002",
+            "ekcerthandle": "0x01C00002",
             "ek": { "handle": "0x810100EE", "public": "AToAAQALAAMAsg...", "name": "000bd126c6e1..." },
             "ak": { "handle": "0x810100AA", "public": "ARgAAQALAAUAcg...", "name": "000bbaff812d..." } },
   "uefi": { "eventlog": "/sys/kernel/security/tpm0/binary_bios_measurements" },

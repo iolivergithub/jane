@@ -57,3 +57,32 @@ func TestCommandNames(t *testing.T) {
 		}
 	}
 }
+
+// #124: a TPM without ECC is recognised from its algorithm list, and a
+// refused optional query is recorded rather than failing the claim.
+func TestOptionalSections(t *testing.T) {
+	// algorithm list of an Infineon SLB 9665, firmware 5.0 (no ECC)
+	// (rsa, sha1, hmac, aes, keyedhash, xor, sha256, rsassa, rsaes, rsapss,
+	// oaep, kdf1_sp800_108, symcipher, cfb)
+	slb9665 := []tpm2.TPMAlgID{0x0001, 0x0004, 0x0005, 0x0006, 0x0008, 0x000A, 0x000B,
+		0x0014, 0x0015, 0x0016, 0x0017, 0x0022, 0x0025, 0x0043}
+	if hasAlgorithm(slb9665, tpm2.TPMAlgECC) {
+		t.Error("SLB 9665 list: ECC reported")
+	}
+	if !hasAlgorithm(append(slb9665, tpm2.TPMAlgECC), tpm2.TPMAlgECC) {
+		t.Error("ECC in the list but not found")
+	}
+	if hasAlgorithm(nil, tpm2.TPMAlgECC) {
+		t.Error("empty list: ECC reported")
+	}
+
+	var r tpm2capabilitiesReturn
+	if r.Unavailable != nil {
+		t.Fatal("Unavailable should start nil, so it is left out of the JSON")
+	}
+	r.unavailable("ecccurves", eccNotSupported)
+	r.unavailable("commands", "TPM2_GetCapability(TPM_CAP_COMMANDS, 0x11f) failed: TPM_RC_VALUE")
+	if r.Unavailable["ecccurves"] != eccNotSupported || len(r.Unavailable) != 2 {
+		t.Errorf("unavailable = %v", r.Unavailable)
+	}
+}

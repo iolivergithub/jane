@@ -14,7 +14,7 @@ Jane, tarzan and jp all run on the same machine here. Later you would normally r
 | tarzan | the trust agent: answers Jane's requests for TPM quotes, event logs and system information (port 8530) | each element |
 | jp | the provisioner: registers the element with Jane, sets up its TPM keys, records expected values, attests | each element |
 
-You need `sudo` (or a root shell), network access for `apt`, and the two packages `jane_<version>_amd64.deb` and `tarzan_<version>_amd64.deb` (from a release, or built as in [Compiling](compiling.md)).
+You need `sudo` (or a root shell), network access for `apt`, and the two packages `jane_<version>_amd64.deb` and `tarzan_<version>_amd64.deb` (from a release, or built as in [Compiling](compiling.md)). This guide uses amd64; for other machines pick the matching packages from [the table in Installing with dpkg/apt](deb.md#which-package-for-which-machine).
 
 ## 1. MongoDB
 
@@ -81,7 +81,7 @@ Go to **Intents** and press **Load standard intents**. Intents describe what to 
 
 ## 5. Register this machine (jp create)
 
-Copy the example provisioning file and look through it:
+Copy the example provisioning file and look through it. It is for a physical machine with UEFI and a TPM; for a VM, a board without UEFI or a machine without a TPM, copy `full-vm.yaml`, `tpm2-nouefi.yaml` or `sysonly.yaml` from `/usr/share/doc/tarzantrustagent/skeletons/` instead (see [jp: skeletons](jp.md#skeletons)):
 
 ```bash
 sudo cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml

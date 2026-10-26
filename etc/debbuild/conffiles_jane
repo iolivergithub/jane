@@ -2,4 +2,5 @@
 /etc/opt/jane/REPLACE_ME.key
 /etc/opt/jane/REPLACE_ME.crt
 /etc/opt/jane/standardintents.json
+/etc/opt/jane/standardobjects.json
 /etc/opt/jane/jane.env

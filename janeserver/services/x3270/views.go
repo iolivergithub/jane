@@ -36,6 +36,7 @@ var menuItems = []menuItem{
 	{"7", "Attest            choose an element, intent and rules, and attest", attestStart},
 	{"8", "Log               Jane's log, newest first", logList},
 	{"9", "Configuration     this attestation server's settings and record counts", configScreen},
+	{"10", "Register names    names of TPM PCRs and confidential computing registers", pcrNamesList},
 }
 
 // menuAction is what a command typed on the primary option menu does.

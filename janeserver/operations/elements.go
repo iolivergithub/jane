@@ -29,6 +29,7 @@ func AddElement(e structures.Element) (string, error) {
 	} else {
 		e.ItemID = utilities.MakeID()
 		e.RecordHistory = recordInformationCreation()
+		e.Relationships = nil // only the relationship operations add them (#118)
 		fmt.Printf("New element %v\n", e)
 		_, dberr := datalayer.DB.Collection("elements").InsertOne(context.TODO(), e)
 		logging.MakeLogEntry("IM", "add", e.ItemID, "element", "")
@@ -37,9 +38,16 @@ func AddElement(e structures.Element) (string, error) {
 	}
 }
 
-// UpdateElement requires the complete structure, that is, it replaces the structure with the given itemid
+// UpdateElement requires the complete structure, that is, it replaces the structure with the given itemid.
+// The element's relationships are kept as stored, whatever the replacement
+// carries: they are changed only by the relationship operations (#118), so
+// that e.g. jp update does not wipe them.
 func UpdateElement(replacement structures.Element) error {
 	replacement.RecordHistory = recordInformationUpdate(replacement.RecordHistory)
+	replacement.Relationships = nil
+	if stored, err := GetElementByItemID(replacement.ItemID); err == nil {
+		replacement.Relationships = stored.Relationships
+	}
 	filter := bson.D{{"itemid", replacement.ItemID}}
 	updateresult, err := datalayer.DB.Collection("elements").ReplaceOne(context.TODO(), filter, replacement)
 

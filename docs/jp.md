@@ -1,6 +1,6 @@
 # jp, the provisioner
 
-jp runs on each element (machine to be attested). It registers the machine with Jane, provisions its TPM keys, records the machine's expected values, and attests it. Everything jp does is described by a **provisioning file** (YAML); the tarzan package installs an example as `/etc/opt/jane/provisioning.yaml.example`.
+jp runs on each element (machine to be attested). It registers the machine with Jane, provisions its TPM keys, records the machine's expected values, and attests it. Everything jp does is described by a **provisioning file** (YAML); the tarzan package installs an example as `/etc/opt/jane/provisioning.yaml.example` and four [skeletons](#skeletons) to start from.
 
 jp is built to run unattended (from cron, a systemd timer, a package hook) as well as by hand. It never asks questions. Anything destructive needs its own flag on the command line, so a scheduled or scripted jp can never wipe the TPM keys or re-register the machine by accident.
 
@@ -108,9 +108,10 @@ sudo -E /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 |---|---|
 | `JANE_API_KEY` | the Jane REST API key (`jane_...`, made with `addjaneuser --apikey`), when Jane's `auth: rest: true` |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, only if one is set (`tpm2_changeauth -c e`); used when creating the EK. Unset means the empty password |
+| `JANE_TPM_OWNER_PASSWORD` | the TPM's owner hierarchy password, only if one is set (`tpm2_changeauth -c o`); used when making the EK and AK persistent and when `tpmclear` evicts them. Unset means the empty password. tarzan does not need it |
 | `SSL_CERT_FILE` | (Linux/BSD) a certificate to trust for Jane's HTTPS, e.g. Jane's self-signed certificate |
 
-`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_API_KEY,JANE_TPM_ENDORSEMENT_PASSWORD`, or give the key with `--apikeyfile`.
+`sudo` drops the environment by default: use `sudo -E`, or `sudo --preserve-env=JANE_API_KEY,JANE_TPM_ENDORSEMENT_PASSWORD,JANE_TPM_OWNER_PASSWORD`, or give the key with `--apikeyfile`.
 
 `JANE_USERNAME`, `JANE_PASSWORD`, `--user` and `--pass` were removed in 1.5.5: jp stops with a message if it is given them without a key. Jane and jp must both be 1.5.5 or later.
 
@@ -143,13 +144,15 @@ element:
   name: Debian13VM                            # must be unique in Jane
   description: Debian 13 VM
   tags: [linux, x86, tpm2, uefi]
+  elementtype: virtual-machine                # optional (1.5.6): physical-machine, virtual-machine, ...
 endpoints:                                    # where Jane reaches this machine's trust agents
   tarzan:
       endpoint: http://127.0.0.1:8530
       protocol: A10HTTPRESTv2
 tpm2:
   device: /dev/tpmrm0
-  ekcerthandle: '0x1C000002'
+  ekcerthandle: '0x01C00002'
+  pcrnaming: tcg-pcclient-uefi                # optional (1.5.6): PCR names, see registernames.md
   ek:
     handle: '0x810100EE'
   ak:
@@ -176,6 +179,19 @@ evs:                                          # intents to attest, and what to r
 
 Use the endpoint names in `evs: protocol:` (the key is called `protocol` for historical reasons; it names an endpoint). If Jane and tarzan are on different machines, `attestationserver` must reach Jane from this machine and `endpoints` must reach tarzan from Jane's machine.
 
+### Skeletons
+
+Four provisioning files to start from (#125), in `provisioner/skeleton/` and installed by the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/` (in `skeletons\` in the Windows zip). Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
+
+| Skeleton | Machine | SYS | UEFI | TPM 2.0 | IMA |
+|---|---|---|---|---|---|
+| `full.yaml` | physical Linux machine, UEFI, discrete or firmware TPM | ✓ | ✓ | ✓, with the EK certificate | ✓ |
+| `full-vm.yaml` | virtual machine, UEFI (OVMF), vTPM | ✓ | ✓ | ✓, without the EK certificate (vTPMs normally have none) | ✓ |
+| `tpm2-nouefi.yaml` | board with a TPM but no UEFI, e.g. Raspberry Pi with a TPM module | ✓ | — | ✓, with the EK certificate, no event log replay | commented |
+| `sysonly.yaml` | no TPM | ✓ | — | — | — |
+
+Each lists every standard intent that applies, with all its rules and cross-checks (event log → PCRs → quote, the clock against the pcr0 quote, the capabilities firmware against the quote, the EK certificate against the EK and its issuer); `full.yaml` is also installed as `/etc/opt/jane/provisioning.yaml.example`. Intents that only some machines support are there but commented out (`sha256::grubfull`, `sha256::txt`, `uefi::bootconfig`, the ratsd intents). Leave out what the machine cannot do, e.g. `tpm2::gettime` on a TPM without TPM2_GetTime, or `tpm2::getcert` on a TPM without an EK certificate: a rule on an error claim is recorded as a failed attempt on every run. The skeletons before 1.5.6 were `examplecreateprovisioningfile.yaml` (now `full.yaml`), `examplecreatetestvm.yaml` (`full-vm.yaml`), `pi.yaml` (`tpm2-nouefi.yaml`) and `pi_notpm.yaml` (`sysonly.yaml`).
+
 ### Worklist steps
 
 | Step | What it does |
@@ -196,7 +212,8 @@ A worklist without the TPM steps is fine for machines whose keys are managed els
 Each entry names a standard (or your own) intent and says:
 
 - `protocol:` which endpoint to use;
-- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `uefiefivars`; none: record nothing);
+- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars`; none: record nothing);
+- `issuerurl:` for type `tpm2ekcert`: where the EK certificate's issuer certificates are (`https://`, `http://` or `file://`). Without it jp takes the certificate's own *CA Issuers* URL; if there is neither, or the TPM has no EK certificate, jp says so and records nothing;
 - `rules:` which rules `attest` runs, each a name or a name with options (`parameters`, `rid`, `resvar`);
 - `cid:` a variable holding this intent's claim item ID during `attest`.
 
@@ -225,7 +242,7 @@ A variable must be defined earlier in the file; mistakes stop jp with exit 2 bef
 
 | File | Notes |
 |---|---|
-| `/etc/opt/jane/janeelementid` | the element's item ID, written by `create` (read-only, 444). Windows: `%ProgramData%\jane\janeelementid`. Before 1.5.3 it was `/etc/janeelementid`; `update` and `attest` copy it over once (this needs root once) |
+| `/etc/opt/jane/janeelementid` | the element's item ID, written by `create` (read-only, 444). Windows: `%ProgramData%\jane\janeelementid`. (Before 1.5.3 it was `/etc/janeelementid`; since 1.5.6 jp no longer moves it — move it by hand.) |
 | provisioning file | anywhere; `/etc/opt/jane/provisioning.yaml` by convention |
 | `ek.pub`, `ak.pub`, `ak.name` | written to the temporary directory by `tpmprovision` |
 

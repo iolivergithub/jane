@@ -95,6 +95,9 @@ func setUpOperationEndpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/element", postElement)
 	router.PUT(PREFIX+"/element", putElement)
 	router.DELETE(PREFIX+"/element/:itemid", deleteElement)
+	router.GET(PREFIX+"/element/:itemid/relationships", getElementRelationships)
+	router.POST(PREFIX+"/element/:itemid/relationships", postElementRelationship)
+	router.DELETE(PREFIX+"/element/:itemid/relationships/:relationshiptype/:target", deleteElementRelationship)
 
 	router.GET(PREFIX+"/intents", getIntents)
 	router.GET(PREFIX+"/intent/:itemid", getIntent)
@@ -142,6 +145,8 @@ func setupAuxillaryOperationEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/rule/:name", getRule)
 
 	router.GET(PREFIX+"/opaqueobjects", getOpaqueObjects)
+	router.GET(PREFIX+"/pcrnames", getPCRNames)
+	router.GET(PREFIX+"/pcrname/:key", getPCRName)
 	router.GET(PREFIX+"/opaqueobject/:value", getOpaqueObjectByValue)
 	router.POST(PREFIX+"/opaqueobject", postOpaqueObject)
 	router.PUT(PREFIX+"/opaqueobject", putOpaqueObject)

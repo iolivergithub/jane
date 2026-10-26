@@ -15,6 +15,3 @@ func defaultIDFile() string {
 	}
 	return filepath.Join(pd, "jane", "janeelementid")
 }
-
-// defaultLegacyIDFile: the Windows location has not changed.
-func defaultLegacyIDFile() string { return "" }

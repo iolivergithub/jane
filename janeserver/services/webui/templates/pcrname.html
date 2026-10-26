@@ -1,0 +1,15 @@
+{{define "title"}}{{ .Title }} · Register names · {{end}}{{define "content"}}
+<h3>{{ .Title }}</h3>
+<div class="small font-monospace text-body-secondary mb-2">{{ .Key }} <span class="badge bg-primary-subtle text-primary-emphasis">{{ .Platform }}</span></div>
+<p>{{ .Description }}</p>
+{{ if .Reference }}<p class="small">Reference: <a href="{{ .Reference }}">{{ .Reference }}</a></p>{{ end }}
+<table class="table table-sm table-striped">
+   <thead><tr><th>Register</th><th>Name</th><th>Description</th></tr></thead>
+   <tbody>
+      {{ range .Registers }}
+      <tr><td class="font-monospace text-nowrap">{{ .Register }}</td><td class="text-nowrap">{{ .Short }}</td><td class="small">{{ .Long }}</td></tr>
+      {{ end }}
+   </tbody>
+</table>
+<a href="/pcrnames">All naming schemes</a>
+{{end}}

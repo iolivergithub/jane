@@ -1,0 +1,698 @@
+[
+ {
+  "key": "tcg-pcclient-uefi",
+  "title": "TCG PC Client Platform Firmware Profile (UEFI)",
+  "platform": "tpm2",
+  "description": "The default: PCR use defined by the TCG PC Client Platform Firmware Profile for UEFI firmware, as implemented by EDK II. PCRs 8-15 belong to the operating system.",
+  "reference": "https://tianocore-docs.github.io/edk2-TrustedBootChain/release-1.00/3_TCG_Trusted_Boot_Chain_in_EDKII.html",
+  "registers": [
+   {
+    "register": "0",
+    "short": "SRTM, firmware code",
+    "long": "SRTM, BIOS, host platform extensions, embedded option ROMs and PI drivers: the S-CRTM version, the platform firmware volumes, optional SRTM contents (e.g. Boot Guard ACM, key manifest, boot policy manifest), non-host code and information, integrated option ROMs."
+   },
+   {
+    "register": "1",
+    "short": "Host platform configuration",
+    "long": "Boot#### and BootOrder variables, filtered SMBIOS tables, multiprocessor information on servers, entering setup, non-host configuration, OEM setup variables and policy, possibly microcode."
+   },
+   {
+    "register": "2",
+    "short": "UEFI driver and application code",
+    "long": "Third-party UEFI drivers such as option ROMs on add-in cards, drivers from unmeasured firmware volumes, updatable non-host code, SPDM firmware blobs."
+   },
+   {
+    "register": "3",
+    "short": "UEFI driver and application configuration",
+    "long": "Configuration and data of the drivers in PCR 2: entering setup, non-host configuration, SPDM firmware configuration, third-party setup settings."
+   },
+   {
+    "register": "4",
+    "short": "Boot manager code and boot attempts",
+    "long": "UEFI applications started by the boot manager (shells, OS loaders, OEM boot options) and the boot attempts (\"Calling EFI Application from Boot Option\", \"Returning from ...\")."
+   },
+   {
+    "register": "5",
+    "short": "Boot manager configuration, GPT",
+    "long": "Boot manager configuration and data, the GPT/partition table of the boot disk, and the ExitBootServices actions."
+   },
+   {
+    "register": "6",
+    "short": "Host platform manufacturer specific",
+    "long": "Defined by the platform manufacturer; EDK II measures nothing here."
+   },
+   {
+    "register": "7",
+    "short": "Secure Boot policy",
+    "long": "The Secure Boot state and policy variables (SecureBoot, PK, KEK, db, dbx, and dbt/dbr if present), the separator, the db entries (authorities) used to verify each loaded image, and events such as UEFI debug mode or DMA protection disabled."
+   },
+   {
+    "register": "8",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "9",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "10",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "11",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "12",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "13",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "14",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "15",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "16",
+    "short": "Debug",
+    "long": "Debug use; resettable."
+   },
+   {
+    "register": "17",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "18",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "19",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "20",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "21",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "22",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "23",
+    "short": "Application support",
+    "long": "Application support; resettable."
+   }
+  ]
+ },
+ {
+  "key": "linux-uefi",
+  "title": "Linux on UEFI (shim, GRUB, systemd, IMA)",
+  "platform": "tpm2",
+  "description": "PCRs 0-7 as in the TCG scheme, with what shim, GRUB, systemd-boot and systemd-stub add, and PCRs 8-15 as used by GRUB, IMA, systemd and shim, from the Linux TPM PCR Registry (UAPI.7).",
+  "reference": "https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/",
+  "registers": [
+   {
+    "register": "0",
+    "short": "SRTM, firmware code",
+    "long": "Core system firmware code (as in the TCG scheme); systemd-pcrosseparator extends a separator barrier at the end of boot."
+   },
+   {
+    "register": "1",
+    "short": "Firmware platform configuration",
+    "long": "Host platform configuration data such as serial and model numbers; systemd-stub measures SMBIOS types 1, 2 and 11 when it starts."
+   },
+   {
+    "register": "2",
+    "short": "Add-in executable code",
+    "long": "Extended or pluggable executable code, including option ROMs."
+   },
+   {
+    "register": "3",
+    "short": "Add-in firmware data",
+    "long": "Data about pluggable hardware."
+   },
+   {
+    "register": "4",
+    "short": "Boot loader and drivers",
+    "long": "The boot loader, extra drivers and binaries it loads; shim measures the PE binary it chain-loads; the Linux kernel when booted as a UEFI PE binary; systemd-stub measures system extension images read from the ESP."
+   },
+   {
+    "register": "5",
+    "short": "Partition table, boot loader configuration",
+    "long": "The GPT/partition table; systemd-boot measures its loader.conf."
+   },
+   {
+    "register": "6",
+    "short": "Manufacturer specific / separator",
+    "long": "Platform manufacturer specific; on Linux only the systemd-pcrosseparator barrier."
+   },
+   {
+    "register": "7",
+    "short": "Secure Boot state",
+    "long": "Secure Boot state and certificate updates; shim measures most non-MOK certificates and its SBAT data."
+   },
+   {
+    "register": "8",
+    "short": "GRUB commands, kernel command line",
+    "long": "GRUB: every command executed (also from its configuration files), the kernel command line and module command lines."
+   },
+   {
+    "register": "9",
+    "short": "Files loaded by GRUB, initrd",
+    "long": "GRUB: every file read, including the kernel image; the Linux kernel measures initrds passed with the LOAD_FILE2 protocol."
+   },
+   {
+    "register": "10",
+    "short": "IMA",
+    "long": "The Linux Integrity Measurement Architecture: protects the IMA measurement log."
+   },
+   {
+    "register": "11",
+    "short": "Unified kernel image, boot phases",
+    "long": "systemd-stub: the components of a unified kernel image (UKI); systemd-pcrphase: the boot phase milestone strings."
+   },
+   {
+    "register": "12",
+    "short": "Kernel command line, credentials",
+    "long": "systemd-stub: a manually specified kernel command line, credentials, configuration images and add-ons; systemd-boot: the kernel command line."
+   },
+   {
+    "register": "13",
+    "short": "System extensions for the initrd",
+    "long": "systemd-stub: system extension images passed to the initrd."
+   },
+   {
+    "register": "14",
+    "short": "MOK keys and hashes",
+    "long": "shim: the Machine Owner Key certificates and hashes (MokList, MokListX, MokSBState)."
+   },
+   {
+    "register": "15",
+    "short": "Machine, disk and file system identity",
+    "long": "systemd-cryptsetup: the root volume encryption key (optional); systemd-pcrmachine: the machine ID; systemd-pcrfs: mount points, UUIDs and labels of / and /var."
+   },
+   {
+    "register": "16",
+    "short": "Debug",
+    "long": "Debug use; resettable."
+   },
+   {
+    "register": "17",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "18",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "19",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "20",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "21",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "22",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "23",
+    "short": "Application support",
+    "long": "Application support; resettable."
+   }
+  ]
+ },
+ {
+  "key": "windows-bitlocker",
+  "title": "Windows BitLocker (UEFI)",
+  "platform": "tpm2",
+  "description": "PCRs 0-7 as in the TCG scheme, and 8-14 as used by Windows BitLocker, from the EDK II Trusted Boot Chain documentation (Other Trusted Boot Chains).",
+  "reference": "https://tianocore-docs.github.io/edk2-TrustedBootChain/release-1.00/4_Other_Trusted_Boot_Chains.html",
+  "registers": [
+   {
+    "register": "0",
+    "short": "SRTM, firmware code",
+    "long": "SRTM, BIOS, host platform extensions, embedded option ROMs and PI drivers: the S-CRTM version, the platform firmware volumes, optional SRTM contents (e.g. Boot Guard ACM, key manifest, boot policy manifest), non-host code and information, integrated option ROMs."
+   },
+   {
+    "register": "1",
+    "short": "Host platform configuration",
+    "long": "Boot#### and BootOrder variables, filtered SMBIOS tables, multiprocessor information on servers, entering setup, non-host configuration, OEM setup variables and policy, possibly microcode."
+   },
+   {
+    "register": "2",
+    "short": "UEFI driver and application code",
+    "long": "Third-party UEFI drivers such as option ROMs on add-in cards, drivers from unmeasured firmware volumes, updatable non-host code, SPDM firmware blobs."
+   },
+   {
+    "register": "3",
+    "short": "UEFI driver and application configuration",
+    "long": "Configuration and data of the drivers in PCR 2: entering setup, non-host configuration, SPDM firmware configuration, third-party setup settings."
+   },
+   {
+    "register": "4",
+    "short": "Boot manager code and boot attempts",
+    "long": "UEFI applications started by the boot manager (shells, OS loaders, OEM boot options) and the boot attempts (\"Calling EFI Application from Boot Option\", \"Returning from ...\")."
+   },
+   {
+    "register": "5",
+    "short": "Boot manager configuration, GPT",
+    "long": "Boot manager configuration and data, the GPT/partition table of the boot disk, and the ExitBootServices actions."
+   },
+   {
+    "register": "6",
+    "short": "Host platform manufacturer specific",
+    "long": "Defined by the platform manufacturer; EDK II measures nothing here."
+   },
+   {
+    "register": "7",
+    "short": "Secure Boot policy",
+    "long": "The Secure Boot state and policy variables (SecureBoot, PK, KEK, db, dbx, and dbt/dbr if present), the separator, the db entries (authorities) used to verify each loaded image, and events such as UEFI debug mode or DMA protection disabled."
+   },
+   {
+    "register": "8",
+    "short": "Reserved (UEFI)",
+    "long": "Reserved under UEFI boot; with a legacy BIOS: the NTFS boot sector."
+   },
+   {
+    "register": "9",
+    "short": "Reserved (UEFI)",
+    "long": "Reserved under UEFI boot; with a legacy BIOS: the NTFS boot block."
+   },
+   {
+    "register": "10",
+    "short": "Reserved (UEFI)",
+    "long": "Reserved under UEFI boot; with a legacy BIOS: the boot manager."
+   },
+   {
+    "register": "11",
+    "short": "BitLocker access control",
+    "long": "BitLocker access control."
+   },
+   {
+    "register": "12",
+    "short": "Data and highly volatile events",
+    "long": "Data events and highly volatile events (UEFI boot)."
+   },
+   {
+    "register": "13",
+    "short": "Boot module details",
+    "long": "Boot module details (UEFI boot)."
+   },
+   {
+    "register": "14",
+    "short": "Boot authorities",
+    "long": "Boot authorities (UEFI boot)."
+   },
+   {
+    "register": "15",
+    "short": "Operating system use",
+    "long": "Operating system use; not listed for BitLocker."
+   },
+   {
+    "register": "16",
+    "short": "Debug",
+    "long": "Debug use; resettable."
+   },
+   {
+    "register": "17",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "18",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "19",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "20",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "21",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "22",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "23",
+    "short": "Application support",
+    "long": "Application support; resettable."
+   }
+  ]
+ },
+ {
+  "key": "coreboot-vboot",
+  "title": "coreboot with Google vboot",
+  "platform": "tpm2",
+  "description": "PCRs 0-7 as used by coreboot with Google's verified boot, from the EDK II Trusted Boot Chain documentation (Other Trusted Boot Chains).",
+  "reference": "https://tianocore-docs.github.io/edk2-TrustedBootChain/release-1.00/4_Other_Trusted_Boot_Chains.html",
+  "registers": [
+   {
+    "register": "0",
+    "short": "vboot GBB flags",
+    "long": "Google vboot: the GBB flags."
+   },
+   {
+    "register": "1",
+    "short": "vboot GBB HWID digest",
+    "long": "Google vboot: the digest of the GBB hardware ID."
+   },
+   {
+    "register": "2",
+    "short": "CRTM",
+    "long": "The core root of trust for measurement: CBFS components, RO_VPD, GBB, SI_DESC, SI_GBE."
+   },
+   {
+    "register": "3",
+    "short": "Runtime data",
+    "long": "Runtime data such as hwinfo.hex or the MRC cache."
+   },
+   {
+    "register": "4",
+    "short": "Not used",
+    "long": "Not used by coreboot."
+   },
+   {
+    "register": "5",
+    "short": "Not used",
+    "long": "Not used by coreboot."
+   },
+   {
+    "register": "6",
+    "short": "Not used",
+    "long": "Not used by coreboot."
+   },
+   {
+    "register": "7",
+    "short": "Not used",
+    "long": "Not used by coreboot."
+   },
+   {
+    "register": "8",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "9",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "10",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "11",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "12",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "13",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "14",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "15",
+    "short": "Operating system use",
+    "long": "Defined for use by the static operating system; see the Linux or Windows schemes for what common boot chains put here."
+   },
+   {
+    "register": "16",
+    "short": "Debug",
+    "long": "Debug use; resettable."
+   },
+   {
+    "register": "17",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "18",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "19",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "20",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "21",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "22",
+    "short": "DRTM",
+    "long": "Dynamic root of trust for measurement (DRTM), e.g. Intel TXT or AMD SKINIT: the dynamically launched environment."
+   },
+   {
+    "register": "23",
+    "short": "Application support",
+    "long": "Application support; resettable."
+   }
+  ]
+ },
+ {
+  "key": "intel-tdx",
+  "title": "Intel TDX measurement registers",
+  "platform": "tdx",
+  "description": "The measurement registers of an Intel TDX trust domain (TD), reported in the TD quote. With TDVF (OVMF), the TCG PCRs map to them: PCR 0 to MRTD, PCRs 1 and 7 to RTMR0, PCRs 2-6 to RTMR1, PCRs 8-15 to RTMR2.",
+  "reference": "https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/documentation.html",
+  "registers": [
+   {
+    "register": "MRTD",
+    "short": "Initial TD contents",
+    "long": "Measurement of the initial contents of the TD (the TD's firmware image, e.g. TDVF), set at build time."
+   },
+   {
+    "register": "RTMR0",
+    "short": "Firmware configuration",
+    "long": "Run-time extendable register 0: with TDVF the TD's configuration and firmware data (TCG PCRs 1 and 7: configuration, Secure Boot policy)."
+   },
+   {
+    "register": "RTMR1",
+    "short": "OS loader, boot applications",
+    "long": "Run-time extendable register 1: with TDVF the boot loader and other boot applications (TCG PCRs 2-6)."
+   },
+   {
+    "register": "RTMR2",
+    "short": "OS kernel, command line, initrd",
+    "long": "Run-time extendable register 2: the operating system (TCG PCRs 8-15), e.g. the kernel command line and initrd."
+   },
+   {
+    "register": "RTMR3",
+    "short": "Application / runtime",
+    "long": "Run-time extendable register 3: not used by the firmware; for the guest's own (application or runtime) measurements."
+   },
+   {
+    "register": "MRCONFIGID",
+    "short": "Configuration ID",
+    "long": "Software-defined ID for non-owner-defined configuration of the TD, e.g. OS or runtime settings (48 bytes, set at TD creation)."
+   },
+   {
+    "register": "MROWNER",
+    "short": "Owner ID",
+    "long": "Software-defined ID for the TD's owner (48 bytes, set at TD creation)."
+   },
+   {
+    "register": "MROWNERCONFIG",
+    "short": "Owner configuration ID",
+    "long": "Software-defined ID for owner-defined configuration, e.g. workload-specific settings (48 bytes, set at TD creation)."
+   }
+  ]
+ },
+ {
+  "key": "arm-cca",
+  "title": "Arm CCA realm measurements",
+  "platform": "cca",
+  "description": "The measurements of an Arm Confidential Compute Architecture realm, reported in the realm token (IETF draft-ffm-rats-cca-token).",
+  "reference": "https://datatracker.ietf.org/doc/html/draft-ffm-rats-cca-token-04",
+  "registers": [
+   {
+    "register": "RIM",
+    "short": "Realm Initial Measurement",
+    "long": "The compound extension of the measurements of realm memory and state taken before the realm is activated."
+   },
+   {
+    "register": "REM0",
+    "short": "Realm Extensible Measurement 0",
+    "long": "Extended by realm guest software at run time (e.g. firmware)."
+   },
+   {
+    "register": "REM1",
+    "short": "Realm Extensible Measurement 1",
+    "long": "Extended by realm guest software at run time."
+   },
+   {
+    "register": "REM2",
+    "short": "Realm Extensible Measurement 2",
+    "long": "Extended by realm guest software at run time."
+   },
+   {
+    "register": "REM3",
+    "short": "Realm Extensible Measurement 3",
+    "long": "Extended by realm guest software at run time."
+   },
+   {
+    "register": "RPV",
+    "short": "Realm Personalization Value",
+    "long": "64-byte value given at realm creation, distinguishing realms with the same initial measurement."
+   }
+  ]
+ },
+ {
+  "key": "amd-sev-snp",
+  "title": "AMD SEV-SNP attestation report",
+  "platform": "sev-snp",
+  "description": "The measurement fields of an AMD SEV-SNP guest attestation report (SEV Secure Nested Paging Firmware ABI Specification). SNP itself has no run-time extendable registers; a vTPM in the guest (e.g. via an SVSM) can provide PCRs.",
+  "reference": "https://www.amd.com/en/developer/sev.html",
+  "registers": [
+   {
+    "register": "MEASUREMENT",
+    "short": "Launch measurement",
+    "long": "The launch digest: measurement of the guest's initial memory and state (e.g. OVMF, kernel, initrd, command line with measured direct boot)."
+   },
+   {
+    "register": "HOST_DATA",
+    "short": "Host data",
+    "long": "32 bytes supplied by the host at launch, e.g. a policy or configuration hash."
+   },
+   {
+    "register": "ID_KEY_DIGEST",
+    "short": "ID key digest",
+    "long": "Digest of the ID key that signed the guest's ID block."
+   },
+   {
+    "register": "AUTHOR_KEY_DIGEST",
+    "short": "Author key digest",
+    "long": "Digest of the author key that signed the ID key, if any."
+   },
+   {
+    "register": "REPORT_DATA",
+    "short": "Report data",
+    "long": "64 bytes supplied by the guest when requesting the report, e.g. a nonce or key hash."
+   }
+  ]
+ },
+ {
+  "key": "intel-sgx",
+  "title": "Intel SGX enclave identity",
+  "platform": "sgx",
+  "description": "The identity measurements of an Intel SGX enclave, reported in its report and quote.",
+  "reference": "https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html",
+  "registers": [
+   {
+    "register": "MRENCLAVE",
+    "short": "Enclave measurement",
+    "long": "Measurement of the enclave's code and data as it was built and loaded."
+   },
+   {
+    "register": "MRSIGNER",
+    "short": "Signer measurement",
+    "long": "Hash of the public key of the enclave's signer (the sealing authority)."
+   }
+  ]
+ },
+ {
+  "key": "aws-nitro",
+  "title": "AWS Nitro Enclaves PCRs",
+  "platform": "nitro",
+  "description": "The PCRs (SHA-384) of an AWS Nitro enclave, reported in its attestation document. Enclaves in debug mode report all zeros.",
+  "reference": "https://docs.aws.amazon.com/enclaves/latest/user/set-up-attestation.html",
+  "registers": [
+   {
+    "register": "0",
+    "short": "Enclave image file",
+    "long": "Contiguous measure of the contents of the enclave image file, without the section data."
+   },
+   {
+    "register": "1",
+    "short": "Linux kernel and bootstrap",
+    "long": "Contiguous measurement of the kernel and boot ramfs data."
+   },
+   {
+    "register": "2",
+    "short": "Application",
+    "long": "Contiguous, in-order measurement of the user applications, without the boot ramfs."
+   },
+   {
+    "register": "3",
+    "short": "IAM role of the parent instance",
+    "long": "Measurement of the IAM role assigned to the parent instance."
+   },
+   {
+    "register": "4",
+    "short": "Parent instance ID",
+    "long": "Measurement of the ID of the parent instance."
+   },
+   {
+    "register": "8",
+    "short": "Enclave image signing certificate",
+    "long": "Measure of the signing certificate of the enclave image file (signed images only)."
+   }
+  ]
+ }
+]

@@ -70,3 +70,42 @@ func TestCapabilitiesTemplate(t *testing.T) {
 		}
 	}
 }
+
+// #124: sections the TPM refused are shown with the reason; the rest of the
+// claim as usual.
+func TestCapabilitiesTemplateUnavailable(t *testing.T) {
+	html := renderPartial(t, "claim_tpm2capabilities.html", `{"summary":{"manufacturer":"IFX","vendorstring":"SLB9665","firmwareversion":"0005000000044102",
+		"family":"2.0","level":"0","revision":"0.99","fips140_2":false},"properties":{},"pcrbanks":{"sha256":24},
+		"algorithms":["TPM_ALG_RSA"],"ecccurves":[],"persistenthandles":[],
+		"unavailable":{"ecccurves":"ECC not supported by this TPM (TPM_ALG_ECC is not in its algorithm list)",
+		"commands":"TPM2_GetCapability(TPM_CAP_COMMANDS, 0x11f) failed: TPM_RC_VALUE"}}`)
+	for _, want := range []string{"SLB9665", "revision 0.99", "TPM_ALG_RSA", "ECC not supported by this TPM",
+		"Commands: not available on this TPM", "TPM_RC_VALUE"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+
+	// older claims have no "unavailable": the page is as before
+	html = renderPartial(t, "claim_tpm2capabilities.html", `{"summary":{},"properties":{},"pcrbanks":{},"algorithms":["TPM_ALG_ECC"],"ecccurves":["TPM_ECC_NIST_P256"]}`)
+	if !strings.Contains(html, "TPM_ECC_NIST_P256") || strings.Contains(html, "not available") {
+		t.Errorf("older claim rendered differently:\n%s", html)
+	}
+}
+
+// #63
+func TestGetCertTemplate(t *testing.T) {
+	html := renderPartial(t, "claim_tpm2getcert.html", `{"handle":"0x01C00002","size":1177,"certificate":"MIIEmTCC",
+		"summary":{"subject":"","issuer":"CN=Infineon OPTIGA(TM) RSA Manufacturing CA 003","serial":"5a3c","notbefore":"2019-01-01T00:00:00Z",
+		"notafter":"2034-01-01T00:00:00Z","keytype":"RSA","keybits":2048,"tpmmanufacturer":"id:49465800","tpmmodel":"SLB9670",
+		"tpmversion":"id:0007003D","issuingcertificateurl":["http://pki.infineon.com/OptigaRsaMfrCA003/OptigaRsaMfrCA003.crt"],"sha256":"ab12"}}`)
+	for _, want := range []string{"Infineon OPTIGA", "2048 bits", "SLB9670", "OptigaRsaMfrCA003.crt", "1177 bytes from NV index 0x01C00002", "MIIEmTCC", "(empty"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	html = renderPartial(t, "claim_tpm2getcert.html", `{"handle":"0x01C00002","size":5,"certificate":"MAMCAQE=","summary":{"sha256":"cd34","parseerror":"x509: malformed"}}`)
+	if !strings.Contains(html, "could not be parsed") || !strings.Contains(html, "x509: malformed") {
+		t.Errorf("parse error not shown:\n%s", html)
+	}
+}

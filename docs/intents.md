@@ -28,6 +28,7 @@ The function names the operation; the element endpoint's [protocol](protocols.md
 | tpm2/quote | A10HTTPRESTv2 | a quote over selected PCRs, signed by the AK |
 | tpm2/gettime | A10HTTPRESTv2 | the TPM clock, reset and restart counts, signed by the AK |
 | tpm2/capabilities | A10HTTPRESTv2 | the TPM's identity and configuration (unsigned) |
+| tpm2/getcert | A10HTTPRESTv2 | the EK certificate from the TPM's NV storage (unsigned) |
 | tpm2/activatecredential | A10HTTPRESTv2 | whether the AK is in the same TPM as the EK |
 | uefi/eventlog | A10HTTPRESTv2 | the UEFI measured-boot event log |
 | uefi/efivars | A10HTTPRESTv2 | UEFI variables (Secure Boot state, keys, databases) |

@@ -21,14 +21,19 @@
    </tbody>
 </table>
 
+{{/* unavailable: optional sections the TPM refused, with the reason (#124); absent in older claims */}}
+{{ $na := .unavailable }}
 <div class="row">
    <div class="col-md-4">
       <h6>Algorithms</h6>
+      {{ with $na }}{{ with index . "algorithms" }}<p class="small text-body-secondary">Not available on this TPM: <span class="font-monospace">{{ . }}</span></p>{{ end }}{{ end }}
       <ul class="list-unstyled font-monospace small">{{ range .algorithms }}<li>{{ . }}</li>{{ end }}</ul>
    </div>
    <div class="col-md-4">
       <h6>ECC curves</h6>
-      <ul class="list-unstyled font-monospace small">{{ range .ecccurves }}<li>{{ . }}</li>{{ else }}<li class="text-body-secondary">none</li>{{ end }}</ul>
+      {{ $eccna := "" }}{{ with $na }}{{ with index . "ecccurves" }}{{ $eccna = . }}{{ end }}{{ end }}
+      {{ if $eccna }}<p class="small text-body-secondary">{{ $eccna }}</p>
+      {{ else }}<ul class="list-unstyled font-monospace small">{{ range .ecccurves }}<li>{{ . }}</li>{{ else }}<li class="text-body-secondary">none</li>{{ end }}</ul>{{ end }}
    </div>
    <div class="col-md-4">
       <h6>Persistent handles</h6>
@@ -42,6 +47,7 @@
    <ul class="list-unstyled font-monospace small mb-0" style="columns: 18rem;">{{ range . }}<li>{{ . }}</li>{{ end }}</ul>
 </details>
 {{ end }}
+{{ with $na }}{{ with index . "commands" }}<p class="small text-body-secondary mb-2">Commands: not available on this TPM: <span class="font-monospace">{{ . }}</span></p>{{ end }}{{ end }}
 
 <details>
    <summary class="small text-body-secondary">All properties</summary>

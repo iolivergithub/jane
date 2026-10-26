@@ -23,6 +23,7 @@ type Element struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
 	Tags        []string            `json:"tags"`
+	ElementType string              `json:"elementtype,omitempty"` // #118
 	Endpoints   map[string]Endpoint `json:"endpoints"`
 	Host        *HostInfo           `json:"host,omitempty"`
 	UEFI        *UEFIInfo           `json:"uefi,omitempty"`
@@ -67,11 +68,7 @@ type Provisioner struct {
 	Recreate bool
 
 	IDFile string // where the element's itemid is stored
-
-	// LegacyIDFile is the pre-1.5.3 location of the element ID file, which
-	// update and attest migrate to IDFile; "" if there is none (#81).
-	LegacyIDFile string
-	KeyDir       string // where tpmprovision writes ek.pub, ak.pub and ak.name
+	KeyDir string // where tpmprovision writes ek.pub, ak.pub and ak.name
 
 	Out      io.Writer
 	Now      func() time.Time
@@ -84,16 +81,15 @@ type Provisioner struct {
 
 func NewProvisioner(p *ProvisioningFile, op string) *Provisioner {
 	return &Provisioner{
-		P:            p,
-		Client:       NewClient(p.AttestationServer),
-		Op:           op,
-		IDFile:       defaultIDFile(),
-		LegacyIDFile: defaultLegacyIDFile(),
-		KeyDir:       os.TempDir(),
-		Out:          os.Stdout,
-		Now:          time.Now,
-		HostInfo:     collectHostInfo,
-		OpenTPM:      openTPMDevice,
+		P:        p,
+		Client:   NewClient(p.AttestationServer),
+		Op:       op,
+		IDFile:   defaultIDFile(),
+		KeyDir:   os.TempDir(),
+		Out:      os.Stdout,
+		Now:      time.Now,
+		HostInfo: collectHostInfo,
+		OpenTPM:  openTPMDevice,
 	}
 }
 
@@ -112,6 +108,7 @@ func (pv *Provisioner) initialElement() *Element {
 		Name:        pv.P.Element.Name,
 		Description: pv.P.Element.Description,
 		Tags:        pv.P.Element.Tags,
+		ElementType: pv.P.Element.ElementType,
 		Endpoints:   pv.P.Endpoints,
 	}
 }
@@ -159,12 +156,8 @@ func (pv *Provisioner) ProcessWorklist() (*Element, error) {
 			if err := pv.writeID(eid); err != nil {
 				return e, err
 			}
-		case "processevs", "processevs_withrules":
-			// Rules are only run by jp attest (#72); processevs_withrules is a
-			// deprecated alias, to be removed (#81).
-			if w == "processevs_withrules" {
-				fmt.Fprintln(pv.Out, "processevs_withrules: deprecated, using processevs")
-			}
+		case "processevs":
+			// Rules are only run by jp attest (#72).
 			if eid == "" {
 				return e, fmt.Errorf("%s needs an element ID: put processelement before it in the worklist", w)
 			}
@@ -307,6 +300,20 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 			return err
 		}
 		evs = v
+
+	case "tpm2ekcert":
+		// for tpm2_ekCertIssuer (#63): where the issuer certificates are.
+		// No certificate or no URL is not an error: some TPMs have none.
+		url, why := ev.Spec.IssuerURL, ""
+		if url == "" {
+			url, why = ekCertIssuerURL(c.Body)
+		}
+		if url == "" {
+			fmt.Fprintln(pv.Out, "No expected value for", pid+":", why)
+			return nil
+		}
+		fmt.Fprintln(pv.Out, "EK certificate issuer URL", url)
+		evs = map[string]any{"issuerurl": url}
 
 	default:
 		fmt.Fprintln(pv.Out, "Unknown expected value type", typ, "for", pid)
@@ -525,18 +532,9 @@ func (pv *Provisioner) collectTPM2() *TPM2 {
 
 // writeID stores the element's itemid, read-only (0444). It writes nothing
 // if the file already holds this ID, so update leaves it alone; otherwise
-// (create, or create --recreate) it replaces it. An existing legacy file is
-// kept in step (#81).
+// (create, or create --recreate) it replaces it.
 func (pv *Provisioner) writeID(id string) error {
-	if err := writeIDFile(pv.IDFile, id); err != nil {
-		return err
-	}
-	if pv.LegacyIDFile != "" {
-		if _, err := os.Stat(pv.LegacyIDFile); err == nil {
-			return writeIDFile(pv.LegacyIDFile, id)
-		}
-	}
-	return nil
+	return writeIDFile(pv.IDFile, id)
 }
 
 func writeIDFile(path, id string) error {
@@ -559,16 +557,10 @@ func writeIDFile(path, id string) error {
 	return os.Chmod(path, 0o444)
 }
 
-// existingIDFile is the element ID file in use: IDFile, or else the legacy
-// one if only that exists, or "" if neither does.
+// existingIDFile is the element ID file if it exists, or "".
 func (pv *Provisioner) existingIDFile() string {
-	for _, f := range []string{pv.IDFile, pv.LegacyIDFile} {
-		if f == "" {
-			continue
-		}
-		if fi, err := os.Stat(f); err == nil && fi.Mode().IsRegular() {
-			return f
-		}
+	if fi, err := os.Stat(pv.IDFile); err == nil && fi.Mode().IsRegular() {
+		return pv.IDFile
 	}
 	return ""
 }
@@ -577,20 +569,16 @@ func (pv *Provisioner) existingIDFile() string {
 // process may not read it (e.g. /etc/opt/jane not accessible to this user), so
 // that it is not reported as missing.
 func (pv *Provisioner) idFileUnreadable() error {
-	for _, f := range []string{pv.IDFile, pv.LegacyIDFile} {
-		if f == "" {
-			continue
+	f := pv.IDFile
+	_, err := os.Stat(f)
+	if err == nil {
+		var fh *os.File
+		if fh, err = os.Open(f); err == nil {
+			fh.Close()
 		}
-		_, err := os.Stat(f)
-		if err == nil {
-			var fh *os.File
-			if fh, err = os.Open(f); err == nil {
-				fh.Close()
-			}
-		}
-		if errors.Is(err, fs.ErrPermission) {
-			return fmt.Errorf("cannot read the element ID file %s: permission denied (run jp with sudo, or check the permissions of %s)", f, filepath.Dir(f))
-		}
+	}
+	if errors.Is(err, fs.ErrPermission) {
+		return fmt.Errorf("cannot read the element ID file %s: permission denied (run jp with sudo, or check the permissions of %s)", f, filepath.Dir(f))
 	}
 	return nil
 }
@@ -618,46 +606,6 @@ func parseID(path string, b []byte) (string, error) {
 
 func (pv *Provisioner) idFileExists() bool {
 	return pv.existingIDFile() != ""
-}
-
-// migrateIDFile, run by update and attest, copies a legacy element ID file
-// to IDFile if IDFile does not exist yet, and stops if both exist and hold
-// different IDs. The legacy file is not changed (#81).
-func (pv *Provisioner) migrateIDFile() error {
-	if pv.LegacyIDFile == "" {
-		return nil
-	}
-	lb, err := os.ReadFile(pv.LegacyIDFile)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	legacy, err := parseID(pv.LegacyIDFile, lb)
-	if err != nil {
-		return err
-	}
-
-	cb, err := os.ReadFile(pv.IDFile)
-	if errors.Is(err, fs.ErrNotExist) {
-		if err := writeIDFile(pv.IDFile, legacy); err != nil {
-			return err
-		}
-		fmt.Fprintf(pv.Out, "element ID file copied from %s to %s\n", pv.LegacyIDFile, pv.IDFile)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	cur, err := parseID(pv.IDFile, cb)
-	if err != nil {
-		return err
-	}
-	if cur != legacy {
-		return fmt.Errorf("element ID files differ: %s has %s but %s has %s; remove the wrong one", pv.IDFile, cur, pv.LegacyIDFile, legacy)
-	}
-	return nil
 }
 
 //

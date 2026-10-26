@@ -81,6 +81,16 @@ func showElement(c echo.Context) error {
 		s, err := operations.GetSessionByItemID(id)
 		return s, err == nil
 	})
+	for _, r := range e.Relationships {
+		rel := elementRelation{RelationshipType: r.RelationshipType, ItemID: r.ItemID}
+		if t, err := operations.GetElementByItemID(r.ItemID); err == nil {
+			rel.Name = t.Name
+		} else {
+			rel.Missing = true
+		}
+		page.Related = append(page.Related, rel)
+	}
+	page.RelatedFrom, _ = operations.GetElementsRelatedTo(e.ItemID)
 
 	return c.Render(http.StatusOK, "element.html", page)
 }
@@ -141,7 +151,7 @@ func elementtemplate() string {
     "tpm2":
     {
         "device": "/dev/tpmrm0",
-        "ekcerthandle": "0x01c00002",
+        "ekcerthandle": "0x01C00002",
         "ek":
         {
             "handle": "0x810100EE",

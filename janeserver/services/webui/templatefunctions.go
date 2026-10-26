@@ -2,7 +2,10 @@ package webui
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"encoding/base64"
@@ -11,6 +14,7 @@ import (
 	"html/template"
 
 	"a10/operations"
+	"a10/registernames"
 	"a10/structures"
 	"a10/utilities"
 
@@ -111,4 +115,82 @@ func Duration(from, to structures.Timestamp) string {
 // ShortTime formats a timestamp as "MM-DD HH:MM" UTC.
 func ShortTime(t structures.Timestamp) string {
 	return shortLabel(t)
+}
+
+// Dict builds a map from alternating keys and values, so that a partial
+// template can be given more than one value, e.g.
+// {{ template "x.html" (dict "Body" .Body "Scheme" "linux-uefi") }}.
+func Dict(kv ...interface{}) map[string]interface{} {
+	m := make(map[string]interface{}, len(kv)/2)
+	for i := 0; i+1 < len(kv); i += 2 {
+		if k, ok := kv[i].(string); ok {
+			m[k] = kv[i+1]
+		}
+	}
+	return m
+}
+
+// PCRName returns the names of a register (e.g. PCR "7") in the naming scheme
+// key, or nil if the scheme does not name it (#101). An empty or unknown key
+// means the default scheme.
+func PCRName(key string, register interface{}) *registernames.Register {
+	return registernames.Lookup(key, fmt.Sprintf("%v", register))
+}
+
+// pcrSchemeView is the naming scheme a page uses, for the line saying so.
+type pcrSchemeView struct {
+	Key       string // the scheme used
+	Title     string
+	Requested string // what the element named, if anything
+	Unknown   bool   // the element named a scheme that does not exist
+}
+
+// PCRScheme describes the scheme used for the element's key (#101).
+func PCRScheme(key string) pcrSchemeView {
+	s, known := registernames.Resolve(key)
+	return pcrSchemeView{Key: s.Key, Title: s.Title, Requested: key, Unknown: key != "" && !known}
+}
+
+// registerEntry is one register of a claim body and its value.
+type registerEntry struct {
+	Register string
+	Value    string
+}
+
+// SortRegisters lists a bank's registers (a map from register number to
+// value) in numerical order, 0, 1, 2, ... 10, rather than the textual order
+// a template's range gives; keys that are not numbers follow, in textual order.
+func SortRegisters(bank interface{}) []registerEntry {
+	var out []registerEntry
+	v := reflect.ValueOf(bank)
+	if v.Kind() != reflect.Map {
+		return out
+	}
+	for _, k := range v.MapKeys() {
+		out = append(out, registerEntry{fmt.Sprintf("%v", k.Interface()), fmt.Sprintf("%v", v.MapIndex(k).Interface())})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		a, aerr := strconv.Atoi(out[i].Register)
+		b, berr := strconv.Atoi(out[j].Register)
+		switch {
+		case aerr == nil && berr == nil:
+			return a < b
+		case aerr == nil || berr == nil:
+			return aerr == nil
+		}
+		return out[i].Register < out[j].Register
+	})
+	return out
+}
+
+// SplitList splits a comma-separated value, e.g. a quote's pcrSelection
+// "0,1,2,3", into its trimmed parts.
+func SplitList(v interface{}) []string {
+	var out []string
+	for _, p := range strings.Split(fmt.Sprintf("%v", v), ",") {
+		if p = strings.TrimSpace(p); p != "" && p != "<nil>" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

@@ -4,13 +4,17 @@ package tpm2
 
 import (
 	"fmt"
-	"github.com/google/go-tpm/legacy/tpm2"
-	"io"
+
+	"github.com/google/go-tpm/tpm2/transport"
+	"github.com/google/go-tpm/tpm2/transport/windowstpm"
 )
 
-func OpenTPM(path string) (io.ReadWriteCloser, error) {
-	fmt.Sprintf("TPM Device path >>> %v <<< passed as parameter. This is a Windows build and will be ignored.")
-	rwc, err := tpm2.OpenTPM()
-
-	return rwc, err
+// OpenTPM opens the TPM through Windows TPM Base Services (TBS), as jp does
+// (#122). A device path such as /dev/tpmrm0 has no meaning on Windows and is
+// ignored. Whether Windows lets each TPM command through is up to Windows:
+// TBS only passes commands on its allow list, and Windows keeps the owner
+// authorisation itself.
+func OpenTPM(dev string) (transport.TPMCloser, error) {
+	fmt.Printf("TPM Device >>> %v <<< passed as parameter. This is a Windows build: using TPM Base Services, the device path is ignored\n", dev)
+	return windowstpm.Open()
 }

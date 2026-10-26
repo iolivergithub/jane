@@ -26,7 +26,7 @@
 <div id="elementGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xxl-6 g-2">
    {{ range . }}
    <div class="col element-item"
-        data-search="{{ .Name }} {{ .Description }} {{ .Host.Hostname }} {{ .Host.OS }} {{ .Host.Arch }} {{ range .Tags }}{{ . }} {{ end }}{{ range .Endpoints }}{{ .Protocol }} {{ .Endpoint }} {{ end }}">
+        data-search="{{ .Name }} {{ .ElementType }} {{ .Description }} {{ .Host.Hostname }} {{ .Host.OS }} {{ .Host.Arch }} {{ range .Tags }}{{ . }} {{ end }}{{ range .Endpoints }}{{ .Protocol }} {{ .Endpoint }} {{ end }}">
       {{ template "elementsummarylist.html" . }}
    </div>
    {{ end }}

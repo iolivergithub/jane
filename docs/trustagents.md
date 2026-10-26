@@ -13,7 +13,7 @@ An intent is attested against one endpoint of an element; the attest page and jp
 
 ## tarzan
 
-tarzan is Jane's reference trust agent, in `tarzan/` and the tarzan package. It offers APIs selected by flags (`-sys`, `-tpm2`, `-uefi`, `-ima`, `-txt`), listens on port 8530, and runs as root because it needs the TPM and the logs under `/sys/kernel/security`. It does the TPM work natively through go-tpm: PCR reads, quotes, TPM2_GetTime, capabilities and credential activation. Since 1.5.3 it returns the raw signed attestation with every quote and gettime, so Jane can verify the signature.
+tarzan is Jane's reference trust agent, in `tarzan/` and the tarzan package. It offers APIs selected by flags (`-sys`, `-tpm2`, `-uefi`, `-ima`, `-txt`), listens on port 8530, and runs as root because it needs the TPM and the logs under `/sys/kernel/security`. It does the TPM work natively through go-tpm: PCR reads, quotes, TPM2_GetTime, capabilities, credential activation and reading the EK certificate from NV (`tpm2/getcert`, 1.5.6). Since 1.5.3 it returns the raw signed attestation with every quote and gettime, so Jane can verify the signature.
 
 tarzan speaks plain HTTP and has no authentication (#58): firewall its port so only Jane can reach it. It only reads logs from their standard locations unless started with `-unsafe`, which must never be used. Details: [Running](running.md#tarzan), [Hardening](hardening.md#10-tarzan).
 

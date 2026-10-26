@@ -11,9 +11,30 @@ The jane package needs two services it cannot install itself:
 
 The jane package depends on `adduser` and recommends `mosquitto`, `python3`, `python3-argon2` and `python3-pymongo` (the last three for `addjaneuser`). The tarzan package has no dependencies.
 
+## Which package for which machine
+
+From 1.5.6 there is a package per architecture (#116). Debian 13 supports all of them; for armel it is the last release.
+
+| Machine | jane | tarzan |
+|---|---|---|
+| 64-bit PC (x86-64) | `jane_<v>_amd64.deb` | `tarzan_<v>_amd64.deb` |
+| 64-bit ARM (servers, Raspberry Pi 3/4/5 with a 64-bit OS) | `jane_<v>_arm64.deb` | `tarzan_<v>_arm64.deb` |
+| IBM Z (s390x) | `jane_<v>_s390x.deb` | `tarzan_<v>_s390x.deb` |
+| IBM POWER, little-endian (ppc64el) | — | `tarzan_<v>_ppc64el.deb` |
+| 64-bit RISC-V | — | `tarzan_<v>_riscv64.deb` |
+| 32-bit ARMv7 with FPU (Debian `armhf`) | — | `tarzan_<v>_armhf-armv7.deb` |
+| 32-bit ARMv6 with FPU: Raspberry Pi Zero/1 on Raspberry Pi OS | — | `tarzan_<v>_armhf-armv6.deb` |
+| 32-bit ARM without FPU, ARMv5 (Debian `armel`) | — | `tarzan_<v>_armel-armv5.deb` |
+
+- The two `armhf` packages both declare `Architecture: armhf`, so the file name says which is which. Raspberry Pi OS 32-bit calls its ARMv6 port `armhf`, but an ARMv7 binary does not run on a Pi Zero/1: use `armhf-armv6` there. On ARMv7 boards either works.
+- The `armel-armv5` binaries use software floating point and run on any 32-bit ARM, including boards without an FPU.
+- s390x, ppc64el and riscv64 machines rarely have a TPM; tarzan still serves `sys/info` there.
+- Jane only needs to *reach* a MongoDB, which can run on another machine. Current MongoDB needs ARMv8.2-A or later on arm64 (a Raspberry Pi 5, but **not** a Pi 4) and an AVX-capable CPU on x86-64, and MongoDB's own packages do not cover every Debian architecture; where it can't run locally, point `database: connection` in `config.yaml` at a MongoDB elsewhere.
+- Windows amd64 is built as zip files instead (see [Compiling](compiling.md#windows)).
+
 ## Installing
 
-Release files are gzipped (`jane_<version>_amd64.deb.gz`); unzip them first with `gunzip`. Then, as root:
+Release files are gzipped (`jane_<version>_<arch>.deb.gz`); unzip them first with `gunzip`. Then, as root, e.g. on amd64:
 
 ```bash
 apt install ./jane_<version>_amd64.deb ./tarzan_<version>_amd64.deb
@@ -44,6 +65,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/etc/opt/jane/jane.env` | environment for janeserver (MongoDB and MQTT accounts), all commented out |
 | `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate, only used when you switch to HTTPS; replace them (see [Hardening](hardening.md#3-your-own-tls-key-and-certificate)) |
 | `/etc/opt/jane/standardintents.json` | the standard intents matching this version, for loading by hand if downloading them fails |
+| `/etc/opt/jane/standardobjects.json` | the standard opaque objects matching this version (since 1.5.6, #102), likewise |
 | `/lib/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
@@ -54,7 +76,8 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 |---|---|
 | `/opt/jane/tarzan` | the trust agent |
 | `/opt/jane/jp` | the provisioner (see [jp](jp.md)) |
-| `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy |
+| `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy (the `full.yaml` skeleton) |
+| `/usr/share/doc/tarzantrustagent/skeletons/` | the four jp [skeletons](jp.md#skeletons): `full`, `full-vm`, `tpm2-nouefi`, `sysonly` (not conffiles) |
 | `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
 | `/lib/systemd/system/tarzan.service` | runs tarzan as root |
 
@@ -71,9 +94,9 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | `/etc/opt/jane` (directory) | `root:jane` | 751 |
 | directories inside `/etc/opt/jane` | `root:jane` | 750 |
 | `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` and its subdirectories (not `jp.key`) | `root:jane` | 640 |
-| `*.crt`, `standardintents.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
+| `*.crt`, `standardintents.json`, `standardobjects.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
-| `/etc/opt/jane/provisioning.yaml.example` | `root:root` | 644 |
+| `/etc/opt/jane/provisioning.yaml.example`, `/usr/share/doc/tarzantrustagent/skeletons/*.yaml` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
 | `/lib/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 

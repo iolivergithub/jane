@@ -15,6 +15,7 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 **Installing and running**
 
 - [Installing with dpkg/apt](deb.md): what the packages install, upgrade and removal, running under systemd.
+- [Containers](containers.md): an all-in-one image (Jane, MongoDB, Mosquitto) and a `kubectl apply` file, for a quick start.
 - [Running Jane, tarzan and jp](running.md): every option, flag and environment variable; running by hand and on other systems.
 - [jp, the provisioner](jp.md): create, update and attest, the flags and when to use them, the provisioning file.
 - [Authentication](authentication.md): logins for the Web UI, REST API and x3270, and Jane's users.
@@ -24,11 +25,13 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 
 - [Elements](elements.md): the machines or other things being attested.
 - [Intents](intents.md): what to ask a trust agent for. [Standard intents](standardintents.md): the common set shipped with Jane.
+- [Standard opaque objects](standardobjects.md): the published set of opaque objects, and loading it.
 - [Expected values](expectedvalues.md): the known-good values rules compare with.
 - [Claims](claims.md): what a trust agent returned, with its context.
 - [Results](results.md): a rule's verdict on a claim.
 - [Sessions](sessions.md): claims and results of one piece of work.
 - [Data model](datamodels.md): how they link.
+- [Register names](registernames.md): names of TPM PCRs and confidential computing registers, and how an element chooses its scheme.
 
 **Attestation and verification**
 

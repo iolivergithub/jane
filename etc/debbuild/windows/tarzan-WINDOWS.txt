@@ -1,0 +1,27 @@
+tarzan and jp for Windows amd64
+===============================
+
+This zip holds the trust agent tarzan (tarzan.exe), the provisioner jp
+(jp.exe) and the same configuration files as the Debian package. It is
+provided as is: there is no installer and no Windows service wrapper; a
+Windows administrator sets it up (starting tarzan, the firewall rule for its
+port, 8530 by default).
+
+  tarzan.exe              trust agent, e.g. tarzan.exe -sys -tpm2 -uefi
+  jp.exe                  provisioner: jp.exe create|update|attest <file>
+  provisioning.yaml.example
+                          example provisioning file for jp (skeletons/full.yaml);
+                          its paths and the TPM device are Unix ones (the
+                          device is ignored on Windows)
+  skeletons\              the four jp skeletons: full, full-vm, tpm2-nouefi,
+                          sysonly (by what the machine has: UEFI, TPM, ...)
+  tarzan.env              environment variables, read by systemd on Linux;
+                          set them in Windows instead
+
+What works on Windows is best effort. tarzan opens the TPM through TPM Base
+Services (TBS); Windows only passes TPM commands on its own allow list and
+keeps the TPM owner authorisation itself, so some TPM functions (and jp's
+create/update, which make keys persistent) may be refused by Windows. IMA does
+not exist on Windows. The UEFI event log comes from TBS.
+
+Documentation: https://github.com/iolivergithub/jane/blob/main/docs/contents.md

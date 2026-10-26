@@ -1,4 +1,22 @@
 #!/bin/sh
+#
+# Builds the jane and tarzan deb packages for every supported architecture
+# (#116). Run it in ./jane/etc/debbuild. The packages end up in
+# /tmp/janedebbuild, gzipped:
+#
+#   jane_<version>_<arch>.deb       amd64, arm64, s390x
+#   tarzan_<version>_<arch>.deb     amd64, arm64, s390x, ppc64el, riscv64,
+#                                   armel-armv5, armhf-armv6, armhf-armv7
+#
+# and two zips for Windows amd64 (#122), not gzipped:
+#
+#   jane_<version>_windows-amd64.zip, tarzan_<version>_windows-amd64.zip
+#
+# The binaries are built with the component Makefiles into
+# ../../<component>/dist/linux-<target>/. See docs/compiling.md (architecture
+# table) and docs/deb.md (which package for which machine).
+
+set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -6,190 +24,200 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 DEBBUILDDIR=`pwd`
+REPO=$(cd ../.. && pwd)
 TMPBASE=/tmp/janedebbuild
-JANEBASE=$TMPBASE/jane
-TARZANBASE=$TMPBASE/tarzan
 
 VERSIONNUMBER=$(tail -n 1 versions.txt)
 VERSIONNUMBERCONTROL=${VERSIONNUMBER%% *}
-ARCHTECTURE=amd64
+
+# Targets: Debian architecture, or Debian architecture-armv<N> for 32-bit ARM.
+JANE_TARGETS="amd64 arm64 s390x"
+TARZAN_TARGETS="amd64 arm64 s390x ppc64el riscv64 armel-armv5 armhf-armv6 armhf-armv7"
 
 echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
 echo "${GREEN} -- we are building version number:${RED} ${VERSIONNUMBER} ${NC}"
 echo "${GREEN} -- for pkg control version:${RED} ${VERSIONNUMBERCONTROL} ${NC}"
-echo "${GREEN} -- and for architecture:${RED} ${ARCHTECTURE} ${NC}"
+echo "${GREEN} -- jane for:${RED} ${JANE_TARGETS} ${NC}"
+echo "${GREEN} -- tarzan and jp for:${RED} ${TARZAN_TARGETS} ${NC}"
 
+# debarch <target>: the Debian architecture of a target (armhf-armv6 -> armhf)
+debarch() {
+    echo "${1%%-*}"
+}
 
+# goarch <target> / goarm <target>: the Go GOARCH and GOARM of a target
+goarch() {
+    case "$1" in
+        ppc64el) echo ppc64le ;;
+        arm*-armv*) echo arm ;;
+        *) echo "$1" ;;
+    esac
+}
+goarm() {
+    case "$1" in
+        *-armv*) echo "${1##*-armv}" ;;
+        *) echo "" ;;
+    esac
+}
 
-#first remove any temporary build directories
+# distdir <target>: where the Makefiles put the target's binaries
+distdir() {
+    case "$1" in
+        *-armv*) echo "dist/linux-armv$(goarm "$1")" ;;
+        *) echo "dist/linux-$(goarch "$1")" ;;
+    esac
+}
+
+# build <component> <target>
+build() {
+    echo "${BLUE}Compiling $1 for $2${NC}"
+    make -C "$REPO/$1" binary OS=linux ARCH="$(goarch "$2")" GOARM="$(goarm "$2")" \
+        VERSION="$VERSIONNUMBER" OUT="$(distdir "$2")"
+}
+
+# control <base file> <target> <output>: the control file with Version and Architecture
+control() {
+    { grep -v '^Architecture:' "$1"; echo "Architecture: $(debarch "$2")"; echo "Version: $VERSIONNUMBERCONTROL"; } > "$3"
+}
+
+# maintainer <package tree> <jane|tarzan>: control scripts and conffiles
+maintainer() {
+    for s in postinst prerm preinst postrm; do
+        cp "${s}_$2" "$1/DEBIAN/$s"
+        chmod 755 "$1/DEBIAN/$s"
+    done
+    cp "conffiles_$2" "$1/DEBIAN/conffiles"
+}
+
+# first remove any temporary build directories and earlier binaries
 echo "${BLUE}Removing previous builds${NC}"
-rm -rf ${TMPBASE}/*
+rm -rf ${TMPBASE}
+mkdir -p ${TMPBASE}
+for c in janeserver tarzan provisioner; do rm -rf "$REPO/$c/dist"; done
 
+# module housekeeping once per component, not per target
+for c in janeserver tarzan provisioner; do
+    echo "${BLUE}Checking modules and formatting of $c${NC}"
+    make -C "$REPO/$c" libs fmt
+done
 
-#create the jane build directories
-echo "${BLUE}Creating temporary build directories${NC}"
-mkdir -p $JANEBASE
-mkdir -p $JANEBASE/DEBIAN
-mkdir -p $JANEBASE/opt/jane
-mkdir -p $JANEBASE/var/log/jane
-mkdir -p $JANEBASE/etc/opt/jane
-mkdir -p $JANEBASE/lib/systemd/system
-mkdir -p $JANEBASE/usr/share/doc/janeattestationengine
+# ---------------------------------------------------------------- jane
+for t in $JANE_TARGETS; do
+    build janeserver "$t"
+    JANEBASE=$TMPBASE/jane-$t
+    BIN=$REPO/janeserver/$(distdir "$t")
 
-mkdir -p $TARZANBASE
-mkdir -p $TARZANBASE/DEBIAN
-mkdir -p $TARZANBASE/opt/jane
-mkdir -p $TARZANBASE/lib/systemd/system
-mkdir -p $TARZANBASE/etc/opt/jane
+    mkdir -p $JANEBASE/DEBIAN $JANEBASE/opt/jane $JANEBASE/var/log/jane $JANEBASE/etc/opt/jane \
+        $JANEBASE/lib/systemd/system $JANEBASE/usr/share/doc/janeattestationengine
 
-#constructing control files
-echo "${BLUE}Constructing control files for deb packaging${NC}"
-rm -f control_jane control_tarzan
-{ cat control_jane_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_jane
-{ cat control_tarzan_base; echo "Version:" $VERSIONNUMBERCONTROL; } > control_tarzan
+    cp $BIN/janeserver $JANEBASE/opt/jane
+    cp ../addjaneuser/addjaneuser $JANEBASE/opt/jane/addjaneuser
+    cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
 
-#compile Jane
-echo "${BLUE}Compiling Janeserver${NC}"
-cd ../../janeserver
-make -f ../etc/debbuild/Makefile.jane.$ARCHTECTURE build VERSION="$VERSIONNUMBER"
-ls -l janeserver
+    cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
+    cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
+    cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
+    # Backup copy of the standard intents matching this version (#67)
+    cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintents.json
+    # and of the standard opaque objects (#102)
+    cp ../standardobjects/standardobjects.json $JANEBASE/etc/opt/jane/standardobjects.json
+    cp jane.env $JANEBASE/etc/opt/jane/jane.env
+    cp jane.service $JANEBASE/lib/systemd/system/jane.service
 
-#compile Tarzan
-echo "${BLUE}Compiling Tarzan${NC}"
-cd ../tarzan
-make -f ../etc/debbuild/Makefile.tarzan.$ARCHTECTURE build VERSION="$VERSIONNUMBER"
-ls -l tarzan
+    # Modes in the package itself, so that secrets are never world-readable, not
+    # even between unpacking and postinst (which then sets the jane group).
+    chmod 751 $JANEBASE/etc/opt/jane
+    chmod 750 $JANEBASE/var/log/jane
+    chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser
+    chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
+    chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
+    chmod 644 $JANEBASE/lib/systemd/system/jane.service
 
-#compile Provisioner - included in the tarzan.deb package
-echo "${BLUE}Compiling JP${NC}"
-cd ../provisioner
-make  -f ../etc/debbuild/Makefile.provisioner.amd64 build VERSION="$VERSIONNUMBER"
-ls -l jp
+    control control_jane_base "$t" $JANEBASE/DEBIAN/control
+    maintainer $JANEBASE jane
 
-#return to this directory
-echo "${BLUE}Returning to build script directory ${RED}${DEBBUILDDIR}${NC}"
-cd $DEBBUILDDIR
+    DEB=$TMPBASE/jane_${VERSIONNUMBERCONTROL}_${t}.deb
+    echo "${BLUE}Building Debian package $DEB${NC}"
+    dpkg-deb --root-owner-group --build $JANEBASE $DEB
+done
 
+# ---------------------------------------------------------------- tarzan (with jp)
+for t in $TARZAN_TARGETS; do
+    build tarzan "$t"
+    build provisioner "$t"
+    TARZANBASE=$TMPBASE/tarzan-$t
 
-#Copy binaries
-echo "${BLUE}Copying binaries"
-pwd
-cp ../../janeserver/janeserver $JANEBASE/opt/jane
-cp ../addjaneuser/addjaneuser $JANEBASE/opt/jane/addjaneuser
-chmod 755 $JANEBASE/opt/jane/addjaneuser
-cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
-cp ../../tarzan/tarzan $TARZANBASE/opt/jane
-cp ../../provisioner/jp $TARZANBASE/opt/jane
+    mkdir -p $TARZANBASE/DEBIAN $TARZANBASE/opt/jane $TARZANBASE/lib/systemd/system $TARZANBASE/etc/opt/jane \
+        $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons
 
-#Copy configuration files
-echo "${BLUE}Copying configuration files and temporary keys"
-cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
+    cp $REPO/tarzan/$(distdir "$t")/tarzan $TARZANBASE/opt/jane
+    cp $REPO/provisioner/$(distdir "$t")/jp $TARZANBASE/opt/jane
 
-cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
-cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
+    cp tarzan.service $TARZANBASE/lib/systemd/system/tarzan.service
+    # the jp skeletons (#125): full.yaml is the example, all four are docs
+    cp $REPO/provisioner/skeleton/full.yaml $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+    cp $REPO/provisioner/skeleton/*.yaml $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons/
+    cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
 
-# Backup copy of the standard intents matching this version (#67)
-cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintents.json
+    chmod 755 $TARZANBASE/opt/jane/tarzan $TARZANBASE/opt/jane/jp
+    chmod 600 $TARZANBASE/etc/opt/jane/tarzan.env
+    chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons/*.yaml
+    chmod 644 $TARZANBASE/lib/systemd/system/tarzan.service
 
-cp jane.service $JANEBASE/lib/systemd/system/jane.service
-cp tarzan.service $TARZANBASE/lib/systemd/system/tarzan.service
-cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example
-cp jane.env $JANEBASE/etc/opt/jane/jane.env
-cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
+    control control_tarzan_base "$t" $TARZANBASE/DEBIAN/control
+    maintainer $TARZANBASE tarzan
 
-# Modes in the package itself, so that secrets are never world-readable, not
-# even between unpacking and postinst (which then sets the jane group).
-echo "${BLUE}Setting file modes in the package trees${NC}"
-chmod 751 $JANEBASE/etc/opt/jane
-chmod 750 $JANEBASE/var/log/jane
-chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser
-chmod 755 $TARZANBASE/opt/jane/tarzan $TARZANBASE/opt/jane/jp
-chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
-chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json
-chmod 600 $TARZANBASE/etc/opt/jane/tarzan.env
-chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example
-chmod 644 $JANEBASE/lib/systemd/system/jane.service $TARZANBASE/lib/systemd/system/tarzan.service
+    DEB=$TMPBASE/tarzan_${VERSIONNUMBERCONTROL}_${t}.deb
+    echo "${BLUE}Building Debian package $DEB${NC}"
+    dpkg-deb --root-owner-group --build $TARZANBASE $DEB
+done
 
+# ---------------------------------------------------------------- Windows amd64 zips (#122)
+# Same programs and configuration files as the packages; no installer.
+for c in janeserver tarzan provisioner; do
+    echo "${BLUE}Compiling $c for Windows amd64${NC}"
+    make -C "$REPO/$c" binary OS=windows ARCH=amd64 VERSION="$VERSIONNUMBER" OUT=dist/windows-amd64
+done
 
+WINJANE=$TMPBASE/jane-windows-amd64
+mkdir -p $WINJANE
+cp $REPO/janeserver/dist/windows-amd64/janeserver.exe $WINJANE/
+cp ../addjaneuser/addjaneuser $WINJANE/
+cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
+cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
+cp ../standardintents/standardintents.json ../standardobjects/standardobjects.json $WINJANE/
+cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt
 
-#Copy control files
-echo "${BLUE}Copying Debian control, conffile and maintainer scripts${NC}"
-cp control_jane $JANEBASE/DEBIAN/control
-cp control_tarzan $TARZANBASE/DEBIAN/control
+WINTARZAN=$TMPBASE/tarzan-windows-amd64
+mkdir -p $WINTARZAN
+cp $REPO/tarzan/dist/windows-amd64/tarzan.exe $REPO/provisioner/dist/windows-amd64/jp.exe $WINTARZAN/
+cp tarzan.env $WINTARZAN/
+cp $REPO/provisioner/skeleton/full.yaml $WINTARZAN/provisioning.yaml.example
+mkdir -p $WINTARZAN/skeletons
+cp $REPO/provisioner/skeleton/*.yaml $WINTARZAN/skeletons/
+cp windows/tarzan-WINDOWS.txt $WINTARZAN/WINDOWS.txt
 
-cp postinst_jane $JANEBASE/DEBIAN/postinst
-cp postinst_tarzan $TARZANBASE/DEBIAN/postinst
-cp prerm_jane $JANEBASE/DEBIAN/prerm
-cp prerm_tarzan $TARZANBASE/DEBIAN/prerm
-cp preinst_jane $JANEBASE/DEBIAN/preinst
-cp preinst_tarzan $TARZANBASE/DEBIAN/preinst
-cp postrm_jane $JANEBASE/DEBIAN/postrm
-cp postrm_tarzan $TARZANBASE/DEBIAN/postrm
-chmod 755 $JANEBASE/DEBIAN/postinst $TARZANBASE/DEBIAN/postinst $JANEBASE/DEBIAN/prerm $TARZANBASE/DEBIAN/prerm
-chmod 755 $JANEBASE/DEBIAN/preinst $TARZANBASE/DEBIAN/preinst $JANEBASE/DEBIAN/postrm $TARZANBASE/DEBIAN/postrm
-
-cp conffiles_jane $JANEBASE/DEBIAN/conffiles
-cp conffiles_tarzan $TARZANBASE/DEBIAN/conffiles
-
-#Set up package names with versioning and architecture
-JANEDEBNAME=jane_${VERSIONNUMBERCONTROL}_${ARCHTECTURE}
-TARZANDEBNAME=tarzan_${VERSIONNUMBERCONTROL}_${ARCHTECTURE}
-
-#Build deb packages
-echo "${BLUE}Building Debian package for $JANEDEBNAME${NC}"
-pwd
-#ls -l
-cd $TMPBASE
-dpkg-deb --root-owner-group --build jane
-
-echo "${BLUE}Building Debian package for $TARZANDEBNAME${NC}"
-cd $TMPBASE
-dpkg-deb --root-owner-group --build tarzan
+# zip with Python's standard library, so no zip tool is needed
+(cd $WINJANE && python3 -m zipfile -c $TMPBASE/jane_${VERSIONNUMBERCONTROL}_windows-amd64.zip *)
+(cd $WINTARZAN && python3 -m zipfile -c $TMPBASE/tarzan_${VERSIONNUMBERCONTROL}_windows-amd64.zip *)
 
 echo "${BLUE}Build complete${NC}"
-
-echo "${BLUE}Removing any old packages of this version${NC}"
-rm -f ${JANEDEBNAME}.deb ${TARZANDEBNAME}.deb
-
-echo "${BLUE}Renaming tarzan and jane to something saner${NC}"
-mv jane.deb ${JANEDEBNAME}.deb
-mv tarzan.deb ${TARZANDEBNAME}.deb
-
-echo "${BLUE}Here you go${NC}"
-ls -l ${JANEDEBNAME}.deb
-ls -l ${TARZANDEBNAME}.deb
-
-echo "${BLUE}Attempting to build rpms with alien if installed${NC}"
 cd $TMPBASE
 
-alien -r -c -v jane.deb
-alien -r -c -v tarzan.deb
+# Not used any more (#116); kept for reference.
+#echo "${BLUE}Attempting to build rpms with alien if installed${NC}"
+#for d in *.deb; do alien -r -c -v $d; done
+#ls -l *.rpm
+#echo "${BLUE}Linting with lintian if installed${NC}"
+#for d in *.deb; do lintian $d; done
 
-ls -l *.rpm
-
-#Linting deb packages
-echo "${BLUE}Linting jane.deb with lintian if installed${NC}"
-cd $TMPBASE
-lintian jane.deb
-
-echo "${BLUE}Linting tarzan.deb with lintian if installed${NC}"
-cd $TMPBASE
-lintian tarzan.deb
-
-
-
-
-
-gzip *.deb 
-gzip *.rpm 
-
-
+ls -l *.deb
+gzip -f *.deb
+#gzip *.rpm
 
 echo "${BLUE}Listing files${NC}"
-
-cd $TMPBASE
-ls -l *.gz
+ls -l $TMPBASE/*.gz $TMPBASE/*.zip
 
 #Completion
 echo "${BLUE}Complete${NC}"

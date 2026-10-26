@@ -1,0 +1,17 @@
+{{define "title"}}Register names · {{end}}{{define "content"}}
+<h3>Register names</h3>
+<p class="text-body-secondary">Names and descriptions of measurement registers (#101): TPM PCRs under several naming schemes, and the registers of confidential computing platforms. An element chooses the scheme for its TPM with <span class="font-monospace">tpm2.pcrnaming</span>; empty or unknown means <span class="font-monospace">{{ .Default }}</span>. These are built into Jane.</p>
+<table class="table table-sm table-striped">
+   <thead><tr><th>Scheme</th><th>Platform</th><th>Registers</th><th>Description</th></tr></thead>
+   <tbody>
+      {{ range .Schemes }}
+      <tr>
+         <td class="text-nowrap"><a href="/pcrname/{{ .Key }}">{{ .Title }}</a><div class="small font-monospace text-body-secondary">{{ .Key }}</div></td>
+         <td><span class="badge bg-primary-subtle text-primary-emphasis">{{ .Platform }}</span></td>
+         <td>{{ len .Registers }}</td>
+         <td class="small">{{ .Description }}</td>
+      </tr>
+      {{ end }}
+   </tbody>
+</table>
+{{end}}

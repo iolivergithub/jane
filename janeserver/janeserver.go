@@ -28,7 +28,7 @@ import (
 )
 
 // Version number. A var rather than a const so it can be overridden at build time with
-// -ldflags "-X 'main.VERSION=...'"; the Makefiles set only BUILD.
+// -ldflags "-X 'main.VERSION=...'"; the Makefile sets it when given VERSION=, and always sets BUILD.
 var VERSION string = "v1.1 JANE"
 
 // the BUILD value can be set during compilation.

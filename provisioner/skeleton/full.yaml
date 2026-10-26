@@ -1,0 +1,286 @@
+# jp provisioning file: full (physical machine, UEFI, TPM)
+#
+# A physical Linux machine with UEFI firmware and a TPM (discrete or firmware): every
+# standard intent with its rules and cross-checks.
+#
+# One of four skeletons, by what the machine can show (#125):
+#   full.yaml          physical Linux machine, UEFI, discrete or firmware TPM
+#   full-vm.yaml       virtual machine with UEFI and a vTPM
+#   tpm2-nouefi.yaml   board with a TPM but no UEFI (e.g. Raspberry Pi with a TPM)
+#   sysonly.yaml       no TPM: the trust agent's system information only
+# All four are installed by the tarzan package in
+# /usr/share/doc/tarzantrustagent/skeletons/ (and full.yaml as
+# /etc/opt/jane/provisioning.yaml.example). Copy one, edit the copy, then:
+#   sudo /opt/jane/jp create --reprovisiontpm <file>     (first time)
+#   sudo /opt/jane/jp attest <file>                      (any time)
+# Leave out what the machine cannot do: a rule on a claim that failed is
+# recorded as a failure on every run. See docs/jp.md.
+
+attestationserver: http://127.0.0.1:8520
+element:
+  name: Debian13
+  description: Debian 13 machine
+  # free text; de facto physical-machine or virtual-machine (#118)
+  elementtype: physical-machine
+  tags:
+    - linux
+    - x86
+    - tpm2
+    - uefi
+endpoints:
+  tarzan:
+      endpoint: http://127.0.0.1:8530
+      protocol: A10HTTPRESTv2
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the ratsd intents at the end.
+  #ratsd:
+  #    endpoint: http://127.0.0.1:8895
+  #    protocol: RATSD
+tpm2:
+  device:   /dev/tpmrm0
+  # NV index of the EK certificate, read by std::intent::tpm2::getcert
+  # (0x01C00002: RSA 2048, the usual one; 0x01C0000A: ECC P-256)
+  ekcerthandle: '0x01C00002'
+  # register naming scheme for the PCRs on claim pages (jane: Register names)
+  pcrnaming: linux-uefi
+  ek:
+    handle: '0x810100EE'
+  ak:
+    handle: '0x810100AA'
+provisionworklist:
+  # tpmclear evicts (deletes) the persistent keys at the EK and AK handles above, so
+  # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
+  # Whatever was stored at those two handles is lost, and Jane's record of the old keys
+  # no longer matches until jp registers the new ones. Both steps run only when jp
+  # create/update is given --reprovisiontpm; otherwise they are skipped and the TPM is
+  # left unchanged, so jp can run unattended. jp attest never runs them.
+  - tpmclear
+  - tpmprovision
+  - collecthostinfo
+  - collecttpm2
+  - collectuefi
+  - collectima
+  - makebetterdescription
+  - processelement
+  - processevs
+
+evs:
+  - std::intent::sys::info :
+      protocol: tarzan
+      type: sysmachineid
+      rules:
+        - sys_taRunningSafely
+        - sys_machineID_Agent
+        - sys_machineID_CrossRef
+  # the event log and the PCRs, collected before the quotes, so that the
+  # rules can check event log -> PCRs -> quote (cid names a claim's itemid,
+  # $name passes it to a rule; see docs/jp.md)
+  - std::intent::uefi::eventlog :
+      protocol: tarzan
+      cid: uefilog
+  - std::intent::tpm::pcrs :
+      protocol: tarzan
+      cid: pcrs
+      rules:
+        - tpm2_uefiLogReplay:
+            rid: r_uefilog
+            resvar: r_uefilog_code
+            parameters: { "uefilogcid": $uefilog }
+  # quotes (signed by the AK): every standard PCR selection; the expected
+  # values (PCR digest, firmware version) are recorded by jp create/update
+  - std::intent::sha256::crtm::pcr0 :
+      protocol: tarzan
+      cid: q_pcr0
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  - std::intent::sha256::crtm::firmware :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  - std::intent::sha256::crtm::bootloaderonly :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  - std::intent::sha256::crtm::crtmplusbootloader :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  - std::intent::sha256::crtm::srtmbootloader :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  - std::intent::sha256::srtm :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  # PCRs 0 and 10: needs IMA (kernel ima_policy); PCR 10 changes as files are measured
+  - std::intent::sha256::linuxIMA :
+      protocol: tarzan
+      type: tpm2quote
+      rules:
+        - tpm2_attestedValue
+        - tpm2_firmware
+        - tpm2_magicNumber
+        - tpm2_type
+        - tpm2_safe
+        - tpm2_validNonce
+        - tpm2_validSignature
+        - tpm2_pcrDigest:
+            parameters: { "pcrscid": $pcrs }
+  # PCRs 0-10: GRUB measures its commands and files into 8 and 9, which change
+  # with every kernel or GRUB configuration update; uncomment if that is what you want
+  # - std::intent::sha256::grubfull :
+  #     protocol: tarzan
+  #     type: tpm2quote
+  #     rules:
+  #       - tpm2_attestedValue
+  #       - tpm2_firmware
+  #       - tpm2_magicNumber
+  #       - tpm2_type
+  #       - tpm2_safe
+  #       - tpm2_validNonce
+  #       - tpm2_validSignature
+  #       - tpm2_pcrDigest:
+  #           parameters: { "pcrscid": $pcrs }
+  # Intel TXT (tboot) only: PCRs 17 and 18
+  # - std::intent::sha256::txt :
+  #     protocol: tarzan
+  #     type: tpm2quote
+  #     rules:
+  #       - tpm2_attestedValue
+  #       - tpm2_firmware
+  #       - tpm2_magicNumber
+  #       - tpm2_type
+  #       - tpm2_safe
+  #       - tpm2_validNonce
+  #       - tpm2_validSignature
+  #       - tpm2_pcrDigest:
+  #           parameters: { "pcrscid": $pcrs }
+  # the IMA measurement list (tarzan -ima)
+  - std::intent::linux::ima::asciilog :
+      protocol: tarzan
+  # the AK is in the same TPM as the EK, and is a proper attestation key
+  - std::intent::tpm2::activatecredential :
+      protocol: tarzan
+      rules:
+        - tpm2_credentialActivated
+        - tpm2_akAttributes
+  # TPM clock, reset and restart counters (signed): the signature, and progress since the
+  # pcr0 quote above (within this run; give an older claim's itemid to compare sessions).
+  # Leave out on TPMs without TPM2_GetTime (see the commands on the capabilities claim)
+  - std::intent::tpm2::gettime :
+      protocol: tarzan
+      rules:
+        - tpm2_validSignature
+        - tpm2_clockProgress:
+            parameters: { "previouscid": $q_pcr0 }
+  # the TPM's identity and configuration (unsigned): its firmware version must equal the
+  # signed one in the pcr0 quote
+  - std::intent::tpm2::capabilities :
+      protocol: tarzan
+      rules:
+        - tpm2_capabilitiesFirmware:
+            parameters: { "quotecid": $q_pcr0 }
+  # the EK certificate from the TPM's NV storage (unsigned): it must hold the element's EK
+  # and be issued by the certificates at issuerurl. jp takes issuerurl from the
+  # certificate's CA Issuers URL unless given here (https://, http:// or file://, e.g.
+  # where a manufacturer's certificates were put). Leave out if the TPM has no EK
+  # certificate (most vTPMs, some boards).
+  - std::intent::tpm2::getcert :
+      protocol: tarzan
+      type: tpm2ekcert
+      #issuerurl: file:///etc/opt/jane/ekca/infineon.pem
+      rules:
+        - tpm2_ekCertMatchesEK
+        - tpm2_ekCertIssuer
+  # UEFI variables: Secure Boot state and keys, against the values recorded by jp
+  - std::intent::uefi::efivars :
+      protocol: tarzan
+      type: uefiefivars
+      rules:
+        - UEFI_SecureBoot
+        - UEFI_SetupMode
+        - UEFI_AuditMode
+        - UEFI_DeployedMode
+        - UEFI_VendorKeys
+        - UEFI_PK
+        - UEFI_KEK
+        - UEFI_db
+        - UEFI_MokSBStateRT
+        # these change with firmware (fwupd) and shim/SBAT (apt) updates;
+        # run jp update afterwards to refresh the expected value
+        - UEFI_dbx
+        - UEFI_SbatLevelRT
+        - UEFI_MokListRT
+        - UEFI_MokListXRT
+        - UEFI_PKDefault
+        - UEFI_KEKDefault
+        - UEFI_dbDefault
+        - UEFI_dbxDefault
+  # boot configuration (BootCurrent, BootOrder, BootNext): not implemented in tarzan yet,
+  # it answers with a message saying so
+  #- std::intent::uefi::bootconfig :
+  #    protocol: tarzan
+  # ratsd (uncomment with the ratsd endpoint above): its leaf attesters, and their
+  # evidence as a CMW collection with the nonces checked
+  #- std::intent::ratsd::subattesters :
+  #    protocol: ratsd
+  #- std::intent::ratsd::chares :
+  #    protocol: ratsd
+  #    rules:
+  #      - chares_validNonce
+  #      - chares_validAttesterNonces
