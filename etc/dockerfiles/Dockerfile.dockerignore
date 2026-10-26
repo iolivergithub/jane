@@ -1,0 +1,12 @@
+# Build context for etc/dockerfiles/Dockerfile (BuildKit reads
+# <Dockerfile>.dockerignore): only the files the image copies.
+*
+!janeserver/janeserver
+!etc/addjaneuser/addjaneuser
+!etc/debbuild/config.yaml
+!etc/debbuild/REPLACE_ME.crt
+!etc/debbuild/REPLACE_ME.key
+!etc/standardintents/standardintents.json
+!etc/standardobjects/standardobjects.json
+!etc/dockerfiles/mosquitto.conf
+!etc/dockerfiles/start.sh

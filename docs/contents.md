@@ -15,6 +15,7 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 **Installing and running**
 
 - [Installing with dpkg/apt](deb.md): what the packages install, upgrade and removal, running under systemd.
+- [Containers](containers.md): an all-in-one image (Jane, MongoDB, Mosquitto) and a `kubectl apply` file, for a quick start.
 - [Running Jane, tarzan and jp](running.md): every option, flag and environment variable; running by hand and on other systems.
 - [jp, the provisioner](jp.md): create, update and attest, the flags and when to use them, the provisioning file.
 - [Authentication](authentication.md): logins for the Web UI, REST API and x3270, and Jane's users.
