@@ -716,3 +716,21 @@ func TestUnsafeFlagRemoved(t *testing.T) {
 		}
 	}
 }
+
+// The provisioning file's element type reaches Jane; without one the field is
+// left out (#118).
+func TestElementType(t *testing.T) {
+	for _, typ := range []string{"virtual-machine", ""} {
+		h := newHarness(t, "create")
+		h.pv.P.Element.ElementType = typ
+		h.pv.P.ProvisionWorklist = []string{"processelement"}
+		if _, err := h.pv.ProcessWorklist(); err != nil {
+			t.Fatal(err)
+		}
+		el := h.jane.bodies["POST /element"][0].(map[string]any)
+		got, present := el["elementtype"]
+		if typ == "" && present || typ != "" && got != typ {
+			t.Errorf("type %q: element body has elementtype %v (present %v)", typ, got, present)
+		}
+	}
+}

@@ -23,6 +23,8 @@ type ElementConfig struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description"`
 	Tags        []string `yaml:"tags"`
+	// ElementType, e.g. physical-machine or virtual-machine (#118); optional
+	ElementType string `yaml:"elementtype"`
 }
 
 // Endpoint matches janeserver's structures.Endpoint.

@@ -19,6 +19,7 @@
       {{ end }}
 
       <div class="d-flex flex-wrap gap-1">
+         {{ if .ElementType }}<span class="badge bg-body-secondary text-body-emphasis border" title="Element type">{{ .ElementType }}</span>{{ end }}
          {{ if .TPM2.Device }}<span class="badge text-bg-success" title="TPM2 device {{ .TPM2.Device }}">TPM2</span>{{ end }}
          {{ if .UEFI.Eventlog }}<span class="badge text-bg-info" title="UEFI event log {{ .UEFI.Eventlog }}">UEFI</span>{{ end }}
          {{ if .IMA.ASCIILog }}<span class="badge text-bg-warning" title="IMA log {{ .IMA.ASCIILog }}">IMA</span>{{ end }}

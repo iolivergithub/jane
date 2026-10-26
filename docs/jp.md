@@ -144,6 +144,7 @@ element:
   name: Debian13VM                            # must be unique in Jane
   description: Debian 13 VM
   tags: [linux, x86, tpm2, uefi]
+  elementtype: virtual-machine                # optional (1.5.6): physical-machine, virtual-machine, ...
 endpoints:                                    # where Jane reaches this machine's trust agents
   tarzan:
       endpoint: http://127.0.0.1:8530

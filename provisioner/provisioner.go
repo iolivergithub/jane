@@ -23,6 +23,7 @@ type Element struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
 	Tags        []string            `json:"tags"`
+	ElementType string              `json:"elementtype,omitempty"` // #118
 	Endpoints   map[string]Endpoint `json:"endpoints"`
 	Host        *HostInfo           `json:"host,omitempty"`
 	UEFI        *UEFIInfo           `json:"uefi,omitempty"`
@@ -107,6 +108,7 @@ func (pv *Provisioner) initialElement() *Element {
 		Name:        pv.P.Element.Name,
 		Description: pv.P.Element.Description,
 		Tags:        pv.P.Element.Tags,
+		ElementType: pv.P.Element.ElementType,
 		Endpoints:   pv.P.Endpoints,
 	}
 }

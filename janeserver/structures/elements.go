@@ -11,6 +11,14 @@ type Element struct {
 
 	Tags []string `json:"tags" bson:"tags" yaml:"tags"`
 
+	// ElementType says what the element is: a free string, by convention
+	// "physical-machine" or "virtual-machine" (#118). Empty means not stated.
+	ElementType string `json:"elementtype,omitempty" bson:"elementtype,omitempty" yaml:"elementtype,omitempty"`
+
+	// Relationships to other elements, a set (#118). Changed only by the
+	// relationship operations; UpdateElement keeps the stored ones.
+	Relationships []ElementRelationship `json:"relationships,omitempty" bson:"relationships,omitempty" yaml:"relationships,omitempty"`
+
 	Sshkey SSHKEY      `json:"sshkey,omitempty" bson:"sshkey,omitempty"  yaml:"sshkey,omitempty"`
 	TPM2   TPM2        `json:"tpm2,omitempty" bson:"tpm2,omitempty" yaml:"tpm2,omitempty"`
 	UEFI   UEFI        `json:"uefi,omitempty" bson:"uefi,omitempty" yaml:"uefi,omitempty"`
@@ -27,6 +35,22 @@ type ElementSummary struct {
 	Name      string              `json:"name" bson:"name"  yaml:"name"`
 	Endpoints map[string]Endpoint `json:"endpoints" bson:"endpoints"  yaml:"endpoints"`
 }
+
+// ElementRelationship relates an element to another, e.g. a VM that is
+// "hosted-on" its host (#118). It is stored on the source element.
+type ElementRelationship struct {
+	RelationshipType string `json:"relationshiptype" bson:"relationshiptype" yaml:"relationshiptype"`
+	ItemID           string `json:"itemid" bson:"itemid" yaml:"itemid"`
+}
+
+// The known relationship types (#118).
+const (
+	RelationshipRunsOn   = "runs-on"   // software runs on the target element
+	RelationshipHostedOn = "hosted-on" // a VM runs on the target element
+)
+
+// RelationshipTypes lists the known relationship types.
+var RelationshipTypes = []string{RelationshipRunsOn, RelationshipHostedOn}
 
 type Endpoint struct {
 	Endpoint string `json:"endpoint" bson:"endpoint"  yaml:"endpoint"`

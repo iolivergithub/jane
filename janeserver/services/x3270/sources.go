@@ -140,6 +140,7 @@ func elementDetail(s store, id string) detail {
 	add(labelled("Name", e.Name)...)
 	add(labelled("Item ID", e.ItemID)...)
 	add(labelled("Description", e.Description)...)
+	add(labelled("Type", or(e.ElementType, "(not stated)"))...)
 	add(labelled("Tags", strings.Join(e.Tags, ", "))...)
 
 	add(section("Endpoints")...)
@@ -152,6 +153,23 @@ func elementDetail(s store, id string) detail {
 		add(labelled(n, e.Endpoints[n].Protocol+"  "+e.Endpoints[n].Endpoint)...)
 	}
 	if len(eps) == 0 {
+		add("(none)")
+	}
+
+	// relationships (#118): read-only here, changed through the REST API
+	add(section("Relationships")...)
+	for _, r := range e.Relationships {
+		r := r
+		name := r.ItemID
+		if t, terr := s.Element(r.ItemID); terr == nil {
+			name = t.Name + "  " + r.ItemID
+		} else {
+			name += "  (missing)"
+		}
+		d.add([]string{fmt.Sprintf("%s  %s", fit(r.RelationshipType, 10), name)},
+			link{Open: func() detail { return elementDetail(s, r.ItemID) }})
+	}
+	if len(e.Relationships) == 0 {
 		add("(none)")
 	}
 

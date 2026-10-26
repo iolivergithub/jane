@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"a10/operations"
 	"a10/structures"
 )
 
@@ -102,6 +103,20 @@ type elementPage struct {
 	ListSessions []elementSession
 	ListResults  []structures.Result
 	ListClaims   []structures.Claim
+
+	// Relationships (#118): this element's, with the targets' names, and
+	// those other elements have to this one. Display only.
+	Related     []elementRelation
+	RelatedFrom []operations.RelatedFrom
+}
+
+// elementRelation is one of the element's relationships, with the name of
+// the target element; Missing if that element no longer exists.
+type elementRelation struct {
+	RelationshipType string
+	ItemID           string
+	Name             string
+	Missing          bool
 }
 
 func shortLabel(t structures.Timestamp) string {
