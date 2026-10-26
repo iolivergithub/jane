@@ -16,7 +16,7 @@ func templateFunctions() template.FuncMap {
 		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription, "eventlog": EventLogBody,
 		"resultClass": ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
 		"longSession": func() string { return configuration.LongSession().String() },
-		"dict":        Dict, "pcrname": PCRName, "pcrscheme": PCRScheme, "splitList": SplitList,
+		"dict":        Dict, "pcrname": PCRName, "pcrscheme": PCRScheme, "splitList": SplitList, "sortRegisters": SortRegisters,
 	}
 	// authEnabled and currentUser, used by base.html for the username and logout button
 	for name, f := range auth.TemplateFuncs() {

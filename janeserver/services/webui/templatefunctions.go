@@ -2,6 +2,8 @@ package webui
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -147,6 +149,38 @@ type pcrSchemeView struct {
 func PCRScheme(key string) pcrSchemeView {
 	s, known := registernames.Resolve(key)
 	return pcrSchemeView{Key: s.Key, Title: s.Title, Requested: key, Unknown: key != "" && !known}
+}
+
+// registerEntry is one register of a claim body and its value.
+type registerEntry struct {
+	Register string
+	Value    string
+}
+
+// SortRegisters lists a bank's registers (a map from register number to
+// value) in numerical order, 0, 1, 2, ... 10, rather than the textual order
+// a template's range gives; keys that are not numbers follow, in textual order.
+func SortRegisters(bank interface{}) []registerEntry {
+	var out []registerEntry
+	v := reflect.ValueOf(bank)
+	if v.Kind() != reflect.Map {
+		return out
+	}
+	for _, k := range v.MapKeys() {
+		out = append(out, registerEntry{fmt.Sprintf("%v", k.Interface()), fmt.Sprintf("%v", v.MapIndex(k).Interface())})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		a, aerr := strconv.Atoi(out[i].Register)
+		b, berr := strconv.Atoi(out[j].Register)
+		switch {
+		case aerr == nil && berr == nil:
+			return a < b
+		case aerr == nil || berr == nil:
+			return aerr == nil
+		}
+		return out[i].Register < out[j].Register
+	})
+	return out
 }
 
 // SplitList splits a comma-separated value, e.g. a quote's pcrSelection
