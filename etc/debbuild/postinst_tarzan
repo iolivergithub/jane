@@ -74,6 +74,8 @@ echo
 echo "tarzan is installed and running on port 8530 (HTTP; APIs: sys, tpm2, uefi, ima)."
 echo "To register this machine with Jane:"
 echo "    cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml"
+echo "    (or one of the skeletons in /usr/share/doc/tarzantrustagent/skeletons/:"
+echo "     full, full-vm, tpm2-nouefi, sysonly)"
 echo "    (edit it), then: sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml"
 echo "Quick start: $DOCS/docs/quickstart.md"
 echo "tarzan has no authentication; see $DOCS/docs/hardening.md"

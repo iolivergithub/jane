@@ -1,0 +1,60 @@
+# jp provisioning file: sysonly (no TPM)
+#
+# A machine without a TPM: only the trust agent's system information (machine ID,
+# whether tarzan runs safely). Nothing here is signed.
+#
+# One of four skeletons, by what the machine can show (#125):
+#   full.yaml          physical Linux machine, UEFI, discrete or firmware TPM
+#   full-vm.yaml       virtual machine with UEFI and a vTPM
+#   tpm2-nouefi.yaml   board with a TPM but no UEFI (e.g. Raspberry Pi with a TPM)
+#   sysonly.yaml       no TPM: the trust agent's system information only
+# All four are installed by the tarzan package in
+# /usr/share/doc/tarzantrustagent/skeletons/ (and full.yaml as
+# /etc/opt/jane/provisioning.yaml.example). Copy one, edit the copy, then:
+#   sudo /opt/jane/jp create --reprovisiontpm <file>     (first time)
+#   sudo /opt/jane/jp attest <file>                      (any time)
+# Leave out what the machine cannot do: a rule on a claim that failed is
+# recorded as a failure on every run. See docs/jp.md.
+
+attestationserver: http://127.0.0.1:8520
+element:
+  name: Pi
+  description: Raspberry Pi without TPM
+  # free text; de facto physical-machine or virtual-machine (#118)
+  elementtype: physical-machine
+  tags:
+    - linux
+    - arm
+    - pi
+endpoints:
+  tarzan:
+      endpoint: http://127.0.0.1:8530
+      protocol: A10HTTPRESTv2
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the ratsd intents at the end.
+  #ratsd:
+  #    endpoint: http://127.0.0.1:8895
+  #    protocol: RATSD
+provisionworklist:
+  - collecthostinfo
+  - makebetterdescription
+  - processelement
+  - processevs
+
+evs:
+  - std::intent::sys::info :
+      protocol: tarzan
+      type: sysmachineid
+      rules:
+        - sys_taRunningSafely
+        - sys_machineID_Agent
+        - sys_machineID_CrossRef
+  # ratsd (uncomment with the ratsd endpoint above): its leaf attesters, and their
+  # evidence as a CMW collection with the nonces checked
+  #- std::intent::ratsd::subattesters :
+  #    protocol: ratsd
+  #- std::intent::ratsd::chares :
+  #    protocol: ratsd
+  #    rules:
+  #      - chares_validNonce
+  #      - chares_validAttesterNonces

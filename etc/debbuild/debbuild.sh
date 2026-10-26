@@ -148,18 +148,21 @@ for t in $TARZAN_TARGETS; do
     build provisioner "$t"
     TARZANBASE=$TMPBASE/tarzan-$t
 
-    mkdir -p $TARZANBASE/DEBIAN $TARZANBASE/opt/jane $TARZANBASE/lib/systemd/system $TARZANBASE/etc/opt/jane
+    mkdir -p $TARZANBASE/DEBIAN $TARZANBASE/opt/jane $TARZANBASE/lib/systemd/system $TARZANBASE/etc/opt/jane \
+        $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons
 
     cp $REPO/tarzan/$(distdir "$t")/tarzan $TARZANBASE/opt/jane
     cp $REPO/provisioner/$(distdir "$t")/jp $TARZANBASE/opt/jane
 
     cp tarzan.service $TARZANBASE/lib/systemd/system/tarzan.service
-    cp provisioning.yaml.example $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+    # the jp skeletons (#125): full.yaml is the example, all four are docs
+    cp $REPO/provisioner/skeleton/full.yaml $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+    cp $REPO/provisioner/skeleton/*.yaml $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons/
     cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
 
     chmod 755 $TARZANBASE/opt/jane/tarzan $TARZANBASE/opt/jane/jp
     chmod 600 $TARZANBASE/etc/opt/jane/tarzan.env
-    chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example
+    chmod 644 $TARZANBASE/etc/opt/jane/provisioning.yaml.example $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons/*.yaml
     chmod 644 $TARZANBASE/lib/systemd/system/tarzan.service
 
     control control_tarzan_base "$t" $TARZANBASE/DEBIAN/control
@@ -189,7 +192,10 @@ cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt
 WINTARZAN=$TMPBASE/tarzan-windows-amd64
 mkdir -p $WINTARZAN
 cp $REPO/tarzan/dist/windows-amd64/tarzan.exe $REPO/provisioner/dist/windows-amd64/jp.exe $WINTARZAN/
-cp provisioning.yaml.example tarzan.env $WINTARZAN/
+cp tarzan.env $WINTARZAN/
+cp $REPO/provisioner/skeleton/full.yaml $WINTARZAN/provisioning.yaml.example
+mkdir -p $WINTARZAN/skeletons
+cp $REPO/provisioner/skeleton/*.yaml $WINTARZAN/skeletons/
 cp windows/tarzan-WINDOWS.txt $WINTARZAN/WINDOWS.txt
 
 # zip with Python's standard library, so no zip tool is needed

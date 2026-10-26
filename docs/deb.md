@@ -76,7 +76,8 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 |---|---|
 | `/opt/jane/tarzan` | the trust agent |
 | `/opt/jane/jp` | the provisioner (see [jp](jp.md)) |
-| `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy |
+| `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy (the `full.yaml` skeleton) |
+| `/usr/share/doc/tarzantrustagent/skeletons/` | the four jp [skeletons](jp.md#skeletons): `full`, `full-vm`, `tpm2-nouefi`, `sysonly` (not conffiles) |
 | `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
 | `/lib/systemd/system/tarzan.service` | runs tarzan as root |
 
@@ -95,7 +96,7 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` and its subdirectories (not `jp.key`) | `root:jane` | 640 |
 | `*.crt`, `standardintents.json`, `standardobjects.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
-| `/etc/opt/jane/provisioning.yaml.example` | `root:root` | 644 |
+| `/etc/opt/jane/provisioning.yaml.example`, `/usr/share/doc/tarzantrustagent/skeletons/*.yaml` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
 | `/lib/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 

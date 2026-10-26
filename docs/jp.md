@@ -1,6 +1,6 @@
 # jp, the provisioner
 
-jp runs on each element (machine to be attested). It registers the machine with Jane, provisions its TPM keys, records the machine's expected values, and attests it. Everything jp does is described by a **provisioning file** (YAML); the tarzan package installs an example as `/etc/opt/jane/provisioning.yaml.example`.
+jp runs on each element (machine to be attested). It registers the machine with Jane, provisions its TPM keys, records the machine's expected values, and attests it. Everything jp does is described by a **provisioning file** (YAML); the tarzan package installs an example as `/etc/opt/jane/provisioning.yaml.example` and four [skeletons](#skeletons) to start from.
 
 jp is built to run unattended (from cron, a systemd timer, a package hook) as well as by hand. It never asks questions. Anything destructive needs its own flag on the command line, so a scheduled or scripted jp can never wipe the TPM keys or re-register the machine by accident.
 
@@ -178,6 +178,19 @@ evs:                                          # intents to attest, and what to r
 ```
 
 Use the endpoint names in `evs: protocol:` (the key is called `protocol` for historical reasons; it names an endpoint). If Jane and tarzan are on different machines, `attestationserver` must reach Jane from this machine and `endpoints` must reach tarzan from Jane's machine.
+
+### Skeletons
+
+Four provisioning files to start from (#125), in `provisioner/skeleton/` and installed by the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/` (in `skeletons\` in the Windows zip). Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
+
+| Skeleton | Machine | SYS | UEFI | TPM 2.0 | IMA |
+|---|---|---|---|---|---|
+| `full.yaml` | physical Linux machine, UEFI, discrete or firmware TPM | ✓ | ✓ | ✓, with the EK certificate | ✓ |
+| `full-vm.yaml` | virtual machine, UEFI (OVMF), vTPM | ✓ | ✓ | ✓, without the EK certificate (vTPMs normally have none) | ✓ |
+| `tpm2-nouefi.yaml` | board with a TPM but no UEFI, e.g. Raspberry Pi with a TPM module | ✓ | — | ✓, with the EK certificate, no event log replay | commented |
+| `sysonly.yaml` | no TPM | ✓ | — | — | — |
+
+Each lists every standard intent that applies, with all its rules and cross-checks (event log → PCRs → quote, the clock against the pcr0 quote, the capabilities firmware against the quote, the EK certificate against the EK and its issuer); `full.yaml` is also installed as `/etc/opt/jane/provisioning.yaml.example`. Intents that only some machines support are there but commented out (`sha256::grubfull`, `sha256::txt`, `uefi::bootconfig`, the ratsd intents). Leave out what the machine cannot do, e.g. `tpm2::gettime` on a TPM without TPM2_GetTime, or `tpm2::getcert` on a TPM without an EK certificate: a rule on an error claim is recorded as a failed attempt on every run. The skeletons before 1.5.6 were `examplecreateprovisioningfile.yaml` (now `full.yaml`), `examplecreatetestvm.yaml` (`full-vm.yaml`), `pi.yaml` (`tpm2-nouefi.yaml`) and `pi_notpm.yaml` (`sysonly.yaml`).
 
 ### Worklist steps
 

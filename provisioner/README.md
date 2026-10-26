@@ -6,7 +6,9 @@ Go port of `provisioner/jp.py`. It registers the machine as an element with a
 Jane attestation server, can clear and provision the TPM, and records
 expected values for the intents listed in the provisioning file. It can
 then attest the registered element, running the rules listed for each
-intent. The provisioning file format is unchanged; see
+intent. The provisioning file format is unchanged; see the skeletons in
+`skeleton/` (`full.yaml`, `full-vm.yaml`, `tpm2-nouefi.yaml`, `sysonly.yaml`;
+[docs/jp.md](../docs/jp.md#skeletons)) and the tests' fixture
 `testdata/examplecreateprovisioningfile.yaml`.
 
 TPM operations use [go-tpm](https://github.com/google/go-tpm) directly

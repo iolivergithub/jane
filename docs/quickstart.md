@@ -81,7 +81,7 @@ Go to **Intents** and press **Load standard intents**. Intents describe what to 
 
 ## 5. Register this machine (jp create)
 
-Copy the example provisioning file and look through it:
+Copy the example provisioning file and look through it. It is for a physical machine with UEFI and a TPM; for a VM, a board without UEFI or a machine without a TPM, copy `full-vm.yaml`, `tpm2-nouefi.yaml` or `sysonly.yaml` from `/usr/share/doc/tarzantrustagent/skeletons/` instead (see [jp: skeletons](jp.md#skeletons)):
 
 ```bash
 sudo cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml

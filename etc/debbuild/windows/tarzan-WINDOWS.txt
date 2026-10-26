@@ -10,9 +10,11 @@ port, 8530 by default).
   tarzan.exe              trust agent, e.g. tarzan.exe -sys -tpm2 -uefi
   jp.exe                  provisioner: jp.exe create|update|attest <file>
   provisioning.yaml.example
-                          example provisioning file for jp; its paths and the
-                          TPM device are Unix ones (the device is ignored on
-                          Windows)
+                          example provisioning file for jp (skeletons/full.yaml);
+                          its paths and the TPM device are Unix ones (the
+                          device is ignored on Windows)
+  skeletons\              the four jp skeletons: full, full-vm, tpm2-nouefi,
+                          sysonly (by what the machine has: UEFI, TPM, ...)
   tarzan.env              environment variables, read by systemd on Linux;
                           set them in Windows instead
 

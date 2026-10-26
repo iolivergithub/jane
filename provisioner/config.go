@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ProvisioningFile is the YAML provisioning file (see examplecreateprovisioningfile.yaml).
+// ProvisioningFile is the YAML provisioning file (see skeleton/full.yaml).
 type ProvisioningFile struct {
 	AttestationServer string              `yaml:"attestationserver"`
 	Element           ElementConfig       `yaml:"element"`
