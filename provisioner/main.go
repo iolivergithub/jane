@@ -2,7 +2,7 @@
 // an element with a Jane attestation server and, optionally, provisions the
 // TPM and records expected values; it can then attest the element.
 //
-//	jp create|update|attest <provisioning file> [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD]
+//	jp create|update|attest <provisioning file> [--reprovisiontpm] [--recreate] [--apikeyfile PATH]
 package main
 
 import (
@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--user NAME --pass PASSWORD] operation pfile
+const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile
 
 Jane Element Configurator
 
