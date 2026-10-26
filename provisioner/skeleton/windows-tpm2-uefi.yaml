@@ -1,0 +1,125 @@
+# jp provisioning file: full (physical machine, UEFI, TPM)
+#
+# A physical Linux machine with UEFI firmware and a TPM (discrete or firmware): every
+# standard intent with its rules and cross-checks.
+#
+# One of four skeletons, by what the machine can show (#125):
+#   full.yaml          physical Linux machine, UEFI, discrete or firmware TPM
+#   full-vm.yaml       virtual machine with UEFI and a vTPM
+#   tpm2-nouefi.yaml   board with a TPM but no UEFI (e.g. Raspberry Pi with a TPM)
+#   sysonly.yaml       no TPM: the trust agent's system information only
+# All four are installed by the tarzan package in
+# /usr/share/doc/tarzantrustagent/skeletons/ (and full.yaml as
+# /etc/opt/jane/provisioning.yaml.example). Copy one, edit the copy, then:
+#   sudo /opt/jane/jp create --reprovisiontpm <file>     (first time)
+#   sudo /opt/jane/jp attest <file>                      (any time)
+# Leave out what the machine cannot do: a rule on a claim that failed is
+# recorded as a failure on every run. See docs/jp.md.
+
+attestationserver: http://127.0.0.1:8520
+element:
+  name: Windows11
+  description: Example Windows machine
+  # free text; de facto physical-machine or virtual-machine (#118)
+  elementtype: physical-machine
+  tags:
+    - windows
+    - x86
+    - tpm2
+    - uefi
+endpoints:
+  tarzan:
+      endpoint: http://127.0.0.1:8530
+      protocol: A10HTTPRESTv2
+  # ratsd (Veraison's attestation daemon): uncomment once ratsd is installed on this
+  # machine and listening on port 8895, to use the ratsd intents at the end.
+  #ratsd:
+  #    endpoint: http://127.0.0.1:8895
+  #    protocol: RATSD
+tpm2:
+#  device:   /dev/tpmrm0
+  # NV index of the EK certificate, read by std::intent::tpm2::getcert
+  # (0x01C00002: RSA 2048, the usual one; 0x01C0000A: ECC P-256)
+  ekcerthandle: '0x01C00002'
+  # register naming scheme for the PCRs on claim pages (jane: Register names)
+  pcrnaming: windows-bitlocker
+  ek:
+    handle: '0x810100EE'
+  ak:
+    handle: '0x810100AA'
+provisionworklist:
+  # tpmclear evicts (deletes) the persistent keys at the EK and AK handles above, so
+  # that tpmprovision can create them afresh; it does not clear the rest of the TPM.
+  # Whatever was stored at those two handles is lost, and Jane's record of the old keys
+  # no longer matches until jp registers the new ones. Both steps run only when jp
+  # create/update is given --reprovisiontpm; otherwise they are skipped and the TPM is
+  # left unchanged, so jp can run unattended. jp attest never runs them.
+ # - tpmclear
+ # - tpmprovision
+  - collecthostinfo
+  - collecttpm2
+  - collectuefi
+  - collectima
+  - makebetterdescription
+  - processelement
+  - processevs
+
+evs:
+  - std::intent::sys::info :
+      protocol: tarzan
+      type: sysmachineid
+      rules:
+        - sys_taRunningSafely
+        - sys_machineID_Agent
+        - sys_machineID_CrossRef
+  # the event log and the PCRs, collected before the quotes, so that the
+  # rules can check event log -> PCRs -> quote (cid names a claim's itemid,
+  # $name passes it to a rule; see docs/jp.md)
+  - std::intent::uefi::eventlog :
+      protocol: tarzan
+      cid: uefilog
+  - std::intent::tpm::pcrs :
+      protocol: tarzan
+      cid: pcrs
+      rules:
+        - tpm2_uefiLogReplay:
+            rid: r_uefilog
+            resvar: r_uefilog_code
+            parameters: { "uefilogcid": $uefilog }
+ 
+  - std::intent::tpm2::capabilities :
+      protocol: tarzan
+ 
+  - std::intent::tpm2::getcert :
+      protocol: tarzan
+      type: tpm2ekcert
+      #issuerurl: file:///etc/opt/jane/ekca/infineon.pem
+#      rules:
+#        - tpm2_ekCertMatchesEK
+#        - tpm2_ekCertIssuer
+
+#  - std::intent::uefi::efivars :
+#      protocol: tarzan
+#      type: uefiefivars
+#      rules:
+#        - UEFI_SecureBoot
+#        - UEFI_SetupMode
+#        - UEFI_AuditMode
+#        - UEFI_DeployedMode
+#        - UEFI_VendorKeys
+#        - UEFI_PK
+#        - UEFI_KEK
+#        - UEFI_db
+#        - UEFI_MokSBStateRT
+#        # these change with firmware (fwupd) and shim/SBAT (apt) updates;
+#        # run jp update afterwards to refresh the expected value
+#        - UEFI_dbx
+#        - UEFI_SbatLevelRT
+#        - UEFI_MokListRT
+#        - UEFI_MokListXRT
+#        - UEFI_PKDefault
+#        - UEFI_KEKDefault
+#        - UEFI_dbDefault
+#        - UEFI_dbxDefault
+
+
