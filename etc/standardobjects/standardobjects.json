@@ -40,6 +40,12 @@
         "type": "PCR SHA256",
         "shortdescription": "Intel NUC 8th Gen Firmware CRTM",
         "longdescription": "Intel NUC 8th Gen Firmware CRTM as SHA256"
+    }, 
+    {
+        "value": "70f46ee968e12213ceb229130057f327cf750aaf7c52598a3efee0c72e284a97",
+        "type": "PCR SHA256",
+        "shortdescription": "ASUS UEFI Firmware",
+        "longdescription": "ASUS UEFI Firmware"
     }
 ]
 
