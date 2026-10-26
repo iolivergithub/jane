@@ -22,5 +22,21 @@
         "type": "PCR SHA1",
         "shortdescription": "Nokia RM18 AirFrame CRTM",
         "longdescription": "Nokia RM18 AirFrame CRTM Value"
+    }, 
+    {
+        "value": "ac083eae8ab7125c0b9619ead3658c7e7ecfe2f1",
+        "type": "PCR SHA1",
+        "shortdescription": "Intel NUC 8th Gen Firmware CRTM",
+        "longdescription": "Intel NUC 8th Gen Firmware CRTM as SHA1"
+    }, 
+    {
+        "value": "33ba0f3c29f478c53fa626b13b2dbed2717c90b000aaaf3a3990b233b731c5fc",
+        "type": "PCR SHA256",
+        "shortdescription": "Intel NUC 8th Gen Firmware CRTM",
+        "longdescription": "Intel NUC 8th Gen Firmware CRTM as SHA256"
     }
 ]
+
+
+ 	
+ 	
