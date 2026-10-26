@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	utilities "ta10/common"
 
 	"github.com/labstack/echo/v4"
@@ -36,6 +37,11 @@ func ASCIILog(c echo.Context) error {
 
 	var postbody map[string]interface{}
 	var rtnbody = make(map[string]interface{})
+
+	if runtime.GOOS == "windows" {
+		rtnbody["error"] = "IMA is not supported on Windows"
+		return c.JSON(http.StatusNotImplemented, rtnbody)
+	}
 
 	if err := c.Bind(&postbody); err != nil {
 		rtnbody["postbody"] = err.Error()

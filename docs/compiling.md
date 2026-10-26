@@ -64,7 +64,10 @@ The targets that are built and packaged (decisions in the 1.5.6 plan: build only
 make binary OS=windows      # in janeserver, tarzan or provisioner
 ```
 
-janeserver, tarzan and jp build for Windows amd64. They are shipped as zip files, not packages; see [Building the packages](#building-the-packages).
+janeserver, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
+
+- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`.
+- `tarzan_<version>_windows-amd64.zip`: `tarzan.exe`, `jp.exe`, `provisioning.yaml.example`, `tarzan.env`.
 
 ## Version and build strings
 
@@ -101,7 +104,8 @@ cd etc/debbuild
 Check first that the last line of `versions.txt` is the version you want (`1.5.6 dd mis yyyy`, the month in Welsh). The script runs `make libs fmt` once per module, builds every target with `make binary` into `<module>/dist/linux-<target>/`, and builds the packages in `/tmp/janedebbuild`, gzipped:
 
 - `jane_<version>_<arch>.deb` for amd64, arm64, s390x;
-- `tarzan_<version>_<arch>.deb` for amd64, arm64, s390x, ppc64el, riscv64, `armel-armv5`, `armhf-armv6`, `armhf-armv7`.
+- `tarzan_<version>_<arch>.deb` for amd64, arm64, s390x, ppc64el, riscv64, `armel-armv5`, `armhf-armv6`, `armhf-armv7`;
+- the two [Windows](#windows) zips (not gzipped), made with Python's `zipfile` module, so no zip tool is needed.
 
 The control files get their `Architecture:` from the target (`armhf` for both armhf packages). The script stops at the first error. `alien` (RPMs) and `lintian` are no longer run; the lines are left commented out in the script.
 

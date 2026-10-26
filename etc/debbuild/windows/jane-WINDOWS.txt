@@ -1,0 +1,24 @@
+Jane for Windows amd64
+======================
+
+This zip holds Jane (janeserver.exe), addjaneuser and the same configuration
+files as the Debian package. It is provided as is: there is no installer and
+no Windows service wrapper; a Windows administrator sets it up.
+
+  janeserver.exe          the attestation server; run it with
+                            janeserver.exe -config <path to config.yaml>
+  addjaneuser, addjaneuser.md
+                          Python script making users and REST API keys; needs
+                          Python 3 with the packages argon2-cffi and pymongo
+  config.yaml             configuration, as shipped in the Debian package: its
+                          paths are Unix paths (/etc/opt/jane, /var/log/jane)
+                          and must be changed for Windows
+  jane.env                environment variables (MongoDB and MQTT accounts),
+                          read by systemd on Linux; set them in Windows instead
+  REPLACE_ME.crt, .key    development certificate and key: replace them
+  standardintents.json    backup copy of the standard intents
+
+Jane also needs MongoDB and an MQTT broker (e.g. Mosquitto), which have their
+own Windows installers.
+
+Documentation: https://github.com/iolivergithub/jane/blob/main/docs/contents.md

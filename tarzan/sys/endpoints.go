@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 
 	"ta10/common"
 
@@ -41,13 +40,9 @@ func Sysinfo(c echo.Context) error {
 
 	fmt.Println("sysinfo called")
 
-	machineidbytes, err := os.ReadFile("/etc/machine-id")
-	if err != nil {
-		machineid = ""
-	} else {
-		mb := string(machineidbytes)
-		machineid = strings.Trim(fmt.Sprintf("%v", mb), " \t\n")
-		fmt.Printf("Machine id: %v %v", len(machineid), machineid)
+	machineid = machineID()
+	if machineid != "" {
+		fmt.Printf("Machine id: %v %v\n", len(machineid), machineid)
 	}
 
 	ncpus := runtime.NumCPU()

@@ -193,7 +193,7 @@ rc_bg=YES
 rc_cmd $1
 ```
 
-**Windows:** run `tarzan.exe` (e.g. `tarzan.exe -sys -tpm2`) as Administrator, or as a service. Windows controls the TPM itself: PCRs can be read, but quotes need an AK the system allows, and UEFI and IMA logs are not available.
+**Windows** (from 1.5.6, #122; best effort): run `tarzan.exe` (e.g. `tarzan.exe -sys -tpm2 -uefi`) as Administrator or SYSTEM; starting it as a service or scheduled task, and the firewall rule for its port, are up to the administrator. tarzan opens the TPM through TPM Base Services (the element's `tpm2.device` is ignored). Windows controls the TPM itself: it only passes commands on its own allow list and keeps the owner authorisation, so some functions (and jp's `create`/`update`, which make keys persistent) may be refused — that is Windows' decision. `uefi/eventlog` comes from TBS (`Tbsi_Get_TCG_Log_Ex`, Windows 10 1803 and later); `ima/asciilog` answers "not supported on Windows"; `sys/info` reports the `MachineGuid` as the machine ID, as jp does.
 
 ## jp
 

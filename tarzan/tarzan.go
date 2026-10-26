@@ -84,6 +84,9 @@ func startRESTInterface(sys, tpm2, uefi, ima, txt bool, p *string) {
 	}
 	if ima == true {
 		fmt.Println("   +-- IMA attestation API enabled")
+		if runtime.GOOS == "windows" {
+			fmt.Println("   +-- WARNING: there is no IMA on Windows; ima/asciilog will answer \"not supported\"")
+		}
 		setupIMAendpoints(router)
 	}
 

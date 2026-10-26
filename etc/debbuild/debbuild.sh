@@ -8,6 +8,10 @@
 #   tarzan_<version>_<arch>.deb     amd64, arm64, s390x, ppc64el, riscv64,
 #                                   armel-armv5, armhf-armv6, armhf-armv7
 #
+# and two zips for Windows amd64 (#122), not gzipped:
+#
+#   jane_<version>_windows-amd64.zip, tarzan_<version>_windows-amd64.zip
+#
 # The binaries are built with the component Makefiles into
 # ../../<component>/dist/linux-<target>/. See docs/compiling.md (architecture
 # table) and docs/deb.md (which package for which machine).
@@ -164,6 +168,32 @@ for t in $TARZAN_TARGETS; do
     dpkg-deb --root-owner-group --build $TARZANBASE $DEB
 done
 
+# ---------------------------------------------------------------- Windows amd64 zips (#122)
+# Same programs and configuration files as the packages; no installer.
+for c in janeserver tarzan provisioner; do
+    echo "${BLUE}Compiling $c for Windows amd64${NC}"
+    make -C "$REPO/$c" binary OS=windows ARCH=amd64 VERSION="$VERSIONNUMBER" OUT=dist/windows-amd64
+done
+
+WINJANE=$TMPBASE/jane-windows-amd64
+mkdir -p $WINJANE
+cp $REPO/janeserver/dist/windows-amd64/janeserver.exe $WINJANE/
+cp ../addjaneuser/addjaneuser $WINJANE/
+cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
+cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
+cp ../standardintents/standardintents.json $WINJANE/
+cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt
+
+WINTARZAN=$TMPBASE/tarzan-windows-amd64
+mkdir -p $WINTARZAN
+cp $REPO/tarzan/dist/windows-amd64/tarzan.exe $REPO/provisioner/dist/windows-amd64/jp.exe $WINTARZAN/
+cp provisioning.yaml.example tarzan.env $WINTARZAN/
+cp windows/tarzan-WINDOWS.txt $WINTARZAN/WINDOWS.txt
+
+# zip with Python's standard library, so no zip tool is needed
+(cd $WINJANE && python3 -m zipfile -c $TMPBASE/jane_${VERSIONNUMBERCONTROL}_windows-amd64.zip *)
+(cd $WINTARZAN && python3 -m zipfile -c $TMPBASE/tarzan_${VERSIONNUMBERCONTROL}_windows-amd64.zip *)
+
 echo "${BLUE}Build complete${NC}"
 cd $TMPBASE
 
@@ -179,7 +209,7 @@ gzip -f *.deb
 #gzip *.rpm
 
 echo "${BLUE}Listing files${NC}"
-ls -l $TMPBASE/*.gz
+ls -l $TMPBASE/*.gz $TMPBASE/*.zip
 
 #Completion
 echo "${BLUE}Complete${NC}"

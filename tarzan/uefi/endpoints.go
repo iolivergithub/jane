@@ -3,7 +3,6 @@ package uefi
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	_ "reflect"
 
@@ -49,9 +48,7 @@ func Eventlog(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, rtnbody)
 	}
 
-	u := GetEventLogLocation(fmt.Sprintf("%v", postbody["uefi/eventlog"]))
-
-	fcontent, err := ioutil.ReadFile(u)
+	fcontent, err := readEventLog(fmt.Sprintf("%v", postbody["uefi/eventlog"]))
 	if err != nil {
 		rtnbody["file err"] = err.Error()
 		return c.JSON(http.StatusInternalServerError, rtnbody)
