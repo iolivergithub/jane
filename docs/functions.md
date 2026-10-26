@@ -81,6 +81,17 @@ The claim body has `summary` (manufacturer, vendorstring, firmwareversion, famil
 
 `algorithms`, `ecccurves` and `commands` are optional (tarzan 1.5.6 and later, #124): if the TPM refuses one of these queries, that list is empty and `unavailable` gives the reason, e.g. `"unavailable": {"commands": "TPM2_GetCapability(...) failed: TPM_RC_VALUE"}`; the rest of the claim is still returned. A TPM whose algorithm list has no `TPM_ALG_ECC` is not asked for its ECC curves (some older TPMs, e.g. an Infineon SLB 9665 with firmware 5.0, refuse that query instead of returning an empty list): `ecccurves` is empty and `unavailable.ecccurves` says "ECC not supported by this TPM". The claim page shows these reasons. `unavailable` is absent when everything could be read.
 
+## tpm2/getcert
+
+Reads the EK certificate from the TPM's NV storage (#63). Not signed: check it with the `tpm2_ekCertMatchesEK` and `tpm2_ekCertIssuer` rules.
+
+| Field | Compulsory | Type | Description |
+| --- | --- | --- | --- |
+| tpm2/device | Y | String | The TPM device to use, from the element's `tpm2.device` |
+| tpm2/ekcerthandle | N | String | NV index of the certificate, from the element's `tpm2.ekcerthandle`; default `0x01C00002` (the TCG index of the RSA 2048 EK certificate; the ECC P-256 one is `0x01C0000A`) |
+
+The index is read with its own empty authorisation (EK certificate indices allow this), otherwise with the owner hierarchy and the empty password, in chunks of the TPM's largest NV read. Padding after the certificate is dropped. The claim body has `handle`, `size`, `certificate` (DER, base64) and `summary`: subject, issuer, serial, notbefore, notafter, keytype, keybits, the TPM manufacturer, model and version from the subject alternative name (TCG OIDs 2.23.133.2.1, .2, .3), `issuingcertificateurl` and `ocsp` (authority information access), `sha256` (fingerprint of the DER) and, if Go's X.509 parser refused the certificate, `parseerror`. A TPM without an EK certificate gives an error claim ("No NV index at ...").
+
 ## uefi/eventlog
 This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; the `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim.
 

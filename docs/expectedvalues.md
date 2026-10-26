@@ -26,6 +26,7 @@ The keys in `evs` are defined by the rules that read them. jp records them when 
 | --- | --- | --- |
 | `tpm2quote` | `attestedValue` (the quote's PCR digest), `firmwareVersion` | `tpm2_attestedValue`, `tpm2_firmware` |
 | `sysmachineid` | `machineid` | `sys_machineID_Agent` |
+| `tpm2ekcert` | `issuerurl` (where the EK certificate's issuer certificates are: `https`, `http` or `file` URL) | `tpm2_ekCertIssuer` |
 | `uefiefivars` | one key per UEFI variable (`SecureBoot`, `PK`, `db`, `dbx`, ...): hex, or `sha256:<hex>` for large values | the `UEFI_*` rules |
 
 See [Rules](rules.md) for which rules need an expected value.

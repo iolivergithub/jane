@@ -7,7 +7,7 @@ Jane has built-in names and descriptions for measurement registers (#101, since 
 An element names the scheme for its TPM's PCRs in its `tpm2` section:
 
 ```json
-"tpm2": { "device": "/dev/tpmrm0", "ekcerthandle": "0x1C000002", "pcrnaming": "linux-uefi", ... }
+"tpm2": { "device": "/dev/tpmrm0", "ekcerthandle": "0x01C00002", "pcrnaming": "linux-uefi", ... }
 ```
 
 jp takes it from `pcrnaming:` in the provisioning file's `tpm2:` section. Empty or unknown means the default, `tcg-pcclient-uefi`; an unknown key is pointed out on the claim pages. Claims keep a snapshot of the element, so a claim is shown with the scheme the element had when it was made.

@@ -81,6 +81,7 @@
          {{ else if eq .BodyType "tpm2/quote" }}{{ template "claim_quote.html" .Body }}{{ template "claim_pcrselection.html" (dict "Scheme" .Header.Element.TPM2.PCRNaming "Selection" (index .Header.CallParameters "pcrSelection")) }}
          {{ else if eq .BodyType "tpm2/gettime" }}{{ template "claim_gettime.html" .Body }}
          {{ else if eq .BodyType "tpm2/capabilities" }}{{ template "claim_tpm2capabilities.html" .Body }}
+         {{ else if eq .BodyType "tpm2/getcert" }}{{ template "claim_tpm2getcert.html" .Body }}
          {{ else if eq .BodyType "uefi/efivars" }}{{ template "claim_efivars.html" .Body }}
          {{ else if eq .BodyType "uefi/eventlog" }}{{ template "claim_uefieventlog.html" .Body }}
          {{ else }}{{ template "genericList.html" .Body }}{{ end }}

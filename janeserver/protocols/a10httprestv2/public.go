@@ -16,7 +16,7 @@ import (
 const nonceSize int = 24
 
 func Registration() structures.Protocol {
-	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/gettime", "tpm2/capabilities", "tpm2/activatecredential", "uefi/eventlog", "ima/asciilog", "txt/log", "sys/info"}
+	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/gettime", "tpm2/capabilities", "tpm2/activatecredential", "tpm2/getcert", "uefi/eventlog", "uefi/efivars", "uefi/bootconfig", "ima/asciilog", "txt/log", "sys/info"}
 
 	return structures.Protocol{"A10HTTPRESTv2", "HTTP protcol for Go based trust agents", Call, intents}
 }
@@ -90,6 +90,12 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 		ips["tpm2/ekhandle"] = (e.TPM2).EK.Handle
 		ips["tpm2/akpublic"] = (e.TPM2).AK.Public
 		ips["tpm2/ekpublic"] = (e.TPM2).EK.Public
+	}
+
+	// the EK certificate's NV index; tarzan defaults to 0x01C00002 if empty (#63)
+	if p.Function == "tpm2/getcert" {
+		ips["tpm2/device"] = (e.TPM2).Device
+		ips["tpm2/ekcerthandle"] = (e.TPM2).EKCertHandle
 	}
 
 	if p.Function == "uefi/eventlog" {

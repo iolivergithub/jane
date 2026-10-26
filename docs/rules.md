@@ -37,6 +37,8 @@ A rule may need:
 | `tpm2_capabilitiesFirmware` | `tpm2/capabilities` | | `quotecid` | the reported firmware version equals the signed one in a quote or gettime claim (see below) |
 | `tpm2_credentialActivated` | `tpm2/activatecredential` | | | the TPM recovered the credential's secret: the AK and EK are in the same TPM |
 | `tpm2_akAttributes` | `tpm2/activatecredential` | | | the AK is a restricted signing key with fixedTPM, fixedParent and sensitiveDataOrigin |
+| `tpm2_ekCertMatchesEK` | `tpm2/getcert` | | | the EK certificate holds the element's EK (`tpm2.ek.public`); RSA only (see below) |
+| `tpm2_ekCertIssuer` | `tpm2/getcert` | `issuerurl` | | the EK certificate was issued by the certificates at `issuerurl` and is valid (see below) |
 
 Parameters naming another claim (`pcrscid`, `uefilogcid`, `previouscid`, `quotecid`) take its item ID. The claim must be of the stated function, for the same element, and not an error claim. If the two claims are from different sessions the message says how far apart they were taken.
 
@@ -52,7 +54,18 @@ Since 1.5.3 tarzan returns, with every quote and gettime claim, the raw `TPMS_AT
 
 It fails for claims made by tarzan before 1.5.3 (no `attest`), elements without an AK public key (run `jp update`), and ECC AKs (only RSA is supported).
 
-**Limitation:** the other quote rules (`tpm2_validNonce`, `tpm2_attestedValue`, `tpm2_firmware`, `tpm2_safe`, `tpm2_magicNumber`, `tpm2_type`, `tpm2_pcrDigest`) read tarzan's decoded copy of the quote, which the signature does not cover. A rule comparing the two is planned (#85).
+**Limitation:** the other quote rules (`tpm2_validNonce`, `tpm2_attestedValue`, `tpm2_firmware`, `tpm2_safe`, `tpm2_magicNumber`, `tpm2_type`, `tpm2_pcrDigest`) read tarzan's decoded copy of the quote, which the signature does not cover.
+
+### tpm2_ekCertMatchesEK and tpm2_ekCertIssuer
+
+Both run on a `tpm2/getcert` claim, the EK certificate read from the TPM's NV storage (#63). The certificate is not signed by the TPM, so on its own it proves nothing; the two rules tie it to the element's EK and to the certificate's issuer.
+
+- **`tpm2_ekCertMatchesEK`** compares the certificate's public key with the EK recorded in the element (`tpm2.ek.public`, as it was when the claim was made). No expected value and no network access: the element's EK is trusted because it was there at provisioning. Only RSA EKs are supported; an ECC EK fails with "ECC EK certificates are not supported yet".
+- **`tpm2_ekCertIssuer`** fetches the certificates at the expected value's `issuerurl` (`https://`, with the server's TLS certificate verified, `http://` or `file://`; 10 s timeout, at most 1 MiB) and checks the EK certificate's signature and validity against them. The URL may give one certificate or a bundle, DER or PEM (PKCS#7 `.p7c` files are not read). Self-signed certificates in it are roots, the others intermediates, and the chain from the EK certificate must reach a root; a bundle without a self-signed certificate is trusted as it is (the chain ends at the last certificate found). Validity is checked at the time the claim was received. The message gives the issuer's subject and SHA-256 fingerprint and the chain. Failing to fetch the URL is an error (result code 9010, `VerifyCallFailure`), not a fail: it says nothing about the TPM.
+
+jp records `issuerurl` (expected-value type `tpm2ekcert`) from the certificate's own authority information access (*CA Issuers*) URL, or from `issuerurl:` in the provisioning file, e.g. a file or web server where the certificates from a manufacturer's download were put. A TPM without an EK certificate has none: the claim is an error claim and neither rule can pass.
+
+EK certificates often bend the X.509 rules (negative serial numbers, unusual extensions) and Go's parser refuses some of them. Both rules then read the key, issuer, validity and signature directly from the DER, and the message says "read leniently" and why.
 
 ### tpm2_clockProgress
 

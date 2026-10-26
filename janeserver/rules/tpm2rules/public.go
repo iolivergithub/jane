@@ -23,7 +23,10 @@ func Registration() []structures.Rule {
 	ruleCapabilitiesFirmware := structures.Rule{"tpm2_capabilitiesFirmware", "Checks the firmware version in this tpm2/capabilities claim equals the signed one in the quote/gettime claim given by parameter quotecid", CapabilitiesFirmware, false}
 	ruleClockProgress := structures.Rule{"tpm2_clockProgress", "Checks the TPM clock, reset and restart counts against the earlier quote/gettime claim given by parameter previouscid", ClockProgress, false}
 
-	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType, ruleCredentialActivated, ruleAKAttributes, rulePCRDigest, ruleUEFILogReplay, ruleValidSignature, ruleCapabilitiesFirmware, ruleClockProgress}
+	ruleEKCertMatchesEK := structures.Rule{"tpm2_ekCertMatchesEK", "Checks the EK certificate in this tpm2/getcert claim holds the element's EK (RSA)", EKCertMatchesEK, false}
+	ruleEKCertIssuer := structures.Rule{"tpm2_ekCertIssuer", "Checks the EK certificate in this tpm2/getcert claim was issued by the certificates at the expected value's issuerurl", EKCertIssuer, true}
+
+	return []structures.Rule{ruleFirmware, ruleMagic, attestedPCRDigest, ruleIsSafe, ruleValidNonce, ruleQuoteType, ruleCredentialActivated, ruleAKAttributes, rulePCRDigest, ruleUEFILogReplay, ruleValidSignature, ruleCapabilitiesFirmware, ruleClockProgress, ruleEKCertMatchesEK, ruleEKCertIssuer}
 }
 
 func IsSafe(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {

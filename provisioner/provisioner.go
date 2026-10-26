@@ -301,6 +301,20 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 		}
 		evs = v
 
+	case "tpm2ekcert":
+		// for tpm2_ekCertIssuer (#63): where the issuer certificates are.
+		// No certificate or no URL is not an error: some TPMs have none.
+		url, why := ev.Spec.IssuerURL, ""
+		if url == "" {
+			url, why = ekCertIssuerURL(c.Body)
+		}
+		if url == "" {
+			fmt.Fprintln(pv.Out, "No expected value for", pid+":", why)
+			return nil
+		}
+		fmt.Fprintln(pv.Out, "EK certificate issuer URL", url)
+		evs = map[string]any{"issuerurl": url}
+
 	default:
 		fmt.Fprintln(pv.Out, "Unknown expected value type", typ, "for", pid)
 		return nil

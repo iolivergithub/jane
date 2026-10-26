@@ -58,6 +58,10 @@ type EVSpec struct {
 	Type     string     `yaml:"type"`
 	CID      string     `yaml:"cid"`
 	Rules    []RuleSpec `yaml:"rules"`
+	// IssuerURL, for type tpm2ekcert, is where the EK certificate's issuer
+	// certificates are (https, http or file); it overrides the certificate's
+	// own AIA URL (#63).
+	IssuerURL string `yaml:"issuerurl"`
 }
 
 // RuleNames lists the names of the entry's rules.

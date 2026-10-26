@@ -122,7 +122,7 @@ The following fields are part of the *tpm2* entry
 | Field | Type | Description |
 | --- | --- | --- |
 | device | String | The location of the TPM2.0 device, eg: `/dev/tpmrm0` |
-| ekcerthandle | String | The handle of the EK Certificate in the TPM NVRAM |
+| ekcerthandle | String | The NV index of the EK certificate, read by `tpm2/getcert`: normally `0x01C00002` (RSA 2048; ECC P-256: `0x01C0000A`), the default if empty. Before 1.5.6 the examples wrongly gave `0x1C000002`, which tarzan refuses as not an NV index: correct it with `jp update` |
 | ek | TPMKey | The structure describing the TPM 2.0 Endorsement Key |
 | ak | TPMKey | The structure describing an attestation key |
 | pcrnaming | String | The [register naming scheme](registernames.md) for this TPM's PCRs, e.g. `linux-uefi` (optional; default `tcg-pcclient-uefi`; since 1.5.6) |
@@ -152,7 +152,7 @@ An element as jp registers it (keys shortened):
   },
   "tags": [ "linux", "x86", "tpm2", "uefi" ],
   "tpm2": { "device": "/dev/tpmrm0",
-            "ekcerthandle": "0x1C000002",
+            "ekcerthandle": "0x01C00002",
             "ek": { "handle": "0x810100EE", "public": "AToAAQALAAMAsg...", "name": "000bd126c6e1..." },
             "ak": { "handle": "0x810100AA", "public": "ARgAAQALAAUAcg...", "name": "000bbaff812d..." } },
   "uefi": { "eventlog": "/sys/kernel/security/tpm0/binary_bios_measurements" },

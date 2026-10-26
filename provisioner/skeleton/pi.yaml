@@ -20,7 +20,7 @@ endpoints:
   #    protocol: RATSD
 tpm2:
   device:   /dev/tpmrm0   
-  ekcerthandle: '0x1C000002'   
+  ekcerthandle: '0x01C00002'   
   ek:
     handle: '0x810100EE'
   ak:

@@ -151,7 +151,7 @@ func elementtemplate() string {
     "tpm2":
     {
         "device": "/dev/tpmrm0",
-        "ekcerthandle": "0x01c00002",
+        "ekcerthandle": "0x01C00002",
         "ek":
         {
             "handle": "0x810100EE",

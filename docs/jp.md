@@ -151,7 +151,7 @@ endpoints:                                    # where Jane reaches this machine'
       protocol: A10HTTPRESTv2
 tpm2:
   device: /dev/tpmrm0
-  ekcerthandle: '0x1C000002'
+  ekcerthandle: '0x01C00002'
   pcrnaming: tcg-pcclient-uefi                # optional (1.5.6): PCR names, see registernames.md
   ek:
     handle: '0x810100EE'
@@ -199,7 +199,8 @@ A worklist without the TPM steps is fine for machines whose keys are managed els
 Each entry names a standard (or your own) intent and says:
 
 - `protocol:` which endpoint to use;
-- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `uefiefivars`; none: record nothing);
+- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars`; none: record nothing);
+- `issuerurl:` for type `tpm2ekcert`: where the EK certificate's issuer certificates are (`https://`, `http://` or `file://`). Without it jp takes the certificate's own *CA Issuers* URL; if there is neither, or the TPM has no EK certificate, jp says so and records nothing;
 - `rules:` which rules `attest` runs, each a name or a name with options (`parameters`, `rid`, `resvar`);
 - `cid:` a variable holding this intent's claim item ID during `attest`.
 

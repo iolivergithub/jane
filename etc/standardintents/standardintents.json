@@ -174,5 +174,12 @@
         "description": "The TPM's identity and configuration: manufacturer, firmware, properties, PCR banks, algorithms, curves and persistent handles (TPM2_GetCapability). Unsigned",
         "function": "tpm2/capabilities",
         "parameters": {}
+    },
+    {
+        "itemid": "std::intent::tpm2::getcert",
+        "name": "TPM 2.0 EK Certificate",
+        "description": "The EK certificate stored in the TPM's NV storage, at the element's tpm2.ekcerthandle (default 0x01C00002). Unsigned: check it with tpm2_ekCertMatchesEK and tpm2_ekCertIssuer",
+        "function": "tpm2/getcert",
+        "parameters": {}
     }
 ]

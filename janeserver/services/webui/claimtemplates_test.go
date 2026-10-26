@@ -92,3 +92,20 @@ func TestCapabilitiesTemplateUnavailable(t *testing.T) {
 		t.Errorf("older claim rendered differently:\n%s", html)
 	}
 }
+
+// #63
+func TestGetCertTemplate(t *testing.T) {
+	html := renderPartial(t, "claim_tpm2getcert.html", `{"handle":"0x01C00002","size":1177,"certificate":"MIIEmTCC",
+		"summary":{"subject":"","issuer":"CN=Infineon OPTIGA(TM) RSA Manufacturing CA 003","serial":"5a3c","notbefore":"2019-01-01T00:00:00Z",
+		"notafter":"2034-01-01T00:00:00Z","keytype":"RSA","keybits":2048,"tpmmanufacturer":"id:49465800","tpmmodel":"SLB9670",
+		"tpmversion":"id:0007003D","issuingcertificateurl":["http://pki.infineon.com/OptigaRsaMfrCA003/OptigaRsaMfrCA003.crt"],"sha256":"ab12"}}`)
+	for _, want := range []string{"Infineon OPTIGA", "2048 bits", "SLB9670", "OptigaRsaMfrCA003.crt", "1177 bytes from NV index 0x01C00002", "MIIEmTCC", "(empty"} {
+		if !strings.Contains(html, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	html = renderPartial(t, "claim_tpm2getcert.html", `{"handle":"0x01C00002","size":5,"certificate":"MAMCAQE=","summary":{"sha256":"cd34","parseerror":"x509: malformed"}}`)
+	if !strings.Contains(html, "could not be parsed") || !strings.Contains(html, "x509: malformed") {
+		t.Errorf("parse error not shown:\n%s", html)
+	}
+}

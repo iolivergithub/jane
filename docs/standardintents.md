@@ -19,6 +19,7 @@ The standard intents are a set of intents which are common across all installati
 | `std::intent::sha256::linuxIMA` | Linux IMA with PCR 0 | tpm2/quote | as above |
 | `std::intent::tpm2::gettime` | TPM 2.0 Time | tpm2/gettime | `tpm2_validSignature`, `tpm2_clockProgress` |
 | `std::intent::tpm2::capabilities` | TPM 2.0 Capabilities | tpm2/capabilities | `tpm2_capabilitiesFirmware` |
+| `std::intent::tpm2::getcert` | TPM 2.0 EK Certificate | tpm2/getcert | `tpm2_ekCertMatchesEK`, `tpm2_ekCertIssuer` |
 | `std::intent::tpm2::activatecredential` | TPM 2.0 Credential Activation | tpm2/activatecredential | `tpm2_credentialActivated`, `tpm2_akAttributes` |
 | `std::intent::uefi::eventlog` | UEFI Eventlog | uefi/eventlog | (used by `tpm2_uefiLogReplay`) |
 | `std::intent::uefi::efivars` | UEFI EFI Variables | uefi/efivars | the `UEFI_*` rules |
