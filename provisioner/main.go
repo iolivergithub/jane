@@ -64,12 +64,18 @@ exit status:
   3  attest only: a rule did not pass or an intent could not be attested
 `
 
+// VERSION and BUILD are set at build time by the Makefile
+// (-ldflags "-X 'main.VERSION=...' -X 'main.BUILD=...'"), as for janeserver
+// and tarzan.
+var VERSION string = "not set"
+var BUILD string = "not set"
+
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
 
 func run(argv []string) int {
-	fmt.Println("Jane Element Configuration")
+	fmt.Printf("Jane Element Configuration (jp version %s, build %s)\n", VERSION, BUILD)
 
 	// Flags may appear anywhere, as with the original argparse CLI.
 	reprovision, recreate := false, false

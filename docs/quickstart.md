@@ -14,7 +14,7 @@ Jane, tarzan and jp all run on the same machine here. Later you would normally r
 | tarzan | the trust agent: answers Jane's requests for TPM quotes, event logs and system information (port 8530) | each element |
 | jp | the provisioner: registers the element with Jane, sets up its TPM keys, records expected values, attests | each element |
 
-You need `sudo` (or a root shell), network access for `apt`, and the two packages `jane_<version>_amd64.deb` and `tarzan_<version>_amd64.deb` (from a release, or built as in [Compiling](compiling.md)).
+You need `sudo` (or a root shell), network access for `apt`, and the two packages `jane_<version>_amd64.deb` and `tarzan_<version>_amd64.deb` (from a release, or built as in [Compiling](compiling.md)). This guide uses amd64; for other machines pick the matching packages from [the table in Installing with dpkg/apt](deb.md#which-package-for-which-machine).
 
 ## 1. MongoDB
 

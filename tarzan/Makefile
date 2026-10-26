@@ -1,29 +1,61 @@
-OS=linux
-ARCH=amd64
-BINARY_NAME=tarzan
-PIE_ON=-buildmode=pie
-BUILD_DATE=`date`
-VERSION=locally_compiled
+# Builds tarzan for one target. CGO is off, so any target builds on any host.
+#
+#   make                              linux/amd64, next to the source
+#   make ARCH=arm64                   another architecture
+#   make ARCH=arm GOARM=5             32-bit ARM: GOARM 5 (no FPU), 6 or 7
+#   make OS=windows                   Windows amd64 (tarzan.exe)
+#   make VERSION=1.5.6 OUT=dist/x     version string and output directory
+#
+# PIE and stripping are used only on targets that support them; see the
+# architecture table in docs/compiling.md. etc/debbuild/debbuild.sh runs
+# "make libs" once and then "make binary" for each target.
 
+GO      ?= go
+OS      ?= linux
+ARCH    ?= amd64
+GOARM   ?=
+VERSION ?=
+OUT     ?= .
 
-build: libs fmt
-	GOOS=${OS} GOARCH=${ARCH} /usr/local/go/bin/go build  -ldflags="-X 'main.BUILD=${BUILD_DATE} (${VERSION})'" ${PIE_ON} -o ${BINARY_NAME}
-	#strip ${BINARY_NAME}
-	ls -l --color=auto ${BINARY_NAME}
+BINARY_NAME = tarzan
+EXE := $(if $(filter windows,$(OS)),.exe,)
+BUILD_DATE := $(shell date)
+
+# -buildmode=pie needs external (cgo) linking on the other targets
+# (s390x, riscv64, 32-bit ARM), which is off here
+PIE_TARGETS := linux/amd64 linux/arm64 linux/ppc64le windows/amd64
+PIE := $(if $(filter $(OS)/$(ARCH),$(PIE_TARGETS)),-buildmode=pie,)
+
+# stripped by the linker (-s -w): the strip command cannot handle binaries
+# for other architectures. Targets where -s -w does not work go here.
+NOSTRIP_TARGETS :=
+STRIP := $(if $(filter $(OS)/$(ARCH),$(NOSTRIP_TARGETS)),,-s -w)
+
+LDFLAGS := $(STRIP) -X 'main.BUILD=$(BUILD_DATE)'$(if $(VERSION), -X 'main.VERSION=$(VERSION)',)
+
+.PHONY: build binary libs fmt vet run clean
+
+build: libs fmt binary
+
+binary:
+	mkdir -p $(OUT)
+	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(GOARM) $(GO) build -ldflags="$(LDFLAGS)" $(PIE) -o $(OUT)/$(BINARY_NAME)$(EXE)
+	ls -l $(OUT)/$(BINARY_NAME)$(EXE)
 
 fmt:
-	go fmt ./...
+	$(GO) fmt ./...
+
+vet:
+	$(GO) vet ./...
 
 libs:
 #	go get -u   # not part of a build: upgrade dependencies deliberately, test, then commit go.mod/go.sum
-	go mod tidy -v
-
-vet:
-	go vet -composites=false ./...
+	$(GO) mod tidy -v
+	$(GO) mod verify
 
 run: build
-	./${BINARY_NAME}
+	./$(BINARY_NAME)
 
 clean:
-	go clean
-	rm ${BINARY_NAME}
+	$(GO) clean
+	rm -f $(BINARY_NAME) $(BINARY_NAME).exe
