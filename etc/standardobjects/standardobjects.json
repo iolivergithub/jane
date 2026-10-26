@@ -14,8 +14,14 @@
     {
         "value": "b2a83b0ebf2f8374299a5b2bdfc31ea955ad7236",
         "type": "PCR SHA1",
-        "shortdescription": "TPM EV_SEPARATOR  Event",
-        "longdescription": "TPM EV_SEPARATOR  Event applied to initialised, 0x0... PCR Value during UEFI Boot - usually found as a test value"
+        "shortdescription": "TPM EV_SEPARATOR Event",
+        "longdescription": "TPM EV_SEPARATOR Event applied to initialised, 0x0... PCR Value during UEFI Boot - usually found as a test value"
+    }, 
+    {
+        "value": "3d458cfe55cc03ea1f443f1562beec8df51c75e14a9fcf9a7234a13f198e7969",
+        "type": "PCR SHA256",
+        "shortdescription": "TPM EV_SEPARATOR Event",
+        "longdescription": "TPM EV_SEPARATOR Event applied to initialised, 0x0... PCR Value during UEFI Boot - usually found as a test value"
     }, 
     {
         "value": "3dcaea25dc86554d94b94aa5bc8f735a49212af8",
