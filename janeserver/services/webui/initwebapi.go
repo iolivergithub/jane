@@ -175,6 +175,8 @@ func setUpDisplayEndpoints(router *echo.Echo) {
 
 	// opaqueobjects
 	router.GET(PREFIX+"/opaqueobjects", showOpaqueObjects)
+	router.GET(PREFIX+"/pcrnames", showPCRNames)
+	router.GET(PREFIX+"/pcrname/:key", showPCRName)
 	router.GET(PREFIX+"/opaqueobject/:name", showOpaqueObject)
 
 	// rules

@@ -87,6 +87,9 @@ type TPM2 struct {
 	EKCertHandle string `json:"ekcerthandle" bson:"ekcerthandle"  yaml:"ekcerthandle"`
 	EK           TPMKey `json:"ek" bson:"ek"  yaml:"ek"`
 	AK           TPMKey `json:"ak" bson:"ak"  yaml:"ak"`
+	// PCRNaming names the register naming scheme for this TPM's PCRs (see
+	// package registernames, #101); empty or unknown means the default.
+	PCRNaming string `json:"pcrnaming,omitempty" bson:"pcrnaming,omitempty" yaml:"pcrnaming,omitempty"`
 }
 
 type TPMKey struct {

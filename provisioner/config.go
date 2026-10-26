@@ -40,6 +40,9 @@ type TPM2 struct {
 	EKCertHandle string `yaml:"ekcerthandle" json:"ekcerthandle"`
 	EK           TPMKey `yaml:"ek" json:"ek"`
 	AK           TPMKey `yaml:"ak" json:"ak"`
+	// PCRNaming: the register naming scheme for this TPM's PCRs, e.g.
+	// tcg-pcclient-uefi (the default), linux-uefi, windows-bitlocker (#101)
+	PCRNaming string `yaml:"pcrnaming,omitempty" json:"pcrnaming,omitempty"`
 }
 
 type TPMKey struct {

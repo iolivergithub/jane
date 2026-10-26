@@ -29,6 +29,7 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 - [Results](results.md): a rule's verdict on a claim.
 - [Sessions](sessions.md): claims and results of one piece of work.
 - [Data model](datamodels.md): how they link.
+- [Register names](registernames.md): names of TPM PCRs and confidential computing registers, and how an element chooses its scheme.
 
 **Attestation and verification**
 

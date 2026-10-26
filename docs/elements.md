@@ -125,6 +125,7 @@ The following fields are part of the *tpm2* entry
 | ekcerthandle | String | The handle of the EK Certificate in the TPM NVRAM |
 | ek | TPMKey | The structure describing the TPM 2.0 Endorsement Key |
 | ak | TPMKey | The structure describing an attestation key |
+| pcrnaming | String | The [register naming scheme](registernames.md) for this TPM's PCRs, e.g. `linux-uefi` (optional; default `tcg-pcclient-uefi`; since 1.5.6) |
 
 The *TPMKey* structure is defined:
 

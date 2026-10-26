@@ -76,9 +76,9 @@
          {{ if eq .BodyType "*ERROR" }}{{ template "claim_ERROR.html" .Body }}
          {{ else if eq .BodyType "sys/info" }}{{ template "genericList.html" .Body }}
          {{ else if eq .BodyType "ima/asciilog" }}{{ template "claim_ima.html" .Body }}
-         {{ else if eq .BodyType "tpm2/pcrs" }}{{ template "claim_tpm2pcrs.html" .Body }}
-         {{ else if eq .BodyType "tpm2/newpcrs" }}{{ template "claim_tpm2pcrs.html" .Body }}
-         {{ else if eq .BodyType "tpm2/quote" }}{{ template "claim_quote.html" .Body }}
+         {{ else if eq .BodyType "tpm2/pcrs" }}{{ template "claim_tpm2pcrs.html" (dict "Body" .Body "Scheme" .Header.Element.TPM2.PCRNaming) }}
+         {{ else if eq .BodyType "tpm2/newpcrs" }}{{ template "claim_tpm2pcrs.html" (dict "Body" .Body "Scheme" .Header.Element.TPM2.PCRNaming) }}
+         {{ else if eq .BodyType "tpm2/quote" }}{{ template "claim_quote.html" .Body }}{{ template "claim_pcrselection.html" (dict "Scheme" .Header.Element.TPM2.PCRNaming "Selection" (index .Header.CallParameters "pcrSelection")) }}
          {{ else if eq .BodyType "tpm2/gettime" }}{{ template "claim_gettime.html" .Body }}
          {{ else if eq .BodyType "tpm2/capabilities" }}{{ template "claim_tpm2capabilities.html" .Body }}
          {{ else if eq .BodyType "uefi/efivars" }}{{ template "claim_efivars.html" .Body }}

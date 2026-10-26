@@ -145,6 +145,8 @@ func setupAuxillaryOperationEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/rule/:name", getRule)
 
 	router.GET(PREFIX+"/opaqueobjects", getOpaqueObjects)
+	router.GET(PREFIX+"/pcrnames", getPCRNames)
+	router.GET(PREFIX+"/pcrname/:key", getPCRName)
 	router.GET(PREFIX+"/opaqueobject/:value", getOpaqueObjectByValue)
 	router.POST(PREFIX+"/opaqueobject", postOpaqueObject)
 	router.PUT(PREFIX+"/opaqueobject", putOpaqueObject)

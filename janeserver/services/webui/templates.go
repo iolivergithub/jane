@@ -16,6 +16,7 @@ func templateFunctions() template.FuncMap {
 		"efivars":      EfiVarsBody, "efiAttributeDescription": EfiAttributeDescription, "eventlog": EventLogBody,
 		"resultClass": ResultClass, "resultLabel": ResultLabel, "duration": Duration, "shortTime": ShortTime,
 		"longSession": func() string { return configuration.LongSession().String() },
+		"dict":        Dict, "pcrname": PCRName, "pcrscheme": PCRScheme, "splitList": SplitList,
 	}
 	// authEnabled and currentUser, used by base.html for the username and logout button
 	for name, f := range auth.TemplateFuncs() {
@@ -57,7 +58,7 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 	page("claims.html", "pager.html")
 	page("claim.html", "claim_ERROR.html", "claim_ima.html", "claim_quote.html", "claim_tpm2pcrs.html",
 		"claim_efivars.html", "claim_uefieventlog.html", "claim_gettime.html", "claim_tpm2capabilities.html",
-		"genericList.html", "resultvalue.html")
+		"genericList.html", "resultvalue.html", "claim_pcrselection.html")
 
 	page("results.html", "resultvalue.html", "pager.html")
 	page("result.html", "resultvalue.html", "genericList.html")
@@ -68,6 +69,8 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 	page("attest.html")
 	page("protocols.html")
 	page("rules.html")
+	page("pcrnames.html")
+	page("pcrname.html")
 	page("log.html")
 
 	page("opaqueobjects.html")

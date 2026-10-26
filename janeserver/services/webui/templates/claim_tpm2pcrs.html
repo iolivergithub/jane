@@ -1,13 +1,16 @@
 {{define "claim_tpm2pcrs.html"}}
+{{/* given (dict "Body" <claim body> "Scheme" <element's tpm2.pcrnaming>) (#101) */}}
+{{ $scheme := .Scheme }}{{ $sv := pcrscheme $scheme }}
+<p class="small text-body-secondary mb-2">PCR names: <a href="/pcrname/{{ $sv.Key }}">{{ $sv.Title }}</a>{{ if $sv.Unknown }} — the element names <span class="font-monospace">{{ $sv.Requested }}</span>, which is not a known scheme, so the default is used{{ end }}. Hover over a name for its description.</p>
 <table class="table table-sm table-striped">
    <tbody>
-      {{ range $key, $value := . }}
+      {{ range $key, $value := .Body }}
             <tr><td scope="col"><b>{{ $key }}</b></td> 
                 <td scope="col">
                         <table class="table table-sm table-striped">
                            <tbody>
                               {{ range $pkey, $pvalue :=  $value  }}
-                                    <tr><td scope="col"><b>{{ $pkey }}</b></td> 
+                                    <tr><td scope="col" class="text-nowrap"><b>{{ $pkey }}</b>{{ with pcrname $scheme $pkey }} <small class="text-body-secondary" title="{{ .Long }}">{{ .Short }}</small>{{ end }}</td> 
                                         <td scope="col">{{ opaqueObject $pvalue }}</td> 
                                     </tr>     
                               {{ end }}
@@ -19,5 +22,3 @@
    </tbody>
 </table>
 {{end}}
-
-   

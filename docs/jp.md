@@ -152,6 +152,7 @@ endpoints:                                    # where Jane reaches this machine'
 tpm2:
   device: /dev/tpmrm0
   ekcerthandle: '0x1C000002'
+  pcrnaming: tcg-pcclient-uefi                # optional (1.5.6): PCR names, see registernames.md
   ek:
     handle: '0x810100EE'
   ak:
