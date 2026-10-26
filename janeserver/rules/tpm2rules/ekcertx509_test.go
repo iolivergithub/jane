@@ -35,9 +35,9 @@ func testKey(t *testing.T) *rsa.PrivateKey {
 }
 
 var (
-	t2020 = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	t2040 = time.Date(2040, 1, 1, 0, 0, 0, 0, time.UTC)
-	testNow   = time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
+	t2020   = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	t2040   = time.Date(2040, 1, 1, 0, 0, 0, 0, time.UTC)
+	testNow = time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
 )
 
 // makeCert issues a certificate for key; parent nil means self-signed.
