@@ -25,6 +25,8 @@ import (
 	"a10/services/restapi"
 	"a10/services/webui"
 	"a10/services/x3270"
+
+	"localnames"
 )
 
 // Version number. A var rather than a const so it can be overridden at build time with
@@ -63,6 +65,9 @@ func main() {
 
 	flag.Parse()
 	configuration.SetupConfiguration(*configFile)
+
+	// HTTP requests to trust agents etc. resolve <name>.local by multicast DNS (#127)
+	localnames.Install()
 
 	// now we know where things are, we can initialise the datalayer, ie: database, messaging etc
 	// if this fails, we panic

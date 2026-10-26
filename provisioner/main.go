@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"localnames"
 )
 
 const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile
@@ -71,6 +73,8 @@ var VERSION string = "not set"
 var BUILD string = "not set"
 
 func main() {
+	// requests to Jane resolve <name>.local by multicast DNS (#127)
+	localnames.Install()
 	os.Exit(run(os.Args[1:]))
 }
 
