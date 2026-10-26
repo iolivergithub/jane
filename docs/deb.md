@@ -65,6 +65,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/etc/opt/jane/jane.env` | environment for janeserver (MongoDB and MQTT accounts), all commented out |
 | `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate, only used when you switch to HTTPS; replace them (see [Hardening](hardening.md#3-your-own-tls-key-and-certificate)) |
 | `/etc/opt/jane/standardintents.json` | the standard intents matching this version, for loading by hand if downloading them fails |
+| `/etc/opt/jane/standardobjects.json` | the standard opaque objects matching this version (since 1.5.6, #102), likewise |
 | `/lib/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
@@ -92,7 +93,7 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | `/etc/opt/jane` (directory) | `root:jane` | 751 |
 | directories inside `/etc/opt/jane` | `root:jane` | 750 |
 | `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` and its subdirectories (not `jp.key`) | `root:jane` | 640 |
-| `*.crt`, `standardintents.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
+| `*.crt`, `standardintents.json`, `standardobjects.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
 | `/etc/opt/jane/provisioning.yaml.example` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |

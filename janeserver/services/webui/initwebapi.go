@@ -133,6 +133,7 @@ func setupEditEndpoints(router *echo.Echo) {
 	router.POST(PREFIX+"/new/expectedvalue", processNewExpectedValue)
 
 	router.GET(PREFIX+"/loadstandardintents", loadstandardintents)
+	router.GET(PREFIX+"/loadstandardobjects", loadstandardobjects)
 
 	router.GET(PREFIX+"/new/opaqueobject", newOpaqueObject)
 	router.POST(PREFIX+"/new/opaqueobject", processOpaqueObject)

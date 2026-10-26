@@ -56,7 +56,7 @@ chmod 751 /etc/opt/jane
 find /etc/opt/jane -mindepth 1 -type d -exec chown root:jane {} + -exec chmod 750 {} +
 find /etc/opt/jane -type f \( -name config.yaml -o -name jane.env -o -name '*.key' -o -name '*.pem' \) \
     ! -name jp.key ! -name tarzan.env -exec chown root:jane {} + -exec chmod 640 {} +
-find /etc/opt/jane -type f \( -name '*.crt' -o -name standardintents.json \) \
+find /etc/opt/jane -type f \( -name '*.crt' -o -name standardintents.json -o -name standardobjects.json \) \
     -exec chown root:jane {} + -exec chmod 644 {} +
 
 mkdir -p /var/log/jane

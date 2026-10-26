@@ -120,6 +120,8 @@ for t in $JANE_TARGETS; do
     cp REPLACE_ME.crt $JANEBASE/etc/opt/jane/REPLACE_ME.crt
     # Backup copy of the standard intents matching this version (#67)
     cp ../standardintents/standardintents.json $JANEBASE/etc/opt/jane/standardintents.json
+    # and of the standard opaque objects (#102)
+    cp ../standardobjects/standardobjects.json $JANEBASE/etc/opt/jane/standardobjects.json
     cp jane.env $JANEBASE/etc/opt/jane/jane.env
     cp jane.service $JANEBASE/lib/systemd/system/jane.service
 
@@ -129,7 +131,7 @@ for t in $JANE_TARGETS; do
     chmod 750 $JANEBASE/var/log/jane
     chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser
     chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
-    chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json
+    chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
     chmod 644 $JANEBASE/lib/systemd/system/jane.service
 
     control control_jane_base "$t" $JANEBASE/DEBIAN/control
@@ -181,7 +183,7 @@ cp $REPO/janeserver/dist/windows-amd64/janeserver.exe $WINJANE/
 cp ../addjaneuser/addjaneuser $WINJANE/
 cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
 cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
-cp ../standardintents/standardintents.json $WINJANE/
+cp ../standardintents/standardintents.json ../standardobjects/standardobjects.json $WINJANE/
 cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt
 
 WINTARZAN=$TMPBASE/tarzan-windows-amd64

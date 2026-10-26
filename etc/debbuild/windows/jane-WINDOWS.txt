@@ -17,6 +17,7 @@ no Windows service wrapper; a Windows administrator sets it up.
                           read by systemd on Linux; set them in Windows instead
   REPLACE_ME.crt, .key    development certificate and key: replace them
   standardintents.json    backup copy of the standard intents
+  standardobjects.json    backup copy of the standard opaque objects
 
 Jane also needs MongoDB and an MQTT broker (e.g. Mosquitto), which have their
 own Windows installers.

@@ -24,6 +24,7 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 
 - [Elements](elements.md): the machines or other things being attested.
 - [Intents](intents.md): what to ask a trust agent for. [Standard intents](standardintents.md): the common set shipped with Jane.
+- [Standard opaque objects](standardobjects.md): the published set of opaque objects, and loading it.
 - [Expected values](expectedvalues.md): the known-good values rules compare with.
 - [Claims](claims.md): what a trust agent returned, with its context.
 - [Results](results.md): a rule's verdict on a claim.

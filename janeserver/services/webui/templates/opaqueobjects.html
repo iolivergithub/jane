@@ -3,8 +3,10 @@
    <h3 class="mb-0 me-auto">Opaque objects <span class="badge bg-secondary fs-6 align-middle">{{ len . }}</span></h3>
    <input id="objectFilter" type="search" class="form-control form-control-sm" style="max-width: 18rem"
           placeholder="Filter by value, type, description…" aria-label="Filter opaque objects">
+   <a href="/loadstandardobjects" class="btn btn-sm btn-outline-primary" title="Add or update the published standard opaque objects; nothing is removed"><i class="fa fa-refresh me-1"></i>Load standard objects</a>
    <a href="/new/opaqueobject" class="btn btn-sm btn-primary"><i class="fa fa-plus me-1"></i>New object</a>
 </div>
+<div id="stdObjectsMsg" class="alert d-none" role="status"></div>
 
 {{ if . }}
 <div class="card">
@@ -31,6 +33,22 @@
 {{ end }}
 
 <script>
+(function () {
+   // result of "Load standard objects" (#102)
+   var r = new URLSearchParams(window.location.search).get('stdobjects');
+   var box = document.getElementById('stdObjectsMsg');
+   if (r === null || !box) return;
+   if (r === 'failed') {
+      box.className = 'alert alert-danger';
+      box.textContent = 'Loading the standard opaque objects failed; the reason is in Jane\'s log.';
+   } else if (r === 'empty') {
+      box.className = 'alert alert-secondary';
+      box.textContent = 'The published list of standard opaque objects is empty: nothing to load.';
+   } else {
+      box.className = 'alert alert-success';
+      box.textContent = 'Loaded ' + parseInt(r, 10) + ' standard opaque objects (added or updated; nothing removed).';
+   }
+})();
 (function () {
    var table = document.getElementById('objectTable');
    if (!table) return;
