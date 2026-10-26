@@ -1,14 +1,26 @@
 [
     {
         "value": "c4b0dc9f0f6185483ec8b40c3a8c06fdef7187e0",
-        "type": "pcr",
+        "type": "PCR SHA1",
         "shortdescription": "VBOX 7 UEFI CRTM SHA1",
         "longdescription": "VirtualBox 7 UEFI firmware: CRTM (PCR 0) value in the SHA-1 bank"
     },
     {
         "value": "fcf4d7b42f073a5cf8fa5929cc2f5ac07039ca7a999b7e078faa2af6870a1250",
-        "type": "pcr",
+        "type": "PCR SH256",
         "shortdescription": "VBOX 7 UEFI CRTM SHA256",
         "longdescription": "VirtualBox 7 UEFI firmware: CRTM (PCR 0) value in the SHA-256 bank"
+    },
+    {
+        "value": "b2a83b0ebf2f8374299a5b2bdfc31ea955ad7236",
+        "type": "PCR SHA1",
+        "shortdescription": "TPM EV_SEPARATOR  Event",
+        "longdescription": "TPM EV_SEPARATOR  Event applied to initialised, 0x0... PCR Value during UEFI Boot - usually found as a test value"
+    }, 
+    {
+        "value": "3dcaea25dc86554d94b94aa5bc8f735a49212af8",
+        "type": "PCR SHA1",
+        "shortdescription": "Nokia RM18 AirFrame CRTM",
+        "longdescription": "Nokia RM18 AirFrame CRTM Value"
     }
 ]
