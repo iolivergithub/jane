@@ -140,7 +140,8 @@ evs:
   anything runs, `jp` stops with exit code 2 if a name is defined twice
   (`cid`, `rid` and `resvar` share one namespace), if `$name` refers to a
   variable that is not defined earlier in the file (an intent's own `cid`
-  counts for its rules), or if `parameters` is text rather than a mapping.
+  counts for its rules). `parameters` given as text rather than a mapping
+  makes the file unreadable: exit code 1.
 - If the step that sets a variable failed (e.g. its intent could not be
   attested), a rule using it is reported `NOTRUN` and counts as failed.
 - Variables only exist in `jp attest`, for one run. At the end it prints them:

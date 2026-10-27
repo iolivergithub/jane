@@ -138,6 +138,8 @@ The session, claims and results are in Jane's Web UI too.
 
 ## The provisioning file
 
+The full reference for the file — every key, rules and parameters, variables and their scope, attestation profiles and `follow` — is [The provisioning language](provisioning.md). In brief:
+
 ```yaml
 attestationserver: http://127.0.0.1:8520      # Jane's REST API
 element:
