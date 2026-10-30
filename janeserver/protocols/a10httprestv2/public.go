@@ -8,12 +8,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"a10/structures"
 	_ "a10/utilities"
 )
 
 const nonceSize int = 24
+
+// taCallTimeout bounds a call to the trust agent, so an agent that never
+// answers gives an error instead of blocking the attestation forever.
+const taCallTimeout = 2 * time.Minute
 
 func Registration() structures.Protocol {
 	intents := []string{"tpm2/pcrs", "tpm2/quote", "tpm2/gettime", "tpm2/capabilities", "tpm2/activatecredential", "tpm2/getcert", "uefi/eventlog", "uefi/efivars", "uefi/bootconfig", "ima/asciilog", "txt/log", "sys/info"}
@@ -131,8 +136,11 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 
 	url := ep.Endpoint + "/" + p.Function
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(postbody))
+	if err != nil {
+		return empty, cps, fmt.Errorf("request to %v could not be made: %w", url, err)
+	}
 	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
+	client := &http.Client{Timeout: taCallTimeout}
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -142,7 +150,6 @@ func requestFromTA(e structures.Element, ep structures.Endpoint, p structures.In
 
 	taResponse, _ := io.ReadAll(resp.Body)
 	err = json.Unmarshal(taResponse, &bodymap)
-	fmt.Printf("bodymap %v\n", bodymap)
 
 	if err != nil {
 		return empty, cps, fmt.Errorf("JSON Unmarshalling reponse from TA: %w", err)

@@ -9,9 +9,14 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"a10/structures"
 )
+
+// taCallTimeout bounds a call to ratsd, so an agent that never answers gives
+// an error instead of blocking the attestation forever.
+const taCallTimeout = 2 * time.Minute
 
 // RATSD requires a 64 byte nonce, sent base64url encoded without padding
 const nonceSize int = 64
@@ -122,7 +127,7 @@ func requestFromRATSD(e structures.Element, ep structures.Endpoint, p structures
 		return empty, cps, fmt.Errorf("intent function %v is not supported by the RATSD protocol", p.Function)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: taCallTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return empty, cps, err // err will be the error from http.client.Do
