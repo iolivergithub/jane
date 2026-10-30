@@ -204,18 +204,20 @@ follow:
 
 **What happens when a profile with `follow:` runs** (in Jane: `jp remoteattest`, REST `runprov`, the Web UI):
 
-1. The element's own steps run, in its own session, with its own variables.
-2. The follow entries are resolved: for each entry, **every** relationship of that type gives a target element and profile. Each is decided before anything else runs:
+1. **The follow tree is planned first**, before anything runs, from the relationships and the stored profiles: starting from this element and profile, for each `follow:` entry in order, **every** relationship of that type (in order of the related element's ID) gives a target element and profile, and so on for the targets' own `follow:` entries, level by level. Each decision is one of (`kind`, then the message):
    - `run` — it will be run;
-   - `skipped (already run in this request)` — that element and profile has already run, or is about to, in this request;
-   - `not followed (follow limit n reached)`;
-   - an error — the element has no relationship of that type, the related element is missing, or it has no such profile (or no default).
-3. The variables and these decisions are recorded in the session, and the session is closed.
-4. Each `run` target is run the same way, in a **new session whose parent is this one** — and may follow further.
+   - `skipped` — that element and profile is already in the plan for this request;
+   - `limit` — not followed, the follow limit is reached;
+   - `error` — the element has no relationship of that type, the related element is missing, or it has no such profile (or no default).
+2. The element's own steps run, in its own session, with its own variables.
+3. The variables and this element's follow decisions are recorded in the session, and the session is closed.
+4. Each `run` target is then run the same way, in a **new session whose parent is this one**, following its own part of the plan.
 
-**It always ends.** Within one request, each (element, profile) pair runs at most once, so cycles in the relationships (A hosted-on B, B runs-on A) are harmless: the second visit is skipped. A **follow limit** (default 10 levels: the starting run is level 0, the elements it follows level 1, …) bounds how far it spreads; `jp remoteattest --followlimit n`, `?followlimit=n` on REST, the depth selector in the Web UI. `--nofollow` (`followlimit 0`) runs the element alone.
+Planning level by level means a shared element is always run from the parent closest to the start, whatever order things finish in. With `parallel` (`jp remoteattest --parallel`, `?parallel=true`, the checkbox in the Web UI) the planned runs go at the same time, at most 4 at once; without it, one after another. Both run the same plan, so `parallel` changes how long it takes, never which sessions are made or their parents.
 
-**Errors don't stop it.** A follow error is logged, recorded in the session and reported at the end; the remaining follow entries still run. `jp remoteattest` exits with 3 if there was any follow error (something asked for was not attested), but not for skips or the limit.
+**It always ends.** Within one request, each (element, profile) pair is planned at most once, so cycles in the relationships (A hosted-on B, B runs-on A) are harmless: the second visit is skipped. A **follow limit** (default 10 levels: the starting run is level 0, the elements it follows level 1, …) bounds how far it spreads; `jp remoteattest --followlimit n`, `?followlimit=n` on REST, the depth selector in the Web UI. `--nofollow` (`followlimit 0`) runs the element alone.
+
+**Errors don't stop it.** A follow error is logged, recorded in the session and reported at the end; the remaining follow entries still run. `jp remoteattest` exits with 3 if there was any follow error (something asked for was not attested), but not for `skipped` or `limit`.
 
 **Nothing passes along follow:** each followed run has its own session, its own variables (starting empty), its own results. Combining the sessions of one request into a verdict is up to whoever asked for it; Jane reports, it does not judge.
 
