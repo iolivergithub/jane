@@ -82,6 +82,13 @@ Asks Jane to run the element's stored profile — its default, or `PROFILE` — 
 - The element is the one in the element ID file, so run it on the registered machine (or with a copy of that file).
 - With one argument, it is the provisioning file if such a file exists, else the profile name.
 - Jane's address is `--server`, else `JANE_SERVER`, else the provisioning file's `attestationserver` (the file must then be given).
+- The provisioning file is optional: jp reads only `attestationserver` from it. What runs is the profile stored in Jane, so edits to the file's `evs:` or `follow:` count only after the next `jp update`.
+
+```bash
+/opt/jane/jp remoteattest /etc/opt/jane/provisioning.yaml          # Jane's address from the file; default profile
+/opt/jane/jp remoteattest --server http://jane:8520 nightly        # no file needed
+JANE_SERVER=http://jane:8520 /opt/jane/jp remoteattest --nofollow
+```
 
 The report lists each element's steps and rules, its variables and follow decisions, indented by depth, then `Remote attestation PASSED` or `FAILED` with counts. Exit 0 only if every rule passed, no step or follow failed and the run itself had no error.
 
