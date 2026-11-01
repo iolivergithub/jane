@@ -1,6 +1,6 @@
 # Compiling
 
-janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`; janeserver and jp also use the small library module `localnames/` (multicast DNS for `.local` names, #127, see [Running](running.md#host-names-ending-in-local)) through a `replace` in their `go.mod` (nothing to install separately). Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
+janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`; janeserver and jp also use the small library module `localnames/` (multicast DNS for `.local` names, #127, see [Running](running.md#host-names-ending-in-local)) as `github.com/iolivergithub/jane/localnames`, through a `replace` in their `go.mod` pointing at `../localnames` (nothing to download or install separately). Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
 
 - [Building one component](#building-one-component)
 - [Architectures](#architectures)

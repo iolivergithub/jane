@@ -12,6 +12,6 @@ require (
 require google.golang.org/protobuf v1.34.2 // indirect
 
 // localnames: multicast DNS for <name>.local (#127), in this repository
-require localnames v0.0.0
+require github.com/iolivergithub/jane/localnames v0.0.0
 
-replace localnames => ../localnames
+replace github.com/iolivergithub/jane/localnames => ../localnames

@@ -1,4 +1,4 @@
-module localnames
+module github.com/iolivergithub/jane/localnames
 
 go 1.26.0
 
