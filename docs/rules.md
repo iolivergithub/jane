@@ -93,6 +93,24 @@ One rule per UEFI variable, each comparing the variable in a `uefi/efivars` clai
 
 The Rules page shows each one's description.
 
+### The measured state in the event log (1.6)
+
+The `UEFI_` rules check what the running OS reports, which is unmeasured and unsigned. These check what the firmware **measured** at boot, from a `uefi/eventlog` claim (#134). They read the log as it is: their trust comes from `tpm2_uefiLogReplay` passing on the **same** log claim (`uefilogcid`) in the same run, against PCRs that a quote covers. Parsing uses go-eventlog, which refuses a log it considers unsafe (a UEFI debugger present, duplicate or late variables, digests that don't match the data); such a log fails every rule with the reason.
+
+One expected value, of jp's type `uefieventlog`, with an entry per rule:
+
+| Rule | Entry | Passes when |
+|---|---|---|
+| `uefi_logSecureBoot` | `secureboot`: `enabled` or `disabled` | the measured state is as expected (a machine with Secure Boot deliberately off records `disabled`) |
+| `uefi_logPK`, `uefi_logKEK`, `uefi_logdb`, `uefi_logdbx` | `pk`, `kek`, `db`, `dbx`: `sha256:<hex>` of the measured data, or `absent` | the measured variable is as expected |
+| `uefi_logAuthorities` | `authorities`: a list of `sha256:<hex>` certificate fingerprints | every certificate that verified a boot image is in the list (the message lists any that aren't) |
+| `uefi_logDMAProtection` | `dmaprotection`: `notreported` or `disabled` | the firmware's DMA protection report is as expected |
+| `uefi_logFirmwareVersion` | `firmwareversion` | the S-CRTM (firmware) version in PCR 0 is as expected |
+
+`uefi_logMatchesEfivars` needs no expected value. It runs on a `uefi/efivars` claim with the log claim as parameter `uefilogcid`, and compares `SecureBoot`, `PK`, `KEK`, `db` and `dbx` as the OS reports them with what was measured. A difference means the OS reports something other than what was measured at boot, or the variables changed since (e.g. a dbx update waiting for a reboot).
+
+`dbx`, the authorities and the firmware version change with firmware (fwupd) and shim/SBAT (apt) updates: run `jp update` afterwards.
+
 ## System
 
 | Rule | Claim | EV | Checks |

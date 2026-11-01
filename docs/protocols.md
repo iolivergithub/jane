@@ -12,4 +12,6 @@ A protocol is how Jane talks to a trust agent. Each element endpoint names one (
 
 The parameters each function takes, and what it returns, are in [Functions](functions.md); the attest page's **Reference** shows them too, with where each value comes from.
 
+Since 1.6, `A10HTTPRESTv2` and `RATSD` give up on a trust agent that doesn't answer within **2 minutes**: the claim is an error claim saying so, and whatever asked for it (an attest page, jp, a profile run) carries on. An endpoint URL that can't be made into a request is an error claim too.
+
 Protocols are compiled into Jane and registered at start-up (`janeserver/protocols/registerProtocols.go`).

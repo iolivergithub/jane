@@ -3,6 +3,7 @@
 This is the reference for every option, flag and environment variable of the programs, and for running them by hand or on systems other than Debian. For a first installation follow the [Quick start](quickstart.md); for securing an installation see [Hardening](hardening.md); for what the deb packages install and how systemd runs them see [Installing with dpkg/apt](deb.md).
 
 - [What runs where](#what-runs-where)
+- [Host names ending in .local](#host-names-ending-in-local)
 - [MongoDB and Mosquitto](#mongodb-and-mosquitto)
 - [janeserver](#janeserver)
 - [addjaneuser](#addjaneuser)
@@ -20,6 +21,14 @@ This is the reference for every option, flag and environment variable of the pro
 | jp | each element | janeserver's REST API; the local TPM |
 
 Installed from the deb packages, the programs are in `/opt/jane` and their configuration in `/etc/opt/jane`. Built from source (see [Compiling](compiling.md)) they can live anywhere.
+
+## Host names ending in .local
+
+janeserver, tarzan and jp are built without cgo (pure Go, so that every architecture builds on one machine). They therefore use Go's own name resolver, which reads `/etc/hosts` and asks the DNS servers in `/etc/resolv.conf`, but not avahi's nss-mdns, which resolves `<name>.local` for programs using glibc (#127).
+
+Since 1.5.6b, janeserver and jp resolve `.local` names themselves with multicast DNS, in pure Go (package `localnames`): every name is looked up as before, and **only if that fails** and the name ends in `.local` is it asked for by multicast DNS (up to 3 s). DNS, `/etc/hosts` and IP addresses behave exactly as before. This covers all their HTTP requests: jp to Jane (`attestationserver:`), Jane to trust agents (element endpoints, e.g. `http://pi.local:8530`), the EK certificate `issuerurl`, and the standard intents and objects downloads. It does **not** cover the MongoDB and MQTT broker addresses in `config.yaml`; give those as IP addresses or names in `/etc/hosts` or DNS (the shipped `127.0.0.1` is fine).
+
+Multicast DNS needs multicast on the local network: it works on most home and office LANs, not across routers, in clouds or in Kubernetes overlay networks. Anyone on the LAN can answer a multicast DNS query, as with avahi; where that matters use IP addresses, `/etc/hosts`, DNS, or HTTPS with a verified certificate. jp and janeserver open UDP port 5353 for the queries when they first need one; avahi keeps working alongside.
 
 ## MongoDB and Mosquitto
 
@@ -60,6 +69,7 @@ The packaged `/etc/opt/jane/config.yaml` lists every option with comments; a com
 | `x3270` | `port` (3270), `listenon` | tn3270 terminal interface; never encrypted |
 | `logging` | `logfilelocation`, `sessionupdatelogging` | Jane's log file (CSV, one entry per line), and whether to log every claim and result added to a session |
 | `signing` (optional) | `keyfile` | PEM private key for claim, result and session footers; without it an ephemeral key is made at each start. See [Signing](signing.md) |
+| `sessions` (optional) | `longsession` (60), `refresh` (2) | sessions open longer than `longsession` seconds (minimum 30) are flagged LONG SESSION; while a profile run is going its session pages reload every `refresh` seconds, `0` switches it off. See [Sessions](sessions.md) |
 | `auth` (optional) | `web`, `rest`, `x3270`, `sessiontimeout` (30m) | logins per interface; without the section nothing asks for a login. See [Authentication](authentication.md) |
 
 Restart Jane after changing the file.
@@ -107,7 +117,7 @@ JANE: Authentication: web false, rest false, x3270 false, session timeout 30m0s
 ...
 ```
 
-The authentication lines show the accounts used (`user jane`), never passwords. Jane warns if a login is required but there are no users, or if no signing key is configured. Under systemd: `journalctl -u jane`.
+The authentication lines show the accounts used (`user jane`), never passwords. Jane warns if a login is required but there are no users, or if no signing key is configured. It creates the indexes on sessions (`itemid`, `parent`) at each start (1.6); if that fails it warns (`could not create the indexes on sessions`) and runs without them, only slower. Under systemd: `journalctl -u jane`.
 
 ### The log
 
@@ -201,9 +211,11 @@ jp registers this machine with Jane, provisions its TPM keys, records its expect
 
 ```
 jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
+jp remoteattest [PROVISIONINGFILE] [PROFILE] [--server URL] [--parent SID]
+                [--followlimit N | --nofollow] [--parallel] [--apikeyfile PATH]
 ```
 
-In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD`, `JANE_TPM_OWNER_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
+In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM; `remoteattest` (1.6) asks Jane to run the element's stored attestation profile, following related elements, and needs neither root nor a TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_SERVER` (`remoteattest`), `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD`, `JANE_TPM_OWNER_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
 
 ## All environment variables
 
@@ -215,6 +227,7 @@ In short: `create` (first registration) and `update` (after firmware or OS updat
 | `JANE_MQTT_USERNAME` | janeserver | MQTT account | anonymous |
 | `JANE_MQTT_PASSWORD` | janeserver | its password | none |
 | `JANE_X3270_DEBUG` | janeserver | log the x3270 data stream | off |
+| `JANE_SERVER` | jp | Jane's REST API for `remoteattest`, e.g. `http://jane:8520`; `--server` overrides it | the provisioning file's `attestationserver` |
 | `JANE_API_KEY` | jp | Jane REST API key (`jane_...`); `--apikeyfile` overrides it | no key sent |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | tarzan, jp | TPM endorsement hierarchy password | empty password |
 | `JANE_TPM_OWNER_PASSWORD` | jp | TPM owner hierarchy password (persisting and evicting the EK/AK) | empty password |

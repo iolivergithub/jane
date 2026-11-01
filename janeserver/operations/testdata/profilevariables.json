@@ -1,0 +1,11 @@
+{
+  "comment": "Shared by janeserver (operations) and jp (provisioner) tests: both must substitute $variables and report unset ones the same way (docs/provisioning.md, Variables).",
+  "cases": [
+    { "name": "no parameters", "params": {}, "vars": {"a": "1"}, "want": null, "unset": "" },
+    { "name": "plain values pass through", "params": {"x": "y", "n": 3}, "vars": {}, "want": {"x": "y", "n": 3}, "unset": "" },
+    { "name": "a variable is replaced", "params": {"pcrscid": "$pcrs"}, "vars": {"pcrs": "C1"}, "want": {"pcrscid": "C1"}, "unset": "" },
+    { "name": "only whole values are variables", "params": {"x": "a$pcrs", "y": "$pcrs"}, "vars": {"pcrs": "C1"}, "want": {"x": "a$pcrs", "y": "C1"}, "unset": "" },
+    { "name": "a variable without a value", "params": {"pcrscid": "$pcrs"}, "vars": {}, "want": null, "unset": "pcrs" },
+    { "name": "a variable whose step failed (empty)", "params": {"pcrscid": "$pcrs"}, "vars": {"pcrs": ""}, "want": null, "unset": "pcrs" }
+  ]
+}

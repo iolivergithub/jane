@@ -6,6 +6,7 @@ import (
 
 	"a10/configuration"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -51,9 +52,24 @@ func initialiseDatabase() {
 	}
 
 	DB = client.Database(configuration.ConfigData.Database.Name)
+	createIndexes()
 
 	fmt.Println("JANE: Database infrastructure MONGO is running")
 
 	DBCLIENT = client
 
+}
+
+// createIndexes makes the indexes Jane relies on (#130): sessions are looked
+// up by item ID on every session page and by parent for the sessions opened
+// under one. Creating an index that already exists does nothing. A failure is
+// reported and Jane carries on: lookups still work, only more slowly.
+func createIndexes() {
+	models := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "itemid", Value: 1}}},
+		{Keys: bson.D{{Key: "parent", Value: 1}}},
+	}
+	if _, err := DB.Collection("sessions").Indexes().CreateMany(ctx, models); err != nil {
+		fmt.Println("JANE: WARNING: could not create the indexes on sessions (itemid, parent):", err)
+	}
 }

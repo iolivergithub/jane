@@ -119,6 +119,9 @@
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-relationships" type="button" role="tab"><i class="fa fa-sitemap me-1"></i> Relationships <span class="badge bg-secondary">{{ len .Related }}{{ if .RelatedFrom }}+{{ len .RelatedFrom }}{{ end }}</span></button>
          </li>
          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-profiles" type="button" role="tab"><i class="fa fa-list-ol me-1"></i> Profiles <span class="badge bg-secondary">{{ len .E.AttestationProfiles }}</span></button>
+         </li>
+         <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#det-history" type="button" role="tab"><i class="fa fa-history me-1"></i> Record history</button>
          </li>
       </ul>
@@ -219,6 +222,26 @@
             </div>
          </div>
          <div class="small text-body-secondary mt-2">Relationships are changed through the REST API (<span class="font-monospace">/element/&lt;itemid&gt;/relationships</span>).</div>
+      </div>
+
+      <div class="tab-pane fade" id="det-profiles" role="tabpanel">
+         {{/* attestation profiles (#132): display only; written by jp create/update */}}
+         {{ if .E.AttestationProfiles }}
+         <table class="table table-sm mb-0">
+            <thead><tr><th>Profile</th><th>Description</th><th>Steps</th><th>Follow</th></tr></thead>
+            <tbody>
+               {{ range $name, $pr := .E.AttestationProfiles }}
+               <tr>
+                  <td class="text-nowrap"><a href="/element/{{ $p.E.ItemID }}/profile/{{ $name }}">{{ $name }}</a>{{ if eq $name $p.E.DefaultAttestationProfile }} <span class="badge bg-primary-subtle text-primary-emphasis">default</span>{{ end }}</td>
+                  <td>{{ $pr.Description }}</td>
+                  <td>{{ len $pr.Steps }}</td>
+                  <td>{{ range $pr.Follow }}<span class="badge bg-body-secondary text-body-emphasis border me-1">{{ .Relationship }}{{ if .Profile }} → {{ .Profile }}{{ end }}</span>{{ else }}<span class="text-body-secondary">–</span>{{ end }}</td>
+               </tr>
+               {{ end }}
+            </tbody>
+         </table>
+         {{ else }}<i class="text-body-secondary">No attestation profiles</i>{{ end }}
+         <div class="small text-body-secondary mt-2">Profiles are written by <span class="font-monospace">jp create</span> and <span class="font-monospace">jp update</span>. Open one to run it.</div>
       </div>
 
       <div class="tab-pane fade" id="det-history" role="tabpanel">

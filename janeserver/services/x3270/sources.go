@@ -173,6 +173,24 @@ func elementDetail(s store, id string) detail {
 		add("(none)")
 	}
 
+	// attestation profiles (#132): read-only, written by jp create/update
+	add(section("Attestation profiles")...)
+	var pns []string
+	for n := range e.AttestationProfiles {
+		pns = append(pns, n)
+	}
+	sort.Strings(pns)
+	for _, n := range pns {
+		label := n
+		if n == e.DefaultAttestationProfile {
+			label += " (default)"
+		}
+		add(labelled(label, e.AttestationProfiles[n].Description)...)
+	}
+	if len(pns) == 0 {
+		add("(none)")
+	}
+
 	add(section("Host")...)
 	add(labelled("Hostname", e.Host.Hostname)...)
 	add(labelled("OS / arch", strings.Trim(e.Host.OS+" / "+e.Host.Arch, " /"))...)
@@ -418,6 +436,17 @@ func sessionDetail(s store, id string) detail {
 		}}
 	}
 	add(labelled("Message", x.Message)...)
+	if x.Parent != "" {
+		parent := x.Parent
+		d.add(labelled("Parent", parent), link{Open: func() detail { return sessionDetail(s, parent) }})
+	}
+	if pr := x.AttestationProfileRun; pr != nil {
+		ed := ""
+		if pr.Edited {
+			ed = " (edited)"
+		}
+		add(labelled("Profile run", fmt.Sprintf("%s%s on %s, %d variables, %d follow decisions", pr.Name, ed, nameOr(el, pr.ElementID), len(pr.Variables), len(pr.Follow)))...)
+	}
 	p, f, o := countResults(rs)
 	add(labelled("Results", fmt.Sprintf("%d pass, %d fail, %d other", p, f, o))...)
 	add(labelled("Claims", fmt.Sprintf("%d (%d errors)", len(cs), countClaimErrors(cs)))...)

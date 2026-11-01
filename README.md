@@ -9,6 +9,7 @@ Jane is the remote attestation engine of a trusted or confidential computing env
 | `janeserver/` | the attestation engine: Web UI, REST API and x3270 terminal interface |
 | `tarzan/` | tarzan, the reference trust agent |
 | `provisioner/` | jp, which registers an element with Jane, provisions its TPM and attests it |
+| `localnames/` | a small library used by janeserver and jp: `.local` names by multicast DNS |
 | `etc/` | packaging (`etc/debbuild`), standard intents, `addjaneuser`, scripts |
 | `docs/` | the documentation |
 

@@ -42,8 +42,21 @@ func showSession(c echo.Context) error {
 	cs, _ := operations.GetClaimsBySessionIDs([]string{s.ItemID})
 	rs, _ := operations.GetResultsBySessionIDs([]string{s.ItemID})
 
-	page := buildSessionPage(s, cs, rs, dbLookups())
+	lk := dbLookups()
+	page := buildSessionPage(s, cs, rs, lk)
 	page.Long = isLongSession(s.Timing, time.Now())
+
+	// parent, children and profile run (#130, #132, #137)
+	parentFound := false
+	if s.Parent != "" {
+		_, err := operations.GetSessionByItemID(s.Parent)
+		parentFound = err == nil
+	}
+	var children []structures.Session
+	if s.ItemID != "" {
+		children, _ = operations.GetSessionsByParent(s.ItemID)
+	}
+	page.Tree = buildSessionTree(s, parentFound, children, operations.IsRunning(s.ItemID), configuration.SessionRefresh(), lk)
 	return c.Render(http.StatusOK, "session.html", page)
 }
 

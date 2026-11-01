@@ -24,27 +24,49 @@ func CountSessions() int64 {
 	}
 }
 
-// AddElement is a function that takes and element structure that has a BLANK Itemid field (empty string) and stores that
-// element in some database
-// Successful storage returns the itemid for that element and a nil error.
-// An error is returned if an item id is given as part of the input structure.
+// OpenSession opens a new session with the given message and returns its
+// item ID.
 func OpenSession(msg string) (string, error) {
-	// construct the session object
-	t := structures.SessionTiming{utilities.MakeTimestamp(), 0}
-	s := structures.Session{utilities.MakeID(), t, []string{}, []string{}, msg, structures.SessionFooter{}}
-	// write to database
+	return OpenSessionWithParent(msg, "", nil)
+}
+
+// OpenSessionWithParent opens a new session under the session parent (empty:
+// none), recording the profile run pr if it is not nil (#130). The parent
+// must exist; it need not be open. Parent and profile run are set only here
+// (the profile run's variables and follow decisions are added once, by
+// SetSessionProfileResults, before the close), so parent chains cannot form
+// cycles: a parent always exists before its child.
+func OpenSessionWithParent(msg string, parent string, pr *structures.ProfileRun) (string, error) {
+	if parent != "" {
+		if _, err := GetSessionByItemID(parent); err != nil {
+			return "", fmt.Errorf("parent session %v: %w", parent, err)
+		}
+	}
+	s := structures.Session{
+		ItemID:                utilities.MakeID(),
+		Timing:                structures.SessionTiming{Opened: utilities.MakeTimestamp(), Closed: 0},
+		ClaimList:             []string{},
+		ResultList:            []string{},
+		Message:               msg,
+		Parent:                parent,
+		AttestationProfileRun: pr,
+	}
 	_, dberr := datalayer.DB.Collection("sessions").InsertOne(context.TODO(), s)
 	logging.MakeLogEntry("S", "open", s.ItemID, "session", msg)
 
 	return s.ItemID, dberr
 }
 
+// The signed part of a session. Parent and AttestationProfileRun are left out
+// when empty, so sessions without them hash exactly as before (#130).
 type hashablePartSession struct {
-	ItemID     string
-	Timing     structures.SessionTiming
-	ClaimList  []string
-	ResultList []string
-	Message    string
+	ItemID                string
+	Timing                structures.SessionTiming
+	ClaimList             []string
+	ResultList            []string
+	Message               string
+	Parent                string                 `json:",omitempty"`
+	AttestationProfileRun *structures.ProfileRun `json:",omitempty"`
 }
 
 // CloseSession closes the session and signs it.
@@ -75,7 +97,7 @@ func CloseSession(itemid string) error {
 		session.Timing.Closed = utilities.MakeTimestamp()
 
 		// hash and sign the session
-		footer, _ := hashAndSignSession(hashablePartSession{session.ItemID, session.Timing, session.ClaimList, session.ResultList, session.Message})
+		footer, _ := hashAndSignSession(hashablePartSession{session.ItemID, session.Timing, session.ClaimList, session.ResultList, session.Message, session.Parent, session.AttestationProfileRun})
 		session.Footer = footer
 
 		//Write to database
@@ -148,6 +170,49 @@ func addToSession(sid string, field string, id string, kind string) error {
 		}
 		return nil
 	}
+}
+
+// SetSessionProfileResults records a profile run's variables and follow
+// decisions in its session (#130). It is one atomic update that only matches
+// an open session with a profile run, so it happens before the close and is
+// signed by it.
+func SetSessionProfileResults(sid string, vars []structures.ProfileVariable, follow []structures.ProfileFollowEntry) error {
+	filter := bson.D{{"itemid", sid}, {"timing.closed", 0}, {"attestationprofilerun", bson.D{{"$ne", nil}}}}
+	update := bson.D{{"$set", bson.D{
+		{"attestationprofilerun.variables", vars},
+		{"attestationprofilerun.follow", follow},
+	}}}
+	res, err := datalayer.DB.Collection("sessions").UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("Database error recording the profile run in session %v: %w", sid, err)
+	}
+	if res.MatchedCount != 1 {
+		return fmt.Errorf("Session %v is closed or not a profile run: results not recorded", sid)
+	}
+	return nil
+}
+
+// GetSessionsByParent returns the summaries of the sessions opened under the
+// session sid (#130), oldest first, with their whole profile run if any;
+// without claim and result lists or footer.
+func GetSessionsByParent(sid string) ([]structures.Session, error) {
+	var elems []structures.Session
+	filter := bson.D{{"parent", sid}}
+	options := options.Find().SetSort(bson.D{{"timing.opened", 1}}).SetProjection(bson.D{
+		{"itemid", 1}, {"timing", 1}, {"message", 1}, {"parent", 1},
+		{"attestationprofilerun", 1},
+	})
+	dbcursor, err := datalayer.DB.Collection("sessions").Find(context.TODO(), filter, options)
+	if err != nil {
+		return nil, err
+	}
+	if err := dbcursor.All(context.TODO(), &elems); err != nil {
+		return nil, err
+	}
+	if elems == nil {
+		elems = []structures.Session{}
+	}
+	return elems, nil
 }
 
 // GetSessionByItemID returns a single session or error

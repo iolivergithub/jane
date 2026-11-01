@@ -51,8 +51,8 @@ func run(t *testing.T, name string, claim structures.Claim, evs map[string]inter
 
 func TestRegistration(t *testing.T) {
 	rs := Registration()
-	if len(rs) != 17 {
-		t.Fatalf("expected 17 rules, got %d", len(rs))
+	if len(rs) != 17+9 { // the UEFI_ variables and the uefi_log rules (#134)
+		t.Fatalf("expected 26 rules, got %d", len(rs))
 	}
 	seen := map[string]bool{}
 	for _, r := range rs {
@@ -61,7 +61,9 @@ func TestRegistration(t *testing.T) {
 		}
 		seen[r.Name] = true
 	}
-	for _, n := range []string{"UEFI_SecureBoot", "UEFI_PK", "UEFI_db", "UEFI_dbx", "UEFI_MokSBStateRT", "UEFI_SbatLevelRT", "UEFI_dbxDefault"} {
+	for _, n := range []string{"UEFI_SecureBoot", "UEFI_PK", "UEFI_db", "UEFI_dbx", "UEFI_MokSBStateRT", "UEFI_SbatLevelRT", "UEFI_dbxDefault",
+		"uefi_logSecureBoot", "uefi_logPK", "uefi_logKEK", "uefi_logdb", "uefi_logdbx", "uefi_logAuthorities", "uefi_logDMAProtection",
+		"uefi_logFirmwareVersion", "uefi_logMatchesEfivars"} {
 		if !seen[n] {
 			t.Errorf("missing rule %v", n)
 		}

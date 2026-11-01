@@ -21,6 +21,7 @@ Linux, Windows, macOS, the BSDs, illumos/Solaris and AIX.
     sudo ./jp create --reprovisiontpm provisioning.yaml   # first time: new EK and AK
     sudo ./jp update provisioning.yaml        # leaves the TPM alone; safe to automate
     ./jp attest provisioning.yaml             # attest the registered element (no root needed)
+    ./jp remoteattest provisioning.yaml       # (1.6) Jane runs the stored profile, following relationships
 
 `create` and `update` need root (Administrator on Windows) for the TPM, the
 element ID file and the machine ID; without write access to the element ID
@@ -82,6 +83,12 @@ run once with jp 1.5.5).
   `processevs_withrules` was removed in 1.5.6: it is now reported as
   "Unknown provision work command" and no expected values are recorded, so
   use `processevs`.
+- Since 1.6, `create` and `update` end by storing the file's `evs:` and
+  `follow:` on the element as an attestation profile named by
+  `defaultattestationprofile` (`default`, with a warning, if missing) and
+  described by `attestationprofiledescription`, and make it the element's
+  default; the element's other profiles are kept. Against a Jane older than
+  1.6 jp warns and carries on (`profile.go`).
 - `attest` attests the element whose ID is in the element ID file against
   every intent under `evs`, and verifies every rule listed for each, in one
   Jane session. It does not run `provisionworklist`, touch the TPM, or change
@@ -96,11 +103,23 @@ run once with jp 1.5.5).
       ...
       Attestation FAILED: 15 rules passed, 3 failed, 1 of 7 intents could not be attested
 
+- `remoteattest [pfile] [profile]` (1.6) asks Jane to run the element's
+  stored profile, its default or the one named (`POST
+  /element/<itemid>/runprov`), and prints Jane's report. Jane does the steps
+  and follows relationships to other elements; jp needs no TPM and no root,
+  and waits (at most 10 minutes), saying to check Jane's Web UI meanwhile.
+  Jane's address is `--server`, else `JANE_SERVER`, else the file's
+  `attestationserver`. Flags: `--parent SID`, `--followlimit N`,
+  `--nofollow`, `--parallel` (`remoteattest.go`).
+
+jp prints `jp: opening session <sid>` whenever it opens a session.
+
 Exit status: 0 success (for `attest`, every rule passed); 1 error (bad
 provisioning file, missing element ID file, Jane server or TPM unreachable);
 2 bad command line, or a mistake in the provisioning file's variables (below);
-3 `attest` completed but a rule did not pass, a rule could not be run or an
-intent could not be attested.
+3 `attest` or `remoteattest` completed but a rule did not pass, a rule could
+not be run or an intent could not be attested (for `remoteattest` also a
+follow that failed or a run error).
 
 ## Variables: passing claims to rules
 
@@ -140,7 +159,8 @@ evs:
   anything runs, `jp` stops with exit code 2 if a name is defined twice
   (`cid`, `rid` and `resvar` share one namespace), if `$name` refers to a
   variable that is not defined earlier in the file (an intent's own `cid`
-  counts for its rules), or if `parameters` is text rather than a mapping.
+  counts for its rules). `parameters` given as text rather than a mapping
+  makes the file unreadable: exit code 1.
 - If the step that sets a variable failed (e.g. its intent could not be
   attested), a rule using it is reported `NOTRUN` and counts as failed.
 - Variables only exist in `jp attest`, for one run. At the end it prints them:
@@ -162,6 +182,15 @@ element, intent and endpoint (created by `create`, replaced by `update`):
 - `sysmachineid`: the claim's `machineid`, for the `sys_machineID_` rules.
 - `tpm2quote`: the quote's PCR digest and firmware version, for the `tpm2_`
   rules.
+- `tpm2ekcert`: `issuerurl`, where the EK certificate's issuer certificates
+  are (the entry's `issuerurl:`, else the certificate's CA Issuers URL), for
+  `tpm2_ekCertIssuer`.
+- `uefieventlog` (1.6): the Secure Boot state measured in the UEFI event log
+  (`secureboot`, `pk`, `kek`, `db`, `dbx`, `authorities`, `dmaprotection`,
+  `firmwareversion`), for the `uefi_log` rules. It is computed as
+  janeserver's `utilities/uefistate.go` does (`uefieventlog.go`; both are
+  tested against the same golden file). A log that can't be parsed is
+  reported and nothing is recorded; the run carries on.
 - `uefiefivars`: one entry per variable checked by the `UEFI_` rules
   (`janeserver/rules/uefirules`), matched by name and vendor GUID: the value
   as hex if it is at most 32 bytes, otherwise `sha256:<hex>`, or `absent` if

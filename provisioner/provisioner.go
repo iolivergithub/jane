@@ -301,6 +301,17 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 		}
 		evs = v
 
+	case "uefieventlog":
+		// for janeserver's uefi_log rules (#134): the measured UEFI state.
+		// A log that can't be read is not an error: nothing is recorded.
+		v, err := uefiEventLogEVs(c.Body)
+		if err != nil {
+			fmt.Fprintln(pv.Out, "No expected value for", pid+":", err)
+			return nil
+		}
+		fmt.Fprintln(pv.Out, "Measured UEFI state: Secure Boot", v["secureboot"])
+		evs = v
+
 	case "tpm2ekcert":
 		// for tpm2_ekCertIssuer (#63): where the issuer certificates are.
 		// No certificate or no URL is not an error: some TPMs have none.

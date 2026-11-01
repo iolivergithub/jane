@@ -36,10 +36,10 @@ func TestSkeletonNamesExist(t *testing.T) {
 	}
 
 	intentRE := regexp.MustCompile(`std::intent::[A-Za-z0-9:]+[A-Za-z0-9]`)
-	ruleRE := regexp.MustCompile(`\b(tpm2|sys|UEFI|chares)_[A-Za-z0-9]+\b`)
+	ruleRE := regexp.MustCompile(`\b(tpm2|sys|UEFI|uefi|chares)_[A-Za-z0-9]+\b`)
 
 	files, err := filepath.Glob("../../provisioner/skeleton/*.yaml")
-	if err != nil || len(files) != 4 {
+	if err != nil || len(files) < 4 {
 		t.Fatalf("skeletons: %v %v", files, err)
 	}
 	for _, f := range files {

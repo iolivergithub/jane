@@ -30,6 +30,9 @@ func AddElement(e structures.Element) (string, error) {
 		e.ItemID = utilities.MakeID()
 		e.RecordHistory = recordInformationCreation()
 		e.Relationships = nil // only the relationship operations add them (#118)
+		// only SetAttestationProfile adds profiles and sets the default (#128)
+		e.AttestationProfiles = nil
+		e.DefaultAttestationProfile = ""
 		fmt.Printf("New element %v\n", e)
 		_, dberr := datalayer.DB.Collection("elements").InsertOne(context.TODO(), e)
 		logging.MakeLogEntry("IM", "add", e.ItemID, "element", "")
@@ -41,12 +44,17 @@ func AddElement(e structures.Element) (string, error) {
 // UpdateElement requires the complete structure, that is, it replaces the structure with the given itemid.
 // The element's relationships are kept as stored, whatever the replacement
 // carries: they are changed only by the relationship operations (#118), so
-// that e.g. jp update does not wipe them.
+// that e.g. jp update does not wipe them. The same holds for the attestation
+// profiles and the default profile, changed only by SetAttestationProfile (#128).
 func UpdateElement(replacement structures.Element) error {
 	replacement.RecordHistory = recordInformationUpdate(replacement.RecordHistory)
 	replacement.Relationships = nil
+	replacement.AttestationProfiles = nil
+	replacement.DefaultAttestationProfile = ""
 	if stored, err := GetElementByItemID(replacement.ItemID); err == nil {
 		replacement.Relationships = stored.Relationships
+		replacement.AttestationProfiles = stored.AttestationProfiles
+		replacement.DefaultAttestationProfile = stored.DefaultAttestationProfile
 	}
 	filter := bson.D{{"itemid", replacement.ItemID}}
 	updateresult, err := datalayer.DB.Collection("elements").ReplaceOne(context.TODO(), filter, replacement)

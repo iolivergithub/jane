@@ -81,7 +81,7 @@ Go to **Intents** and press **Load standard intents**. Intents describe what to 
 
 ## 5. Register this machine (jp create)
 
-Copy the example provisioning file and look through it. It is for a physical machine with UEFI and a TPM; for a VM, a board without UEFI or a machine without a TPM, copy `full-vm.yaml`, `tpm2-nouefi.yaml` or `sysonly.yaml` from `/usr/share/doc/tarzantrustagent/skeletons/` instead (see [jp: skeletons](jp.md#skeletons)):
+Copy the example provisioning file and look through it. It is for a physical machine with UEFI and a TPM; for a VM, a board without UEFI or a machine without a TPM, copy `full-vm.yaml`, `tpm2-nouefi.yaml`, `sysonly.yaml` or `windows-tpm2-uefi.yaml` from `/usr/share/doc/tarzantrustagent/skeletons/` instead (see [jp: skeletons](jp.md#skeletons)):
 
 ```bash
 sudo cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml
@@ -112,6 +112,12 @@ jp then collects information about the machine, registers it with Jane as an ele
 ```
 
 `attest` needs no root. It asks Jane to attest the element against every intent in the file and to run every rule listed there, and prints a table of results. Exit status 0 means every rule passed.
+
+Since 1.6 the file is also stored in Jane as the element's attestation profile, so Jane can do the same itself, following the machine's relationships to other elements (see [Attestation profiles](attestationprofiles.md)):
+
+```bash
+/opt/jane/jp remoteattest /etc/opt/jane/provisioning.yaml
+```
 
 ## 7. Look at the results
 

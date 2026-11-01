@@ -12,9 +12,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/iolivergithub/jane/localnames"
 )
 
 const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile
+       jp remoteattest [pfile] [profile] [--server URL] [--parent SID]
+                       [--followlimit N | --nofollow] [--parallel] [--apikeyfile PATH]
 
 Jane Element Configurator
 
@@ -26,6 +30,11 @@ positional arguments:
                  update   update the element registered earlier
                  attest   attest the registered element against every intent
                           and rule under evs, without changing anything
+                 remoteattest
+                          ask Jane to run the registered element's stored
+                          attestation profile (its default, or the one
+                          named), following related elements; jp waits for
+                          the report. Needs no TPM and no root
   pfile          provisioning file (YAML)
 
 options:
@@ -39,12 +48,21 @@ options:
   --recreate     create only: register a new element even though this
                  machine is already registered; the old element is left in
                  Jane, orphaned
+  --server URL   remoteattest only: Jane's REST API (else JANE_SERVER, else
+                 attestationserver from the provisioning file, which must
+                 then be given)
+  --parent SID   remoteattest only: open the run's session under SID
+  --followlimit N
+                 remoteattest only: follow related elements at most N
+                 levels deep (default 10); --nofollow is --followlimit 0
+  --parallel     remoteattest only: run followed profiles at the same time
   --apikeyfile PATH
                  read the Jane REST API key from PATH (the key alone, e.g.
                  /etc/opt/jane/jp.key); overrides JANE_API_KEY. Needed if
                  Jane's REST API requires a key (auth: rest: true)
 
 environment:
+  JANE_SERVER    remoteattest: Jane's REST API, e.g. http://jane:8520
   JANE_API_KEY   Jane REST API key, jane_... (sudo -E keeps it); keys are
                  made with addjaneuser --apikey
   JANE_TPM_ENDORSEMENT_PASSWORD
@@ -71,6 +89,8 @@ var VERSION string = "not set"
 var BUILD string = "not set"
 
 func main() {
+	// requests to Jane resolve <name>.local by multicast DNS (#127)
+	localnames.Install()
 	os.Exit(run(os.Args[1:]))
 }
 
@@ -81,6 +101,7 @@ func run(argv []string) int {
 	reprovision, recreate := false, false
 	var keyFile *string
 	var pos []string
+	var ro remoteOptions // remoteattest only
 	for i := 0; i < len(argv); i++ {
 		a := argv[i]
 		switch {
@@ -94,6 +115,30 @@ func run(argv []string) int {
 		case a == "--user" || a == "--pass" || strings.HasPrefix(a, "--user=") || strings.HasPrefix(a, "--pass="):
 			fmt.Fprintf(os.Stderr, "jp: --user and --pass were removed in 1.5.5: Jane's REST API uses API keys; set JANE_API_KEY or give --apikeyfile\n%s", usage)
 			return exitUsage
+		case a == "--nofollow":
+			ro.noFollow, ro.set = true, true
+		case a == "--parallel":
+			ro.parallel, ro.set = true, true
+		case a == "--server" || strings.HasPrefix(a, "--server=") || a == "--parent" || strings.HasPrefix(a, "--parent=") ||
+			a == "--followlimit" || strings.HasPrefix(a, "--followlimit="):
+			name, val, hasVal := strings.Cut(a, "=")
+			if !hasVal {
+				if i+1 >= len(argv) {
+					fmt.Fprintf(os.Stderr, "jp: %s needs a value\n%s", name, usage)
+					return exitUsage
+				}
+				i++
+				val = argv[i]
+			}
+			ro.set = true
+			switch name {
+			case "--server":
+				ro.server = val
+			case "--parent":
+				ro.parent = val
+			case "--followlimit":
+				ro.followLimit = &val
+			}
 		case a == "--apikeyfile" || strings.HasPrefix(a, "--apikeyfile="):
 			name, val, hasVal := strings.Cut(a, "=")
 			if !hasVal {
@@ -113,6 +158,17 @@ func run(argv []string) int {
 			pos = append(pos, a)
 		}
 	}
+	if len(pos) >= 1 && pos[0] == "remoteattest" {
+		if reprovision || recreate {
+			fmt.Fprintf(os.Stderr, "jp: --reprovisiontpm and --recreate don't apply to remoteattest\n%s", usage)
+			return exitUsage
+		}
+		return runRemoteAttest(pos[1:], ro, keyFile)
+	}
+	if ro.set {
+		fmt.Fprintf(os.Stderr, "jp: --server, --parent, --followlimit, --nofollow and --parallel only apply to remoteattest\n%s", usage)
+		return exitUsage
+	}
 	if len(pos) != 2 {
 		fmt.Fprint(os.Stderr, usage)
 		return exitUsage
@@ -120,7 +176,7 @@ func run(argv []string) int {
 	op, pfile := pos[0], pos[1]
 
 	if op != "create" && op != "update" && op != "attest" {
-		fmt.Println("Unknown command, not one of: create, update, attest")
+		fmt.Println("Unknown command, not one of: create, update, attest, remoteattest")
 		return exitUsage
 	}
 
@@ -252,6 +308,10 @@ func (pv *Provisioner) Run() int {
 	}
 
 	if _, err := pv.ProcessWorklist(); err != nil {
+		fmt.Println("Error:", err)
+		return exitError
+	}
+	if err := pv.storeProfile(); err != nil {
 		fmt.Println("Error:", err)
 		return exitError
 	}

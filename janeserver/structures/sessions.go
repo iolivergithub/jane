@@ -9,6 +9,14 @@ type Session struct {
 
 	Message string `json:"message" bson:"message"`
 
+	// Parent is the session this one was opened under (#130), set only when
+	// it is opened; empty for most sessions.
+	Parent string `json:"parent,omitempty" bson:"parent,omitempty"`
+
+	// AttestationProfileRun records the profile run this session belongs to
+	// (#130); nil for every other session.
+	AttestationProfileRun *ProfileRun `json:"attestationprofilerun,omitempty" bson:"attestationprofilerun,omitempty"`
+
 	Footer SessionFooter `json:"footer" bson:"footer"`
 }
 

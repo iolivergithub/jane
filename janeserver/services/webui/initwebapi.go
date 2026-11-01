@@ -154,6 +154,8 @@ func setupHomeEndpoints(router *echo.Echo) {
 func setUpDisplayEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/elements", showElements)
 	router.GET(PREFIX+"/element/:itemid", showElement)
+	router.GET(PREFIX+"/element/:itemid/profile/:name", showProfile)
+	router.POST(PREFIX+"/element/:itemid/profile/:name", processProfile)
 	router.GET(PREFIX+"/intents", showIntents)
 	router.GET(PREFIX+"/intent/:itemid", showIntent)
 	router.GET(PREFIX+"/expectedvalues", showExpectedValues)

@@ -42,6 +42,11 @@ type fakeJane struct {
 
 	wantKey  string   // if set, requests without "Authorization: Bearer <wantKey>" get 401
 	authSeen []string // the Authorization header of each request
+
+	profileStatus int    // if non-zero, PUT .../attestationprofile/... answers this status, as an old Jane would with 404
+	runStatus     int    // if non-zero, POST .../runprov answers this status with runBody
+	runBody       string // the answer to POST .../runprov (a report)
+	queries       []string
 }
 
 func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
@@ -49,6 +54,9 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		key := r.Method + " " + r.URL.Path
+		if strings.Contains(r.URL.Path, "/attestationprofile/") || strings.Contains(r.URL.Path, "/runprov") {
+			key = r.Method + " /profile" + r.URL.Path // kept apart from the element calls
+		}
 		f.calls = append(f.calls, key)
 		f.authSeen = append(f.authSeen, r.Header.Get("Authorization"))
 		if f.wantKey != "" && r.Header.Get("Authorization") != "Bearer "+f.wantKey {
@@ -61,11 +69,27 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 				t.Errorf("%s: body is not JSON: %s", key, b)
 			}
 			k := r.Method + " " + firstSeg(r.URL.Path)
+			if strings.HasPrefix(key, r.Method+" /profile") {
+				k = r.Method + " /profile"
+			}
 			f.bodies[k] = append(f.bodies[k], v)
 			f.raw[k] = append(f.raw[k], string(b))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		switch {
+		case r.Method == "PUT" && strings.HasPrefix(r.URL.Path, "/element/") && strings.Contains(r.URL.Path, "/attestationprofile/"):
+			if f.profileStatus != 0 {
+				w.WriteHeader(f.profileStatus)
+				io.WriteString(w, `{"message":"Not Found"}`)
+				return
+			}
+			io.WriteString(w, `{"itemid":"E1","error":""}`)
+		case r.Method == "POST" && strings.HasPrefix(r.URL.Path, "/element/") && strings.Contains(r.URL.Path, "/runprov"):
+			f.queries = append(f.queries, r.URL.RawQuery)
+			if f.runStatus != 0 {
+				w.WriteHeader(f.runStatus)
+			}
+			io.WriteString(w, f.runBody)
 		case r.Method == "POST" && r.URL.Path == "/session":
 			io.WriteString(w, `{"itemid":"S1"}`)
 		case r.Method == "DELETE" && strings.HasPrefix(r.URL.Path, "/session/"):

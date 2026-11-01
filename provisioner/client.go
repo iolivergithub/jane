@@ -109,7 +109,7 @@ func (c *Client) OpenSession(msg string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("opening session: %w", err)
 	}
-	fmt.Println("session is", sid)
+	fmt.Println("jp: opening session", sid)
 	return sid, nil
 }
 

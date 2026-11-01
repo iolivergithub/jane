@@ -3,16 +3,18 @@
 # A virtual machine with UEFI firmware (OVMF) and a vTPM: as full.yaml, without the EK
 # certificate.
 #
-# One of four skeletons, by what the machine can show (#125):
+# One of five skeletons, by what the machine can show (#125):
 #   full.yaml          physical Linux machine, UEFI, discrete or firmware TPM
 #   full-vm.yaml       virtual machine with UEFI and a vTPM
 #   tpm2-nouefi.yaml   board with a TPM but no UEFI (e.g. Raspberry Pi with a TPM)
 #   sysonly.yaml       no TPM: the trust agent's system information only
-# All four are installed by the tarzan package in
+#   windows-tpm2-uefi.yaml  Windows machine, UEFI, TPM 2.0
+# All five are installed by the tarzan package in
 # /usr/share/doc/tarzantrustagent/skeletons/ (and full.yaml as
 # /etc/opt/jane/provisioning.yaml.example). Copy one, edit the copy, then:
 #   sudo /opt/jane/jp create --reprovisiontpm <file>     (first time)
 #   sudo /opt/jane/jp attest <file>                      (any time)
+#   /opt/jane/jp remoteattest <file>                     (any time; Jane runs the stored profile)
 # Leave out what the machine cannot do: a rule on a claim that failed is
 # recorded as a failure on every run. See docs/jp.md.
 
@@ -65,6 +67,17 @@ provisionworklist:
   - processelement
   - processevs
 
+# Attestation profile (1.6): create/update store the evs below (without
+# type: and issuerurl:) in Jane as this named profile, which becomes the
+# element's default; jp remoteattest, REST runprov and the Web UI run it.
+# follow: goes on to attest related elements. See docs/provisioning.md.
+defaultattestationprofile: default
+attestationprofiledescription: All standard checks for this machine
+# a VM: also attest the host it is hosted-on (needs the relationship in Jane)
+#follow:
+#  - relationship: hosted-on
+#    profile: default
+
 evs:
   - std::intent::sys::info :
       protocol: tarzan
@@ -79,6 +92,21 @@ evs:
   - std::intent::uefi::eventlog :
       protocol: tarzan
       cid: uefilog
+      # the measured UEFI state (#134): Secure Boot, its keys, the certificates
+      # that verified the boot images, DMA protection, the firmware version.
+      # Trusted because tpm2_uefiLogReplay below checks this log against the PCRs
+      type: uefieventlog
+      rules:
+        - uefi_logSecureBoot
+        - uefi_logPK
+        - uefi_logKEK
+        - uefi_logdb
+        # the next ones change with firmware (fwupd) and shim/SBAT (apt) updates;
+        # run jp update afterwards to refresh the expected value
+        - uefi_logdbx
+        - uefi_logAuthorities
+        - uefi_logDMAProtection
+        - uefi_logFirmwareVersion
   - std::intent::tpm::pcrs :
       protocol: tarzan
       cid: pcrs
@@ -262,6 +290,9 @@ evs:
         - UEFI_KEKDefault
         - UEFI_dbDefault
         - UEFI_dbxDefault
+        # what the OS reports, against what was measured at boot (#134)
+        - uefi_logMatchesEfivars:
+            parameters: { "uefilogcid": $uefilog }
   # boot configuration (BootCurrent, BootOrder, BootNext): not implemented in tarzan yet,
   # it answers with a message saying so
   #- std::intent::uefi::bootconfig :

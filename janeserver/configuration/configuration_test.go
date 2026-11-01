@@ -37,3 +37,20 @@ func TestLongSession(t *testing.T) {
 		}
 	}
 }
+
+// #137: sessions: refresh, in seconds; missing means 2, 0 switches it off.
+func TestSessionRefresh(t *testing.T) {
+	saved := ConfigData
+	defer func() { ConfigData = saved }()
+	ConfigData = &ConfigurationStruct{}
+	if SessionRefresh() != 2 {
+		t.Errorf("missing: %d", SessionRefresh())
+	}
+	for _, c := range []struct{ set, want int }{{0, 0}, {5, 5}, {-1, 0}} {
+		n := c.set
+		ConfigData.Sessions.Refresh = &n
+		if got := SessionRefresh(); got != c.want {
+			t.Errorf("refresh %d: got %d, want %d", c.set, got, c.want)
+		}
+	}
+}

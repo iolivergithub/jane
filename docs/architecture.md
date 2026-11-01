@@ -19,6 +19,8 @@ Every request passes the `auth` package (logins, API keys, the users collection)
 - **attest**: a **protocol** (`protocols`) asks a trust agent on the element for evidence, and Jane stores the answer as a **claim**;
 - **verify**: a **rule** (`rules`) checks a claim, usually against an expected value, and Jane stores the outcome as a **result**.
 
+Since 1.6 `operations` can also **run an attestation profile** stored on an element: attest and verify for each of its steps, then the same for the related elements it follows, one session each (see [Attestation profiles](attestationprofiles.md)).
+
 Claims, results and closed sessions carry a signed footer (`signing`). Every operation writes a log entry (`logging`) to MongoDB, to the MQTT broker (topics `AS/<channel>`) and to `/var/log/jane/jane.log`. `datalayer` holds the MongoDB and MQTT connections; `configuration` reads `config.yaml`.
 
 Jane needs **MongoDB** (all data, including the log and the users) and an **MQTT broker** such as Mosquitto (the log as a live feed). Both usually run on the same machine.
@@ -27,7 +29,7 @@ On each **element**, the machine being attested:
 
 - **tarzan**, the trust agent, answers Jane's requests over HTTP (port 8530): TPM 2.0 quotes and PCRs, UEFI and IMA logs, system information. It runs as root to reach the TPM and the logs.
 - **ratsd** (optional) gathers evidence from other attesters, e.g. confidential VMs and GPUs.
-- **jp**, the provisioner, registers the element with Jane (`jp create`, `jp update`, which set up the TPM keys and record expected values) and runs attestations (`jp attest`), through the REST API.
+- **jp**, the provisioner, registers the element with Jane (`jp create`, `jp update`, which set up the TPM keys, record expected values and, since 1.6, store the element's attestation profile) and runs attestations (`jp attest`; or `jp remoteattest`, which has Jane run the stored profile), through the REST API.
 
 **addjaneuser**, on the Jane server, creates users, sets their passwords and API keys. It is the only tool that writes the users collection.
 
@@ -40,7 +42,8 @@ On each **element**, the machine being attested:
 - An **expected value** holds the known-good values for one element, endpoint and intent.
 - A **claim** is what a trust agent returned for one intent, plus the context it was asked in.
 - A **result** is one rule's verdict on one claim.
-- A **session** groups the claims and results of one piece of work, e.g. one `jp attest` run. It is opened, claims and results are added, and it is closed and signed.
+- A **session** groups the claims and results of one piece of work, e.g. one `jp attest` run. It is opened, claims and results are added, and it is closed and signed. A session may have a **parent** session (1.6), so the runs of one request form a tree.
+- An element may hold named **attestation profiles** (1.6): the instructions for attesting it, which Jane can run, following the element's relationships. See [Attestation profiles](attestationprofiles.md).
 
 Expected values, results and sessions refer to other items by their `itemid`. Claims and results also keep **copies** of the element, intent, session and expected value they were made from. This is deliberate, for forensics: each copy is a snapshot of that moment, so the history of how an element changed over time can be reconstructed from its claims and results, even after the element, its intents or its expected values have been edited.
 
@@ -53,7 +56,7 @@ Expected values, results and sessions refer to other items by their `itemid`. Cl
 3. For each claim, jp asks Jane to verify with a rule: the rule compares the claim with the expected value, and Jane stores the signed result and adds it to the session.
 4. jp closes the session, and Jane signs its footer over the lists of claims and results.
 
-The Web UI and x3270 attest pages do the same steps for one element and intent at a time.
+The Web UI and x3270 attest pages do the same steps for one element and intent at a time. Since 1.6 Jane can also do the whole loop itself, from a profile stored on the element (`jp remoteattest`, REST `runprov`, the Web UI's profile page), one session per element.
 
 ## Where to read more
 

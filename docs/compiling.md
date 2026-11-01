@@ -1,6 +1,6 @@
 # Compiling
 
-janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`. Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
+janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`; janeserver and jp also use the small library module `localnames/` (multicast DNS for `.local` names, #127, see [Running](running.md#host-names-ending-in-local)) as `github.com/iolivergithub/jane/localnames`, through a `replace` in their `go.mod` pointing at `../localnames` (nothing to download or install separately). Each needs Go 1.26 or later (the `go` line in its `go.mod`) and nothing else: no C libraries, no SGX or other platform SDKs. cgo is off, so every target below builds on any host. The Makefiles use the `go` on your `PATH` (`make GO=/usr/local/go/bin/go` to choose another). Builds are tested on Debian 13 on amd64.
 
 - [Building one component](#building-one-component)
 - [Architectures](#architectures)
@@ -66,8 +66,8 @@ make binary OS=windows      # in janeserver, tarzan or provisioner
 
 janeserver, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
 
-- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`.
-- `tarzan_<version>_windows-amd64.zip`: `tarzan.exe`, `jp.exe`, `provisioning.yaml.example`, `skeletons\` (the four [jp skeletons](jp.md#skeletons)), `tarzan.env`.
+- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`, `skeletons\` (the [jp skeletons](jp.md#skeletons)).
+- `tarzan_<version>_windows-amd64.zip`: `tarzan.exe`, `jp.exe`, `provisioning.yaml.example`, `skeletons\` (the [jp skeletons](jp.md#skeletons)), `tarzan.env`.
 
 ## Version and build strings
 
@@ -91,6 +91,8 @@ In each module:
 go vet -composites=false ./...      # janeserver; plain go vet ./... for tarzan and provisioner (make vet does the right one)
 go test ./...
 ```
+
+and in `localnames/`, `go mod tidy && go test ./...`.
 
 Tests that need a real TPM are skipped unless an environment variable names the device: `JANE_TEST_TPM` (janeserver), `TARZAN_TEST_TPM` (tarzan), `JP_TEST_TPM` (jp), e.g. `TARZAN_TEST_TPM=/dev/tpmrm0 go test ./tpm2`. They create only transient objects. Some jp tests check behaviour without root and are skipped when run as root.
 

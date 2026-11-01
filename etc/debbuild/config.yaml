@@ -55,8 +55,11 @@ logging:
 #Attestation sessions
 #longsession: sessions open (or that were open) longer than this many seconds are flagged
 #LONG SESSION in the Web UI and x3270; minimum 30, default 60
+#refresh: while a profile run is in progress its session page in the Web UI reloads itself
+#every this many seconds; default 2, 0 switches it off
 sessions:
   longsession: 60
+  refresh: 2
 
 
 #Footer signing (optional - if this section is missing, an ephemeral key is generated at each start
