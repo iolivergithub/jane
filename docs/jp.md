@@ -195,6 +195,10 @@ provisionworklist:                            # create and update run these, in 
   - makebetterdescription
   - processelement
   - processevs
+defaultattestationprofile: nightly            # optional (1.6): the profile create/update store; missing → default
+attestationprofiledescription: Nightly check  # optional (1.6)
+follow:                                       # optional (1.6): related elements Jane goes on to attest
+  - relationship: hosted-on
 evs:                                          # intents to attest, and what to record or check
   - std::intent::sys::info :
       protocol: tarzan

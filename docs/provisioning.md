@@ -113,7 +113,7 @@ Each entry is a single-key map: the key is an intent's item ID (a [standard inte
 | Key | Used by | Meaning |
 |---|---|---|
 | `protocol` | all | the **endpoint name** (a key of `endpoints:`) to attest through. Called `protocol` for historical reasons |
-| `type` | `create`/`update` | how to turn the claim into an expected value: `sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars` ([expected value types](../provisioner/README.md#expected-value-types)). None: the claim is collected, nothing is recorded |
+| `type` | `create`/`update` | how to turn the claim into an expected value: `sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars`, `uefieventlog` (1.6) ([expected value types](../provisioner/README.md#expected-value-types)). None: the claim is collected, nothing is recorded |
 | `issuerurl` | `create`/`update`, type `tpm2ekcert` | where the EK certificate's issuer certificates are (`https://`, `http://`, `file://`); overrides the certificate's own CA Issuers URL |
 | `cid` | runs | a variable that receives this intent's claim item ID |
 | `rules` | runs | the rules to run on the claim, in order |
