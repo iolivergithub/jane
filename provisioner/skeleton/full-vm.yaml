@@ -90,6 +90,21 @@ evs:
   - std::intent::uefi::eventlog :
       protocol: tarzan
       cid: uefilog
+      # the measured UEFI state (#134): Secure Boot, its keys, the certificates
+      # that verified the boot images, DMA protection, the firmware version.
+      # Trusted because tpm2_uefiLogReplay below checks this log against the PCRs
+      type: uefieventlog
+      rules:
+        - uefi_logSecureBoot
+        - uefi_logPK
+        - uefi_logKEK
+        - uefi_logdb
+        # the next ones change with firmware (fwupd) and shim/SBAT (apt) updates;
+        # run jp update afterwards to refresh the expected value
+        - uefi_logdbx
+        - uefi_logAuthorities
+        - uefi_logDMAProtection
+        - uefi_logFirmwareVersion
   - std::intent::tpm::pcrs :
       protocol: tarzan
       cid: pcrs
@@ -273,6 +288,9 @@ evs:
         - UEFI_KEKDefault
         - UEFI_dbDefault
         - UEFI_dbxDefault
+        # what the OS reports, against what was measured at boot (#134)
+        - uefi_logMatchesEfivars:
+            parameters: { "uefilogcid": $uefilog }
   # boot configuration (BootCurrent, BootOrder, BootNext): not implemented in tarzan yet,
   # it answers with a message saying so
   #- std::intent::uefi::bootconfig :

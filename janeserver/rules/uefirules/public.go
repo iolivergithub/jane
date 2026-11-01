@@ -69,7 +69,8 @@ func Registration() []structures.Rule {
 			NeedsEV:      true,
 		})
 	}
-	return rules
+	// the measured state in the event log (#134)
+	return append(rules, logRegistration()...)
 }
 
 func ruleFor(v Variable) structures.RuleCall {

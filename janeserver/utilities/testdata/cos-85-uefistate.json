@@ -1,0 +1,15 @@
+{
+  "comment": "The measured UEFI state of cos-85-amd-sev.bin, as MeasuredUEFIState (janeserver/utilities) and jp's uefieventlog type (provisioner) must both give it (#134).",
+  "evs": {
+    "authorities": [
+      "sha256:a7b8c851deb2acba7c7d0e6ec091c93440f942c65d776fdcb58016f8fd1674b0"
+    ],
+    "db": "sha256:640ff6e96d1808b9a1ba9dc2f75f80b2d030103757595706aaf7d47f805f3ef9",
+    "dbx": "sha256:d0e6400fb15f4f9bc679de112b3f25b364789f3e5dfb326e37eb886e39bf2631",
+    "dmaprotection": "notreported",
+    "firmwareversion": "GCE Virtual Firmware v1",
+    "kek": "sha256:7b83a1ae5c2e2049b044f1ece68b6b81a1fabff175d9a6ae15da5dbfe701ec13",
+    "pk": "sha256:ec70b95b7fce7a97faeaf5c536f5d496406d6846000ab89116185380d5cd29de",
+    "secureboot": "enabled"
+  }
+}

@@ -309,7 +309,11 @@ func TestSkeletonUEFIRulesMatchVariables(t *testing.T) {
 		var rules []string
 		for _, ev := range p.EVS {
 			if ev.Spec.Type == "uefiefivars" {
-				rules = ev.Spec.RuleNames()
+				for _, r := range ev.Spec.RuleNames() {
+					if strings.HasPrefix(r, "UEFI_") { // not uefi_logMatchesEfivars (#134)
+						rules = append(rules, r)
+					}
+				}
 			}
 		}
 		if len(rules) != len(uefiRuleVariables) {
