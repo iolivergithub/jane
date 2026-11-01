@@ -33,7 +33,7 @@
          <td class="text-end font-monospace">{{ .PCR }}</td>
          <td class="font-monospace small text-nowrap">{{ .Type }}</td>
          <td class="font-monospace small text-nowrap">{{ if .Digest }}<span title="{{ .Digest }}">{{ .ShortDigest }}</span>{{ else }}<i class="text-body-secondary">none</i>{{ end }}</td>
-         <td class="small j-wrap" style="max-width: 0;">{{ .Description }}</td>
+         <td class="small j-wrap" style="max-width: 0;">{{ if .Details }}<details><summary>{{ .Description }}</summary><ul class="mb-0 ps-3 font-monospace">{{ range .Details }}<li>{{ . }}</li>{{ end }}</ul></details>{{ else }}{{ .Description }}{{ end }}</td>
       </tr>
    {{ end }}
    </tbody>

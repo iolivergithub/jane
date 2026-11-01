@@ -91,7 +91,7 @@ func MeasuredUEFIState(el *tcg.EventLog) (UEFIState, error) {
 				st.Data[v.VarName()] = v.VariableData
 			}
 		case e.Index == 0 && e.Type == tcg.SCRTMVersion && st.FirmwareVersion == "":
-			st.FirmwareVersion = scrtmVersion(e.Data)
+			st.FirmwareVersion = SCRTMVersion(e.Data)
 		}
 	}
 	st.Variables = map[string]string{}
@@ -125,9 +125,9 @@ func (st UEFIState) EVS() map[string]interface{} {
 	return evs
 }
 
-// scrtmVersion decodes an EV_S_CRTM_VERSION event: usually a NUL-terminated
+// SCRTMVersion decodes an EV_S_CRTM_VERSION event: usually a NUL-terminated
 // UCS-2 string, sometimes plain bytes; anything else is shown as hex.
-func scrtmVersion(b []byte) string {
+func SCRTMVersion(b []byte) string {
 	if len(b) >= 2 && len(b)%2 == 0 {
 		u := make([]uint16, 0, len(b)/2)
 		for i := 0; i+1 < len(b); i += 2 {

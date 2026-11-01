@@ -46,7 +46,7 @@ func TestSCRTMVersion(t *testing.T) {
 		"1.02\x00":                "1.02",
 		"\x01\x02\x03":            "hex:010203",
 	} {
-		if got := scrtmVersion([]byte(in)); got != want {
+		if got := SCRTMVersion([]byte(in)); got != want {
 			t.Errorf("%q: got %q, want %q", in, got, want)
 		}
 	}

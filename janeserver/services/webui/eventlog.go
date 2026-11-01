@@ -18,9 +18,10 @@ type EventLogEntry struct {
 	Num         int
 	PCR         int
 	Type        string
-	Digest      string // hex digest in this bank, "" if the event has none
-	ShortDigest string // first 16 hex digits, for the table
-	Description string // light decoding of the event data (#73)
+	Digest      string   // hex digest in this bank, "" if the event has none
+	ShortDigest string   // first 16 hex digits, for the table
+	Description string   // light decoding of the event data (#73)
+	Details     []string // deeper decoding (#135), shown under the description
 }
 
 // EventLogBankView is the events of one bank (digest algorithm) of the log.
@@ -75,6 +76,7 @@ func EventLogBody(body map[string]interface{}) EventLogView {
 				Digest:      digest,
 				ShortDigest: short,
 				Description: describeEvent(typ, e.RawData()),
+				Details:     eventDetails(typ, e.Index, e.RawData()),
 			})
 		}
 		view.Count = len(bank.Events)
@@ -121,6 +123,9 @@ func describeEvent(typ string, data []byte) string {
 		return fmt.Sprintf("image, %d bytes", img.Header.Length)
 	}
 
+	if typ == "EV_S_CRTM_VERSION" {
+		return "Firmware version: " + utilities.SCRTMVersion(data)
+	}
 	if s, ok := printableText(data); ok {
 		return s
 	}
