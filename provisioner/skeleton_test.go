@@ -11,6 +11,7 @@ func TestShippedProvisioningFilesLoad(t *testing.T) {
 		"skeleton/full-vm.yaml",
 		"skeleton/tpm2-nouefi.yaml",
 		"skeleton/sysonly.yaml",
+		"skeleton/windows-tpm2-uefi.yaml",
 		"testdata/examplecreateprovisioningfile.yaml",
 	} {
 		p, err := loadProvisioningFile(f)
@@ -21,6 +22,10 @@ func TestShippedProvisioningFilesLoad(t *testing.T) {
 		// every skeleton has the system information (decision 51)
 		if len(p.EVS) == 0 || p.EVS[0].IntentID != "std::intent::sys::info" {
 			t.Errorf("%s: does not start with std::intent::sys::info", f)
+		}
+		// the skeletons name their attestation profile (1.6); the test fixture doesn't
+		if (f[:8] == "skeleton") != (p.DefaultAttestationProfile == "default") {
+			t.Errorf("%s: defaultattestationprofile %q", f, p.DefaultAttestationProfile)
 		}
 	}
 }

@@ -64,6 +64,16 @@ provisionworklist:
   - processelement
   - processevs
 
+# Attestation profile (1.6): create/update store the evs below (without
+# type: and issuerurl:) in Jane as this named profile, which becomes the
+# element's default; jp remoteattest, REST runprov and the Web UI run it.
+# follow: goes on to attest related elements. See docs/provisioning.md.
+defaultattestationprofile: default
+attestationprofiledescription: All standard checks for this machine
+#follow:
+#  - relationship: hosted-on      # every element this one is hosted-on
+#    profile: default             # that element's profile; leave out for its default
+
 evs:
   - std::intent::sys::info :
       protocol: tarzan

@@ -17,6 +17,20 @@ type ProvisioningFile struct {
 	TPM2              TPM2                `yaml:"tpm2"`
 	ProvisionWorklist []string            `yaml:"provisionworklist"`
 	EVS               []EVEntry           `yaml:"evs"`
+
+	// The attestation profile create/update store in Jane (#131): its name
+	// (missing: "default", with a warning), its description, and the related
+	// elements a run of it goes on to attest. See docs/provisioning.md.
+	DefaultAttestationProfile     string       `yaml:"defaultattestationprofile"`
+	AttestationProfileDescription string       `yaml:"attestationprofiledescription"`
+	Follow                        []FollowSpec `yaml:"follow"`
+}
+
+// FollowSpec is one entry of follow: run Profile (empty: the related
+// element's default) on every element this one has a Relationship to.
+type FollowSpec struct {
+	Relationship string `yaml:"relationship" json:"relationship"`
+	Profile      string `yaml:"profile" json:"profile,omitempty"`
 }
 
 type ElementConfig struct {
@@ -158,6 +172,9 @@ func loadProvisioningFile(path string) (*ProvisioningFile, error) {
 		return nil, fmt.Errorf("attestationserver is not set")
 	}
 	if err := p.checkVars(); err != nil {
+		return nil, err
+	}
+	if err := p.checkProfile(); err != nil {
 		return nil, err
 	}
 	return &p, nil
