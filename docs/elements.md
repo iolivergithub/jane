@@ -75,7 +75,7 @@ Since 1.6. Both fields are optional; see [Attestation profiles](attestationprofi
 | attestationprofiles | Map of name to profile | Named attestation instructions, written by `jp create`/`update` (`PUT /element/<itemid>/attestationprofile/<name>`) |
 | defaultattestationprofile | String | The profile run when none is named; set by the same request |
 
-Like relationships, they are kept by `PUT /element` whatever it carries, and a new element starts with none.
+Like relationships, they are kept by `PUT /element` whatever it carries, and a new element starts with none. The Web UI shows them on the element page's **Profiles** tab, each with a page to run it; x3270 lists them, with their descriptions, on the element screen (read-only).
 
 ## Optional Fields
 There are a number of individual structures to describe particular properties, eg: of TPMs, UEFI records etc.  Not all combinations are valid together, but this very much depends  upon the nature of the element in question.

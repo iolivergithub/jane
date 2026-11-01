@@ -16,7 +16,7 @@ No breaking changes: elements, sessions and expected values from 1.5.6 work as b
 - `.local` names are resolved by multicast DNS in janeserver and jp, in pure Go, when the normal lookup fails (#127). The library is the module `github.com/iolivergithub/jane/localnames` in `localnames/`, used through a `replace`, so `go mod verify` passes.
 - Protocols: calls to trust agents time out after 2 minutes; a request that cannot be built is an error; A10HTTPRESTv2 no longer prints debug output.
 - Skeletons: `windows-tpm2-uefi.yaml` (Windows, UEFI, TPM 2.0), installed with the others; every skeleton names a default profile and shows a commented `follow:`. The skeleton test accepts more than four skeletons.
-- Documentation: new pages The provisioning language and Attestation profiles; `docs/makepdf.sh` builds the documentation as one PDF; jp, Sessions, Elements, Rules, Expected values, Functions, Architecture, Getting started, Running, Hardening, Quick start, the deb page and the jp README updated.
+- Documentation: new pages The provisioning language and Attestation profiles; `docs/makepdf.sh` builds the documentation as one PDF; jp, Sessions, Elements, Rules, Expected values, Functions, Protocols, Architecture, Getting started, Running, Hardening, Authentication, Quick start, the deb page and the jp README updated.
 
 ## [1.5.6] – 2026-10-26
 - **Breaking: jp's 1.5.3 migration shims are removed (#81).** jp no longer reads or moves the old element ID file `/etc/janeelementid`, and the worklist step `processevs_withrules` is gone (it gives "Unknown provision work command"): use `processevs`; rules run with `jp attest`.

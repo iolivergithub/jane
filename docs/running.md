@@ -117,7 +117,7 @@ JANE: Authentication: web false, rest false, x3270 false, session timeout 30m0s
 ...
 ```
 
-The authentication lines show the accounts used (`user jane`), never passwords. Jane warns if a login is required but there are no users, or if no signing key is configured. Under systemd: `journalctl -u jane`.
+The authentication lines show the accounts used (`user jane`), never passwords. Jane warns if a login is required but there are no users, or if no signing key is configured. It creates the indexes on sessions (`itemid`, `parent`) at each start (1.6); if that fails it warns (`could not create the indexes on sessions`) and runs without them, only slower. Under systemd: `journalctl -u jane`.
 
 ### The log
 

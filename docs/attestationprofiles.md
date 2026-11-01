@@ -86,6 +86,8 @@ There is no verdict: each rule's result is as the rule gave it. `jp remoteattest
 - **Follow relationships** (ticked), **Depth** (1–10) and **Run followed profiles in parallel** (unticked), then **Attest**. The run goes on in Jane by itself and the browser goes to the run's session page: leaving the page loses nothing.
 - Followed elements always run their own stored profiles; an edit applies only to the profile on the page.
 
+**x3270** is read-only here: the element screen lists the element's profiles with their descriptions, and a session screen shows its parent (a link) and a one-line summary of its profile run.
+
 ## What a run records
 
 Each session of a run carries an `attestationprofilerun` record, signed with the session:

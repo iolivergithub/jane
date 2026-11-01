@@ -19,6 +19,8 @@ Every request passes the `auth` package (logins, API keys, the users collection)
 - **attest**: a **protocol** (`protocols`) asks a trust agent on the element for evidence, and Jane stores the answer as a **claim**;
 - **verify**: a **rule** (`rules`) checks a claim, usually against an expected value, and Jane stores the outcome as a **result**.
 
+Since 1.6 `operations` can also **run an attestation profile** stored on an element: attest and verify for each of its steps, then the same for the related elements it follows, one session each (see [Attestation profiles](attestationprofiles.md)).
+
 Claims, results and closed sessions carry a signed footer (`signing`). Every operation writes a log entry (`logging`) to MongoDB, to the MQTT broker (topics `AS/<channel>`) and to `/var/log/jane/jane.log`. `datalayer` holds the MongoDB and MQTT connections; `configuration` reads `config.yaml`.
 
 Jane needs **MongoDB** (all data, including the log and the users) and an **MQTT broker** such as Mosquitto (the log as a live feed). Both usually run on the same machine.
@@ -27,7 +29,7 @@ On each **element**, the machine being attested:
 
 - **tarzan**, the trust agent, answers Jane's requests over HTTP (port 8530): TPM 2.0 quotes and PCRs, UEFI and IMA logs, system information. It runs as root to reach the TPM and the logs.
 - **ratsd** (optional) gathers evidence from other attesters, e.g. confidential VMs and GPUs.
-- **jp**, the provisioner, registers the element with Jane (`jp create`, `jp update`, which set up the TPM keys and record expected values) and runs attestations (`jp attest`), through the REST API.
+- **jp**, the provisioner, registers the element with Jane (`jp create`, `jp update`, which set up the TPM keys, record expected values and, since 1.6, store the element's attestation profile) and runs attestations (`jp attest`; or `jp remoteattest`, which has Jane run the stored profile), through the REST API.
 
 **addjaneuser**, on the Jane server, creates users, sets their passwords and API keys. It is the only tool that writes the users collection.
 

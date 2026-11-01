@@ -76,6 +76,7 @@ prints a new key, alone on standard output (so `KEY=$(addjaneuser --apikey ...)`
 **Sharing a key.** Typically one user and its key are shared by all the machines of a cluster (each machine's jp sends the same key). That is convenient, with two consequences:
 
 - If one machine leaks the key, the whole cluster's key has to be replaced.
+- Every key can do everything the REST API offers (there are no roles yet, #47), including, since 1.6, writing and running any element's attestation profiles: a machine holding the cluster's key can change the other machines' profiles.
 - Replacing the key cuts off every machine using it until the new one is deployed. To change keys without an outage, create a second user with its own key, roll that key out, then delete the old user.
 
 Jane's log records which address used which user's key (below), so machines sharing a key can still be told apart.
