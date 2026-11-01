@@ -1,6 +1,7 @@
 package restapi
 
 import (
+	"errors"
 	"net/http"
 
 	"a10/operations"
@@ -47,6 +48,22 @@ func getSession(c echo.Context) error {
 	}
 }
 
+type returnSessionsByParent struct {
+	Parent   string               `json:"parent"`
+	Sessions []structures.Session `json:"sessions"`
+	Length   int                  `json:"length"`
+}
+
+// getSessionsByParent lists the sessions opened under a session (#130).
+func getSessionsByParent(c echo.Context) error {
+	itemid := c.Param("itemid")
+	elems, err := operations.GetSessionsByParent(itemid)
+	if err != nil {
+		return FormattedResponse(c, http.StatusInternalServerError, MakeRESTErrorMessage(err))
+	}
+	return FormattedResponse(c, http.StatusOK, returnSessionsByParent{itemid, elems, len(elems)})
+}
+
 type postSessionMessage struct {
 	Message string `json:"message"`
 }
@@ -65,10 +82,14 @@ func postSession(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, clienterr)
 	}
 
-	res, err := operations.OpenSession(m.Message)
+	// ?parent=<sid>: open it under that session (#130); the parent must exist
+	res, err := operations.OpenSessionWithParent(m.Message, c.QueryParam("parent"), nil)
 
 	if err != nil {
 		response := postSessionReturn{res, err.Error()}
+		if errors.Is(err, operations.ErrorItemNotFound) {
+			return c.JSON(http.StatusNotFound, response) // no such parent
+		}
 		return c.JSON(http.StatusInternalServerError, response)
 	} else {
 		response := postSessionReturn{res, ""}

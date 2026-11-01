@@ -98,6 +98,9 @@ func setUpOperationEndpoints(router *echo.Echo) {
 	router.GET(PREFIX+"/element/:itemid/relationships", getElementRelationships)
 	router.POST(PREFIX+"/element/:itemid/relationships", postElementRelationship)
 	router.DELETE(PREFIX+"/element/:itemid/relationships/:relationshiptype/:target", deleteElementRelationship)
+	router.PUT(PREFIX+"/element/:itemid/attestationprofile/:name", putAttestationProfile)
+	router.POST(PREFIX+"/element/:itemid/runprov", postRunProfile)
+	router.POST(PREFIX+"/element/:itemid/runprov/:name", postRunProfile)
 
 	router.GET(PREFIX+"/intents", getIntents)
 	router.GET(PREFIX+"/intent/:itemid", getIntent)
@@ -129,6 +132,7 @@ func setUpOperationEndpoints(router *echo.Echo) {
 
 	router.GET(PREFIX+"/sessions", getSessions)
 	router.GET(PREFIX+"/session/:itemid", getSession)
+	router.GET(PREFIX+"/sessions/parent/:itemid", getSessionsByParent)
 	router.POST(PREFIX+"/session", postSession)
 	router.DELETE(PREFIX+"/session/:itemid", deleteSession)
 

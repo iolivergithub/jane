@@ -19,6 +19,13 @@ type Element struct {
 	// relationship operations; UpdateElement keeps the stored ones.
 	Relationships []ElementRelationship `json:"relationships,omitempty" bson:"relationships,omitempty" yaml:"relationships,omitempty"`
 
+	// AttestationProfiles are named attestation instructions (#128), written
+	// only by jp create/update; DefaultAttestationProfile names the one run
+	// when none is named. Both are kept by UpdateElement and set only by
+	// SetAttestationProfile.
+	AttestationProfiles       map[string]AttestationProfile `json:"attestationprofiles,omitempty" bson:"attestationprofiles,omitempty" yaml:"attestationprofiles,omitempty"`
+	DefaultAttestationProfile string                        `json:"defaultattestationprofile,omitempty" bson:"defaultattestationprofile,omitempty" yaml:"defaultattestationprofile,omitempty"`
+
 	Sshkey SSHKEY      `json:"sshkey,omitempty" bson:"sshkey,omitempty"  yaml:"sshkey,omitempty"`
 	TPM2   TPM2        `json:"tpm2,omitempty" bson:"tpm2,omitempty" yaml:"tpm2,omitempty"`
 	UEFI   UEFI        `json:"uefi,omitempty" bson:"uefi,omitempty" yaml:"uefi,omitempty"`
