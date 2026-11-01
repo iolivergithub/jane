@@ -69,6 +69,7 @@ The packaged `/etc/opt/jane/config.yaml` lists every option with comments; a com
 | `x3270` | `port` (3270), `listenon` | tn3270 terminal interface; never encrypted |
 | `logging` | `logfilelocation`, `sessionupdatelogging` | Jane's log file (CSV, one entry per line), and whether to log every claim and result added to a session |
 | `signing` (optional) | `keyfile` | PEM private key for claim, result and session footers; without it an ephemeral key is made at each start. See [Signing](signing.md) |
+| `sessions` (optional) | `longsession` (60), `refresh` (2) | sessions open longer than `longsession` seconds (minimum 30) are flagged LONG SESSION; while a profile run is going its session pages reload every `refresh` seconds, `0` switches it off. See [Sessions](sessions.md) |
 | `auth` (optional) | `web`, `rest`, `x3270`, `sessiontimeout` (30m) | logins per interface; without the section nothing asks for a login. See [Authentication](authentication.md) |
 
 Restart Jane after changing the file.
@@ -210,9 +211,11 @@ jp registers this machine with Jane, provisions its TPM keys, records its expect
 
 ```
 jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
+jp remoteattest [PROVISIONINGFILE] [PROFILE] [--server URL] [--parent SID]
+                [--followlimit N | --nofollow] [--parallel] [--apikeyfile PATH]
 ```
 
-In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD`, `JANE_TPM_OWNER_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
+In short: `create` (first registration) and `update` (after firmware or OS updates) need root and change the TPM keys only with `--reprovisiontpm`; `attest` needs no root and never touches the TPM; `remoteattest` (1.6) asks Jane to run the element's stored attestation profile, following related elements, and needs neither root nor a TPM. jp never asks questions, so it can run unattended. Its environment variables are `JANE_SERVER` (`remoteattest`), `JANE_API_KEY`, `JANE_TPM_ENDORSEMENT_PASSWORD`, `JANE_TPM_OWNER_PASSWORD` and `SSL_CERT_FILE` (see the table below); use `sudo -E` to keep them.
 
 ## All environment variables
 
@@ -224,6 +227,7 @@ In short: `create` (first registration) and `update` (after firmware or OS updat
 | `JANE_MQTT_USERNAME` | janeserver | MQTT account | anonymous |
 | `JANE_MQTT_PASSWORD` | janeserver | its password | none |
 | `JANE_X3270_DEBUG` | janeserver | log the x3270 data stream | off |
+| `JANE_SERVER` | jp | Jane's REST API for `remoteattest`, e.g. `http://jane:8520`; `--server` overrides it | the provisioning file's `attestationserver` |
 | `JANE_API_KEY` | jp | Jane REST API key (`jane_...`); `--apikeyfile` overrides it | no key sent |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | tarzan, jp | TPM endorsement hierarchy password | empty password |
 | `JANE_TPM_OWNER_PASSWORD` | jp | TPM owner hierarchy password (persisting and evicting the EK/AK) | empty password |

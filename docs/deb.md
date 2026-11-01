@@ -77,7 +77,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/opt/jane/tarzan` | the trust agent |
 | `/opt/jane/jp` | the provisioner (see [jp](jp.md)) |
 | `/etc/opt/jane/provisioning.yaml.example` | example provisioning file for jp: copy it and edit the copy (the `full.yaml` skeleton) |
-| `/usr/share/doc/tarzantrustagent/skeletons/` | the four jp [skeletons](jp.md#skeletons): `full`, `full-vm`, `tpm2-nouefi`, `sysonly` (not conffiles) |
+| `/usr/share/doc/tarzantrustagent/skeletons/` | the jp [skeletons](jp.md#skeletons): `full`, `full-vm`, `tpm2-nouefi`, `sysonly`, `windows-tpm2-uefi` (not conffiles) |
 | `/etc/opt/jane/tarzan.env` | environment for tarzan (TPM endorsement password), commented out |
 | `/lib/systemd/system/tarzan.service` | runs tarzan as root |
 

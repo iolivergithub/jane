@@ -93,7 +93,7 @@ Reads the EK certificate from the TPM's NV storage (#63). Not signed: check it w
 The index is read with its own empty authorisation (EK certificate indices allow this), otherwise with the owner hierarchy and the empty password, in chunks of the TPM's largest NV read. Padding after the certificate is dropped. The claim body has `handle`, `size`, `certificate` (DER, base64) and `summary`: subject, issuer, serial, notbefore, notafter, keytype, keybits, the TPM manufacturer, model and version from the subject alternative name (TCG OIDs 2.23.133.2.1, .2, .3), `issuingcertificateurl` and `ocsp` (authority information access), `sha256` (fingerprint of the DER) and, if Go's X.509 parser refused the certificate, `parseerror`. A TPM without an EK certificate gives an error claim ("No NV index at ...").
 
 ## uefi/eventlog
-This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; the `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim.
+This returns the UEFI Eventlog. The web UI decodes it into a list of events, one bank at a time; since 1.6 an event's data is decoded further where Jane knows its type (UEFI variables and their certificates, image authorities, firmware blobs, device paths, the GPT, StartupLocality, handoff tables, EV_IPL text), in a collapsed section per event. The `tpm2_uefiLogReplay` rule checks it against a `tpm2/pcrs` claim; the `uefi_log` rules (1.6) check the Secure Boot state it measured (see [Rules](rules.md#the-measured-state-in-the-event-log-16)).
 
 | Field | Compulsory | Type | Description |
 | --- | --- | --- | --- |

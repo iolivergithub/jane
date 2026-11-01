@@ -115,7 +115,7 @@ echo "$KEY" | sudo install -m 640 -o root -g jpusers /dev/stdin /etc/opt/jane/jp
 /opt/jane/jp attest --apikeyfile /etc/opt/jane/jp.key /etc/opt/jane/provisioning.yaml
 ```
 
-Use HTTPS (step 3): the key travels with every request. A leaked key is replaced with `addjaneuser --apikey` (the old one stops working at once) or removed with `--revokeapikey`; see [Authentication](authentication.md#rest-api) for sharing keys across machines.
+Use HTTPS (step 3): the key travels with every request. A leaked key is replaced with `addjaneuser --apikey` (the old one stops working at once) or removed with `--revokeapikey`; see [Authentication](authentication.md#rest-api) for sharing keys across machines. Any key can also write any element's attestation profiles (1.6), as it can write elements and expected values: a key shared across a cluster lets each machine change the others' profiles (see [Attestation profiles](attestationprofiles.md#on-the-element)).
 
 **Check:** `jp attest` passes; with a wrong key it says Jane refused it (HTTP 401); `curl -u ian:x https://127.0.0.1:8520/elements` gets 401 "HTTP Basic is no longer supported".
 

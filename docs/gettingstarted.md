@@ -64,6 +64,15 @@ and one of its results:
 
 Below the form, **Reference** lists every function's parameters and every rule, with the parameters it takes. **Intent Parameters** and **Rule Parameters** take JSON objects, e.g. `{"previouscid": "<claim item id>"}` for `tpm2_clockProgress`.
 
+## Attestation profiles
+
+Since 1.6, `jp create` and `jp update` also store the provisioning file's intents and rules on the element as an **attestation profile**. The element page's **Profiles** tab lists them, the default marked; open one to see it as YAML.
+
+On a profile's page, **Attest** has Jane run the whole profile itself — what `jp attest` does — and, with **Follow relationships** ticked, the profiles of related elements too (a VM's host, say), each in a session of its own under the first. **Edit** lets you change the profile for this one run; the stored profile is never changed. You go straight to the run's session page, which reloads itself every 2 seconds until the run has finished; its collapsed **Profile run** section shows the variables, the follow decisions and the YAML that ran. `jp remoteattest` does the same from the command line. See [Attestation profiles](attestationprofiles.md).
+
+> **📷 SCREENSHOT NEEDED — `images/gs-profile.png`**
+> The quick-start element → **Profiles** tab → the default profile. Show the YAML box (read-only), the **Edit** button, the follow/depth/parallel options and **Attest**. Browser width about 1400 px; first screen.
+
 ## Expected values
 
 Rules such as `tpm2_attestedValue` and `sys_machineID_Agent` compare a claim with an **expected value**: the known-good values for one element, intent and endpoint. jp recorded them during `jp create`; `jp update` refreshes them after firmware or OS updates. **Structures → Expected Values** lists them.

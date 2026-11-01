@@ -155,7 +155,7 @@ for t in $TARZAN_TARGETS; do
     cp $REPO/provisioner/$(distdir "$t")/jp $TARZANBASE/opt/jane
 
     cp tarzan.service $TARZANBASE/lib/systemd/system/tarzan.service
-    # the jp skeletons (#125): full.yaml is the example, all four are docs
+    # the jp skeletons (#125): full.yaml is the example, all of them are docs
     cp $REPO/provisioner/skeleton/full.yaml $TARZANBASE/etc/opt/jane/provisioning.yaml.example
     cp $REPO/provisioner/skeleton/*.yaml $TARZANBASE/usr/share/doc/tarzantrustagent/skeletons/
     cp tarzan.env $TARZANBASE/etc/opt/jane/tarzan.env
