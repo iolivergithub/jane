@@ -70,7 +70,7 @@ func buildSessionTree(s structures.Session, parentFound bool, children []structu
 			v.StoredChanged = operations.ProfileYAML(p) != pr.Profile
 		}
 	}
-	// a run entry's child: the first unused child session for that (element, profile)
+	// a run entry's child: the child session for that (element, profile), unique in a request
 	used := map[string]bool{}
 	for _, f := range pr.Follow {
 		row := followRow{E: f}
@@ -80,7 +80,7 @@ func buildSessionTree(s structures.Session, parentFound bool, children []structu
 			v.NRun++
 			for _, c := range children {
 				cpr := c.AttestationProfileRun
-				if cpr != nil && cpr.ElementID == f.Target && !used[c.ItemID] && (f.Profile == "" || f.Profile == cpr.Name) {
+				if cpr != nil && cpr.ElementID == f.Target && !used[c.ItemID] && f.Profile == cpr.Name {
 					row.ChildSession = c.ItemID
 					used[c.ItemID] = true
 					break

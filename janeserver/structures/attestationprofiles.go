@@ -67,7 +67,7 @@ type ProfileVariable struct {
 type ProfileFollowEntry struct {
 	Relationship string `json:"relationship" bson:"relationship"`
 	Target       string `json:"target" bson:"target"`
-	Profile      string `json:"profile" bson:"profile"` // as given in the follow entry; empty: the target's default
+	Profile      string `json:"profile" bson:"profile"` // the profile followed: once the target's profile is found, its name (also for the default); otherwise as given in the follow entry, empty meaning the default
 	Kind         string `json:"kind" bson:"kind"`       // FollowRun, FollowSkipped, FollowLimit or FollowError
 	Message      string `json:"message" bson:"message"`
 }

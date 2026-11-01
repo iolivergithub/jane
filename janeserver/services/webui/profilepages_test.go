@@ -68,8 +68,8 @@ func runSession(running bool) (structures.Session, []structures.Session, session
 	pr := &structures.ProfileRun{ElementID: "E1", Name: "nightly", Edited: true, Profile: "steps: []\n", FollowLimit: 10,
 		Variables: []structures.ProfileVariable{{Name: "q", Kind: "cid", Value: "C1"}, {Name: "r", Kind: "rid", Value: "R1"}},
 		Follow: []structures.ProfileFollowEntry{
-			{Relationship: "hosted-on", Target: "H1", Kind: structures.FollowRun},
-			{Relationship: "hosted-on", Target: "H2", Kind: structures.FollowRun},
+			{Relationship: "hosted-on", Target: "H1", Profile: "default", Kind: structures.FollowRun},
+			{Relationship: "hosted-on", Target: "H2", Profile: "default", Kind: structures.FollowRun},
 			{Relationship: "hosted-on", Target: "H3", Kind: structures.FollowSkipped, Message: "already in the plan"},
 			{Relationship: "runs-on", Kind: structures.FollowError, Message: "element has no runs-on relationship"},
 		}}

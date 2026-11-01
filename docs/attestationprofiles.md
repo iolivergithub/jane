@@ -77,7 +77,7 @@ The request answers when the whole run, with everything it follows, has finished
 
 There is no verdict: each rule's result is as the rule gave it. `jp remoteattest` turns the report into an exit code (see [jp](jp.md)).
 
-**How it runs.** The follow tree is planned first, from the relationships and the stored profiles. Then each element's profile runs in its own session: its steps one after another (attest, then that claim's rules, with `$variables`), then the variables and that element's follow decisions are recorded in the session, the session is closed, and the elements it follows run in sessions of their own whose parent is this one. Each step uses Jane's ordinary attest and verify, so claims and results are exactly as from any other attestation. A call to a trust agent that doesn't answer gives up after 2 minutes; the step is reported and the run goes on. The details — variables, NOT RUN, follow decisions and why the run always ends — are in [The provisioning language](provisioning.md).
+**How it runs.** The follow tree is planned first, from the relationships and the stored profiles. Then each element's profile runs in its own session: its steps one after another (attest, then that claim's rules, with `$variables`), then the variables and that element's follow decisions are recorded in the session, the session is closed, and the elements it follows run in sessions of their own whose parent is this one. Each step uses Jane's ordinary attest and verify, so claims and results are exactly as from any other attestation. A call to a trust agent that doesn't answer gives up after 2 minutes; the step is reported and the run goes on. If a step fails unexpectedly (a panic in a rule, say), that element's run is reported with the error, its session is still closed, and the elements it follows still run. The details — variables, NOT RUN, follow decisions and why the run always ends — are in [The provisioning language](provisioning.md).
 
 ## In the Web UI
 
@@ -97,7 +97,7 @@ Each session of a run carries an `attestationprofilerun` record, signed with the
 | `profile` | at open | the profile actually run, as YAML |
 | `followlimit`, `depth`, `parallel` | at open | the run's options; `depth` 0 for the first run |
 | `variables` | at close | name, kind (`cid`, `rid`, `resvar`) and value of each variable set |
-| `follow` | at close | each follow decision: relationship, target, profile, `kind` (`run`, `skipped`, `limit`, `error`) and message |
+| `follow` | at close | each follow decision: relationship, target, profile (the name it resolved to, once the target's profile is found), `kind` (`run`, `skipped`, `limit`, `error`) and message |
 
 The session's message says who asked for the run, from where and how, e.g. `runprov nightly (edited) on web01 (<itemid>) by ian via Web UI from 10.0.0.7; followlimit 3`; a followed run's message names the relationship and the session it was followed from. The session page shows the record in a collapsed section whose title sums it up (profile, element, edited, variables, follow counts, depth); open it for the variables (claims and results linked), the follow decisions (linked to the sessions they ran in) and the YAML that ran, and **Edit again** to open the profile page with that YAML.
 

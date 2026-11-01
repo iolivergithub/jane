@@ -76,6 +76,10 @@ func TestGPTDetails(t *testing.T) {
 	if gptDetails([]byte("short")) != nil {
 		t.Error("garbage decoded")
 	}
+	binary.LittleEndian.PutUint32(b[84:], 0) // entry size 0: must not panic
+	if lines := gptDetails(b); len(lines) != 2 || !strings.Contains(lines[1], "too small") {
+		t.Errorf("entry size 0: got %q", lines)
+	}
 }
 
 func TestStartupLocality(t *testing.T) {

@@ -193,13 +193,14 @@ func SetSessionProfileResults(sid string, vars []structures.ProfileVariable, fol
 }
 
 // GetSessionsByParent returns the summaries of the sessions opened under the
-// session sid (#130), oldest first, with their profile run if any.
+// session sid (#130), oldest first, with their whole profile run if any;
+// without claim and result lists or footer.
 func GetSessionsByParent(sid string) ([]structures.Session, error) {
 	var elems []structures.Session
 	filter := bson.D{{"parent", sid}}
 	options := options.Find().SetSort(bson.D{{"timing.opened", 1}}).SetProjection(bson.D{
 		{"itemid", 1}, {"timing", 1}, {"message", 1}, {"parent", 1},
-		{"attestationprofilerun.elementid", 1}, {"attestationprofilerun.name", 1}, {"attestationprofilerun.edited", 1},
+		{"attestationprofilerun", 1},
 	})
 	dbcursor, err := datalayer.DB.Collection("sessions").Find(context.TODO(), filter, options)
 	if err != nil {

@@ -247,11 +247,14 @@ func gptDetails(b []byte) []string {
 	}
 	hdrSize := int(binary.LittleEndian.Uint32(b[12:]))
 	entrySize := int(binary.LittleEndian.Uint32(b[84:]))
-	if hdrSize < 92 || hdrSize > len(b)-8 || entrySize < 128 {
+	if hdrSize < 92 || hdrSize > len(b)-8 {
 		hdrSize = 92
 	}
 	n := binary.LittleEndian.Uint64(b[hdrSize:])
 	lines := []string{fmt.Sprintf("Disk %s, %d partitions", guidString(b[56:72]), n)}
+	if entrySize < 128 {
+		return append(lines, fmt.Sprintf("partition entry size %d is too small", entrySize))
+	}
 	off := hdrSize + 8
 	for i := uint64(0); i < n && off+entrySize <= len(b); i++ {
 		p := b[off : off+entrySize]

@@ -201,6 +201,7 @@ func planFollow(root *planNode, limit int, lookup elementLookup) {
 					n.Follow = append(n.Follow, e)
 					continue
 				}
+				e.Profile = name // the profile this follow resolved to
 				key := t + "\x00" + name
 				if visited[key] {
 					e.Kind, e.Message = structures.FollowSkipped, "profile "+name+" of this element is already in the plan for this request"
@@ -300,6 +301,32 @@ func (req *ProfileRequest) Run() (report *ProfileRunReport) {
 	return req.runNode(req.root, req.SessionID, req.parent, sem)
 }
 
+// runOwn runs a node's own steps in its session sid, records the variables
+// and follow decisions, and closes the session. A panic (e.g. in a rule) is
+// the run's error: the session is still closed, the parallel slot is always
+// given back, and the node's children still run.
+func (req *ProfileRequest) runOwn(n *planNode, sid string, rep *ProfileRunReport, sem chan struct{}) {
+	if sem != nil {
+		sem <- struct{}{}
+		defer func() { <-sem }()
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			rep.Error = joinError(rep.Error, fmt.Sprintf("run failed: %v", r))
+			logging.MakeLogEntry("S", "runprov", sid, "session", fmt.Sprintf("run panicked: %v", r))
+		}
+		if err := CloseSession(sid); err != nil {
+			rep.Error = joinError(rep.Error, err.Error())
+			logging.MakeLogEntry("S", "runprov", sid, "session", "close: "+err.Error())
+		}
+	}()
+	rep.Steps, rep.Vars = runSteps(n.Element, n.Profile, sid)
+	if err := SetSessionProfileResults(sid, rep.Vars, n.Follow); err != nil {
+		rep.Error = joinError(rep.Error, err.Error())
+		logging.MakeLogEntry("S", "runprov", sid, "session", err.Error())
+	}
+}
+
 // runNode runs one planned (element, profile) in the session sid (opened
 // already), then its children.
 func (req *ProfileRequest) runNode(n *planNode, sid string, parent string, sem chan struct{}) *ProfileRunReport {
@@ -309,21 +336,7 @@ func (req *ProfileRequest) runNode(n *planNode, sid string, parent string, sem c
 		Steps: []ProfileStepReport{}, Vars: []structures.ProfileVariable{}, Follow: []ProfileFollowReport{},
 	}
 
-	if sem != nil {
-		sem <- struct{}{}
-	}
-	rep.Steps, rep.Vars = runSteps(n.Element, n.Profile, sid)
-	if err := SetSessionProfileResults(sid, rep.Vars, n.Follow); err != nil {
-		rep.Error = err.Error()
-		logging.MakeLogEntry("S", "runprov", sid, "session", err.Error())
-	}
-	if err := CloseSession(sid); err != nil {
-		rep.Error = joinError(rep.Error, err.Error())
-		logging.MakeLogEntry("S", "runprov", sid, "session", "close: "+err.Error())
-	}
-	if sem != nil {
-		<-sem
-	}
+	req.runOwn(n, sid, rep, sem)
 
 	// the children, in plan order; with sem, at the same time
 	children := make([]*ProfileRunReport, len(n.Children))
