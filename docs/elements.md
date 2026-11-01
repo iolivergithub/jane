@@ -61,8 +61,21 @@ curl -X POST -H "Authorization: Bearer $JANE_API_KEY" -H "Content-Type: applicat
      http://jane:8520/element/<vm itemid>/relationships
 ```
 
+Relationships are also what an attestation profile's `follow:` uses (1.6, see [Attestation profiles](attestationprofiles.md)).
+
 Additions and removals are logged. The Web UI shows the type on the element's card and page, and a **Relationships** tab with the element's relationships and the elements related to it (display only); x3270 shows them on the element screen. A relationship to an element that has since been deleted is shown as "(missing)". Claims keep a snapshot of the element, so its type and relationships at the time are part of each claim.
 
+
+## Attestation profiles
+
+Since 1.6. Both fields are optional; see [Attestation profiles](attestationprofiles.md).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| attestationprofiles | Map of name to profile | Named attestation instructions, written by `jp create`/`update` (`PUT /element/<itemid>/attestationprofile/<name>`) |
+| defaultattestationprofile | String | The profile run when none is named; set by the same request |
+
+Like relationships, they are kept by `PUT /element` whatever it carries, and a new element starts with none.
 
 ## Optional Fields
 There are a number of individual structures to describe particular properties, eg: of TPMs, UEFI records etc.  Not all combinations are valid together, but this very much depends  upon the nature of the element in question.

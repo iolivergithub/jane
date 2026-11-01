@@ -40,7 +40,8 @@ On each **element**, the machine being attested:
 - An **expected value** holds the known-good values for one element, endpoint and intent.
 - A **claim** is what a trust agent returned for one intent, plus the context it was asked in.
 - A **result** is one rule's verdict on one claim.
-- A **session** groups the claims and results of one piece of work, e.g. one `jp attest` run. It is opened, claims and results are added, and it is closed and signed.
+- A **session** groups the claims and results of one piece of work, e.g. one `jp attest` run. It is opened, claims and results are added, and it is closed and signed. A session may have a **parent** session (1.6), so the runs of one request form a tree.
+- An element may hold named **attestation profiles** (1.6): the instructions for attesting it, which Jane can run, following the element's relationships. See [Attestation profiles](attestationprofiles.md).
 
 Expected values, results and sessions refer to other items by their `itemid`. Claims and results also keep **copies** of the element, intent, session and expected value they were made from. This is deliberate, for forensics: each copy is a snapshot of that moment, so the history of how an element changed over time can be reconstructed from its claims and results, even after the element, its intents or its expected values have been edited.
 
@@ -53,7 +54,7 @@ Expected values, results and sessions refer to other items by their `itemid`. Cl
 3. For each claim, jp asks Jane to verify with a rule: the rule compares the claim with the expected value, and Jane stores the signed result and adds it to the session.
 4. jp closes the session, and Jane signs its footer over the lists of claims and results.
 
-The Web UI and x3270 attest pages do the same steps for one element and intent at a time.
+The Web UI and x3270 attest pages do the same steps for one element and intent at a time. Since 1.6 Jane can also do the whole loop itself, from a profile stored on the element (`jp remoteattest`, REST `runprov`, the Web UI's profile page), one session per element.
 
 ## Where to read more
 

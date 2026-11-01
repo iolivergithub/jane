@@ -18,17 +18,20 @@ jp is built to run unattended (from cron, a systemd timer, a package hook) as we
 
 ```
 jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] create|update|attest PROVISIONINGFILE
+jp remoteattest [PROVISIONINGFILE] [PROFILE] [--server URL] [--parent SID]
+                [--followlimit N | --nofollow] [--parallel] [--apikeyfile PATH]
 ```
 
 Installed from the deb it is `/opt/jane/jp`. Options may come before or after the mode and file.
 
-## The three modes
+## The modes
 
 | Mode | Needs root | Changes Jane | Can change the TPM | Typical use |
 |---|---|---|---|---|
 | `create` | yes | registers a new element, records expected values | only with `--reprovisiontpm` | once, when a machine is first set up |
 | `update` | yes | updates the element, replaces its expected values | only with `--reprovisiontpm` | after firmware, bootloader or kernel updates |
 | `attest` | no | adds claims and results (one session) | never | checking the machine, as often as you like |
+| `remoteattest` (1.6) | no | Jane runs a stored profile: claims and results, one session per element | never | checking a machine and the elements related to it, from anywhere |
 
 ### create
 
@@ -66,12 +69,33 @@ Checks the machine against Jane's expected values, without changing anything:
 
 `attest` does not run the worklist, never opens the TPM, and does not change the element or its expected values. It does not need root: it only reads the element ID file and talks to Jane. Run it as often as you like, by hand or on a schedule.
 
+Whenever jp opens a session it prints `jp: opening session <sid>`.
+
+### Attestation profiles (create and update, 1.6)
+
+`create` and `update` also store the file's `evs:` and `follow:` on the element as an **attestation profile**, named by `defaultattestationprofile` (`default` if it is missing, with a warning) and described by `attestationprofiledescription`, and make it the element's default. The element's other profiles are left alone. An older Jane (before 1.6) doesn't know profiles: jp warns and carries on. See [Attestation profiles](attestationprofiles.md) and [The provisioning language](provisioning.md).
+
+### remoteattest (1.6)
+
+Asks Jane to run the element's stored profile — its default, or `PROFILE` — and prints Jane's report (`POST /element/<itemid>/runprov`). Jane does the steps itself and follows the profile's relationships to other elements, each in a session of its own under this run's session. jp needs no TPM and no root; it waits for the report (at most 10 minutes) and says so: `jp: asking Jane to run its default attestation profile on element <itemid>; this may take a while. Check Jane's Web UI (Sessions) for its status.` If jp stops waiting, Jane may still be running: look in the Web UI.
+
+- The element is the one in the element ID file, so run it on the registered machine (or with a copy of that file).
+- With one argument, it is the provisioning file if such a file exists, else the profile name.
+- Jane's address is `--server`, else `JANE_SERVER`, else the provisioning file's `attestationserver` (the file must then be given).
+
+The report lists each element's steps and rules, its variables and follow decisions, indented by depth, then `Remote attestation PASSED` or `FAILED` with counts. Exit 0 only if every rule passed, no step or follow failed and the run itself had no error.
+
 ## Flags
 
 | Flag | Modes | Meaning |
 |---|---|---|
 | `--reprovisiontpm` | create, update | Allow the worklist's TPM steps: `tpmclear` deletes the keys at the EK and AK handles, `tpmprovision` creates a new EK and AK there. Without it both are skipped (reported as `skipped, the TPM is left unchanged`). Rejected with `attest` |
 | `--recreate` | create | Register a new element although this machine is already registered. The old element is left in Jane, orphaned; with `--reprovisiontpm` its keys no longer match the TPM |
+| `--server URL` | remoteattest | Jane's REST API, e.g. `http://jane:8520`; else `JANE_SERVER`, else the provisioning file's `attestationserver` |
+| `--parent SID` | remoteattest | open the run's session under the session *SID* (see [Sessions](sessions.md)) |
+| `--followlimit N` | remoteattest | follow related elements at most *N* levels deep (default 10) |
+| `--nofollow` | remoteattest | don't follow; the same as `--followlimit 0` |
+| `--parallel` | remoteattest | run followed profiles at the same time, at most 4 at once |
 | `--apikeyfile PATH` | all | Read the Jane REST API key from a file holding the key alone (e.g. `/etc/opt/jane/jp.key`), when Jane requires one (`auth: rest: true`). Overrides `JANE_API_KEY`. See [Authentication](authentication.md#rest-api) |
 | `-h`, `--help` | | Print the usage and exit |
 
@@ -86,6 +110,7 @@ There is no `-u`/`--unsafe` any more (see [Changes in 1.5.4](#changes-in-154)).
 | After a firmware, shim, bootloader or kernel update | `sudo -E jp update provisioning.yaml` |
 | The same, automatically (apt hook, fwupd hook, cron) | `jp update` as above; never add `--reprovisiontpm` to an automated job |
 | Regular checks (cron, systemd timer, monitoring) | `jp attest provisioning.yaml`, as any user |
+| The same, with the elements it is related to (its VMs, its host), done by Jane | `jp remoteattest provisioning.yaml` |
 | New TPM keys for a registered machine (keys lost, TPM cleared or replaced, handles reused) | `sudo -E jp update --reprovisiontpm provisioning.yaml` |
 | Register the machine again as a new element (cloned VM given a new identity, reinstalled machine) | `sudo -E jp create --recreate --reprovisiontpm provisioning.yaml`, then remove the old element in the Web UI |
 
@@ -106,6 +131,7 @@ sudo -E /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 
 | Variable | Meaning |
 |---|---|
+| `JANE_SERVER` | `remoteattest`: Jane's REST API, when neither `--server` nor a provisioning file gives it |
 | `JANE_API_KEY` | the Jane REST API key (`jane_...`, made with `addjaneuser --apikey`), when Jane's `auth: rest: true` |
 | `JANE_TPM_ENDORSEMENT_PASSWORD` | the TPM's endorsement hierarchy password, only if one is set (`tpm2_changeauth -c e`); used when creating the EK. Unset means the empty password |
 | `JANE_TPM_OWNER_PASSWORD` | the TPM's owner hierarchy password, only if one is set (`tpm2_changeauth -c o`); used when making the EK and AK persistent and when `tpmclear` evicts them. Unset means the empty password. tarzan does not need it |
@@ -122,7 +148,7 @@ sudo -E /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 | 0 | success; for `attest`, every rule passed |
 | 1 | error: bad provisioning file, element ID file missing or unreadable, Jane or the TPM unreachable, Jane refused the API key (HTTP 401) or this address made too many failed attempts (HTTP 429), no permission (create/update without root), machine already registered (create) |
 | 2 | bad command line (unknown option, missing argument, the removed `--user`/`--pass`, an API key that is unreadable or not a Jane key, `--recreate` or `--reprovisiontpm` with the wrong mode), or a mistake in the provisioning file's variables |
-| 3 | `attest` only: a rule did not pass, could not be run, or an intent could not be attested |
+| 3 | `attest` and `remoteattest`: a rule did not pass, could not be run, or an intent could not be attested; for `remoteattest` also a follow that failed or a run error |
 
 `attest` prints each intent with its claim and each rule's result, then a summary and the variables:
 
@@ -183,12 +209,13 @@ Use the endpoint names in `evs: protocol:` (the key is called `protocol` for his
 
 ### Skeletons
 
-Four provisioning files to start from (#125), in `provisioner/skeleton/` and installed by the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/` (in `skeletons\` in the Windows zip). Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
+Provisioning files to start from (#125), in `provisioner/skeleton/` and installed by the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/` (in `skeletons\` in the Windows zip). Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
 
 | Skeleton | Machine | SYS | UEFI | TPM 2.0 | IMA |
 |---|---|---|---|---|---|
 | `full.yaml` | physical Linux machine, UEFI, discrete or firmware TPM | ✓ | ✓ | ✓, with the EK certificate | ✓ |
 | `full-vm.yaml` | virtual machine, UEFI (OVMF), vTPM | ✓ | ✓ | ✓, without the EK certificate (vTPMs normally have none) | ✓ |
+| `windows-tpm2-uefi.yaml` | Windows machine, UEFI, TPM 2.0 (1.6) | ✓ | event log | ✓, with the EK certificate | — |
 | `tpm2-nouefi.yaml` | board with a TPM but no UEFI, e.g. Raspberry Pi with a TPM module | ✓ | — | ✓, with the EK certificate, no event log replay | commented |
 | `sysonly.yaml` | no TPM | ✓ | — | — | — |
 
@@ -214,7 +241,7 @@ A worklist without the TPM steps is fine for machines whose keys are managed els
 Each entry names a standard (or your own) intent and says:
 
 - `protocol:` which endpoint to use;
-- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars`; none: record nothing);
+- `type:` what expected value to record on `create`/`update` (`sysmachineid`, `tpm2quote`, `tpm2ekcert`, `uefiefivars`, `uefieventlog` (1.6); none: record nothing);
 - `issuerurl:` for type `tpm2ekcert`: where the EK certificate's issuer certificates are (`https://`, `http://` or `file://`). Without it jp takes the certificate's own *CA Issuers* URL; if there is neither, or the TPM has no EK certificate, jp says so and records nothing;
 - `rules:` which rules `attest` runs, each a name or a name with options (`parameters`, `rid`, `resvar`);
 - `cid:` a variable holding this intent's claim item ID during `attest`.

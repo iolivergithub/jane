@@ -113,6 +113,12 @@ jp then collects information about the machine, registers it with Jane as an ele
 
 `attest` needs no root. It asks Jane to attest the element against every intent in the file and to run every rule listed there, and prints a table of results. Exit status 0 means every rule passed.
 
+Since 1.6 the file is also stored in Jane as the element's attestation profile, so Jane can do the same itself, following the machine's relationships to other elements (see [Attestation profiles](attestationprofiles.md)):
+
+```bash
+/opt/jane/jp remoteattest /etc/opt/jane/provisioning.yaml
+```
+
 ## 7. Look at the results
 
 In the Web UI:
