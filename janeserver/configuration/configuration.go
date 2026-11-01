@@ -82,6 +82,9 @@ type ConfigurationStruct struct {
 	}
 	Sessions struct {
 		LongSession int // seconds; attestation sessions longer than this are flagged LONG SESSION (#98)
+		// seconds between reloads of a session page while its profile run is
+		// in progress (#137); missing means 2, 0 switches it off
+		Refresh *int
 	}
 }
 
@@ -100,6 +103,16 @@ func LongSession() time.Duration {
 		n = max(ConfigData.Sessions.LongSession, minLongSession)
 	}
 	return time.Duration(n) * time.Second
+}
+
+// SessionRefresh is how often, in seconds, a session page reloads itself
+// while its profile run is in progress (#137): sessions: refresh in
+// config.yaml, 2 if missing, 0 = never.
+func SessionRefresh() int {
+	if ConfigData == nil || ConfigData.Sessions.Refresh == nil {
+		return 2
+	}
+	return max(*ConfigData.Sessions.Refresh, 0)
 }
 
 // The exported variable for accessing the configuration structure

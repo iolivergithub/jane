@@ -66,6 +66,7 @@ func parseTemplates(functions template.FuncMap) map[string]*template.Template {
 	page("sessions.html", "pager.html")
 	page("session.html", "resultvalue.html")
 
+	page("profile.html")
 	page("attest.html")
 	page("protocols.html")
 	page("rules.html")

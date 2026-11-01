@@ -1,0 +1,47 @@
+{{define "title"}}Profile {{ .Name }} · {{ .E.Name }} · {{end}}{{define "content"}}
+{{ if not .Found }}
+<div class="alert alert-warning">Attestation profile <b>{{ .Name }}</b> not found{{ if .E.ItemID }} on element <a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a>{{ end }}.</div>
+{{ else }}
+
+<div class="mb-3">
+   <h3 class="mb-1"><i class="fa fa-list-ol me-2 text-body-secondary"></i>Profile {{ .Name }}{{ if .Default }} <span class="badge bg-primary-subtle text-primary-emphasis fs-6 align-middle">default</span>{{ end }}</h3>
+   <div>on element <a href="/element/{{ .E.ItemID }}">{{ .E.Name }}</a></div>
+   {{ if .Profile.Description }}<div class="text-body-secondary">{{ .Profile.Description }}</div>{{ end }}
+</div>
+
+{{ if .Error }}<div class="alert alert-danger j-wrap">{{ .Error }} — nothing was run.</div>{{ end }}
+
+<form method="post" action="/element/{{ .E.ItemID }}/profile/{{ .Name }}">
+   <div class="d-flex align-items-center gap-2 mb-1">
+      <label for="profile" class="form-label fw-semibold mb-0">Profile (YAML)</label>
+      {{ if .Editable }}
+         <span class="badge bg-warning text-dark">editing — changes are used for one run and never saved</span>
+      {{ else }}
+         <a class="btn btn-sm btn-outline-secondary py-0 ms-2" href="/element/{{ .E.ItemID }}/profile/{{ .Name }}?edit=1" title="Change the profile for one run; the stored profile is not changed"><i class="fa fa-pencil me-1"></i>Edit</a>
+      {{ end }}
+   </div>
+   <textarea class="form-control font-monospace small mb-3" id="profile" name="profile" rows="20" spellcheck="false" {{ if not .Editable }}readonly{{ end }}>{{ .YAML }}</textarea>
+
+   <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
+      <div class="form-check">
+         <input class="form-check-input" type="checkbox" name="follow" id="follow" checked>
+         <label class="form-check-label" for="follow">Follow relationships</label>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+         <label for="depth" class="small">Depth</label>
+         <select class="form-select form-select-sm w-auto" name="depth" id="depth">
+            {{ range $i := .Depths }}<option value="{{ $i }}" {{ if eq $i $.MaxFollow }}selected{{ end }}>{{ $i }}</option>{{ end }}
+         </select>
+      </div>
+      <div class="form-check">
+         <input class="form-check-input" type="checkbox" name="parallel" id="parallel">
+         <label class="form-check-label" for="parallel">Run followed profiles in parallel</label>
+      </div>
+   </div>
+   <div class="small text-body-secondary mb-3">Depth and parallel apply only when following. Followed elements run their own stored profiles.</div>
+
+   <button type="submit" name="action" value="attest" class="btn btn-primary"><i class="fa fa-play me-1"></i>Attest</button>
+   <span class="small text-body-secondary ms-2">The run continues in the background; its session page shows the progress.</span>
+</form>
+{{ end }}
+{{end}}

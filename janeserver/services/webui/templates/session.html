@@ -1,4 +1,6 @@
-{{define "title"}}Session {{ if .S.ItemID }}{{ epochToUTC .S.Timing.Opened }}{{ end }} · {{end}}{{define "content"}}
+{{define "title"}}Session {{ if .S.ItemID }}{{ epochToUTC .S.Timing.Opened }}{{ end }} · {{end}}
+{{define "head"}}{{ if .Tree.Refresh }}<meta http-equiv="refresh" content="{{ .Tree.Refresh }}">{{ end }}{{end}}
+{{define "content"}}
 {{ if not .S.ItemID }}
 <div class="alert alert-warning">Session not found. <a href="/sessions">All sessions</a></div>
 {{ else }}
@@ -9,6 +11,8 @@
       <h3 class="mb-1"><i class="fa fa-cogs me-2 text-body-secondary"></i>Session</h3>
       <div class="small text-body-secondary font-monospace mb-1 j-wrap"><span data-copy>{{ .S.ItemID }}</span> <button type="button" class="btn btn-link btn-sm p-0 align-baseline j-copy" title="Copy the ID" aria-label="Copy the ID"><i class="fa fa-clipboard"></i></button></div>
       {{ if .S.Message }}<div class="j-wrap">{{ .S.Message }}</div>{{ end }}
+      {{ if .Tree.Parent }}<div class="small mt-1"><i class="fa fa-level-up me-1 text-body-secondary"></i>Parent session {{ if .Tree.ParentMissing }}<span class="font-monospace">{{ .Tree.Parent }}</span> <span class="text-body-secondary">(missing)</span>{{ else }}<a class="font-monospace" href="/session/{{ .Tree.Parent }}">{{ .Tree.Parent }}</a>{{ end }}</div>{{ end }}
+      {{ if .Tree.Running }}<div class="small mt-1"><span class="badge bg-info text-dark"><i class="fa fa-refresh me-1"></i>profile run in progress</span>{{ if .Tree.Refresh }} <span class="text-body-secondary">this page reloads every {{ .Tree.Refresh }} s</span>{{ end }}</div>{{ end }}
    </div>
    <div class="d-flex flex-wrap gap-2">
       <div class="card j-tile"><div class="card-body py-2">
@@ -20,6 +24,7 @@
          <div class="small text-body-secondary">Duration</div>
          <div class="j-num">{{ if .Duration }}{{ .Duration }}{{ else }}–{{ end }}</div>
          {{ if .Long }}<div class="small text-danger fw-semibold" title="Longer than sessions: longsession in config.yaml">LONG SESSION</div>{{ end }}
+         {{ if and .Long .Open .Tree.Run }}<div class="small text-body-secondary" style="max-width: 12rem">closing it stops the remaining steps of a running profile</div>{{ end }}
          {{ if .Open }}<form method="post" action="/session/{{ .S.ItemID }}/close" class="mt-1"><button type="submit" class="btn btn-sm btn-warning py-0" title="Close this session now, e.g. if its client crashed. Logged with your name."><i class="fa fa-stop-circle me-1"></i>Close session</button></form>{{ end }}
       </div></div>
       <div class="card j-tile"><div class="card-body py-2">
@@ -87,6 +92,82 @@
       </div>
    </div>
    {{ end }}
+</div>
+{{ end }}
+
+{{ with .Tree.Run }}
+<!-- profile run (#130, #132): what ran, the variables, the follow decisions -->
+<details class="card mb-3" {{ if $.Tree.Running }}open{{ end }}>
+   <summary class="card-header py-2">
+      <b>Profile run:</b> <span class="font-monospace">{{ .PR.Name }}</span> on {{ if .ElementFound }}{{ .ElementName }}{{ else }}<span class="font-monospace">{{ .PR.ElementID }}</span>{{ end }}
+      {{ if .PR.Edited }}— <i>edited</i>{{ end }}
+      · {{ len .Vars }} variables
+      · follow {{ len .Follow }} ({{ .NRun }} run, {{ .NSkipped }} skipped, {{ .NLimit }} limit, {{ .NError }} errors)
+      · depth {{ .PR.Depth }} of {{ .PR.FollowLimit }}{{ if .PR.Parallel }} · parallel{{ end }}
+   </summary>
+   <div class="card-body small">
+      <div class="mb-2">
+         {{ if .ProfileFound }}<a href="/element/{{ .PR.ElementID }}/profile/{{ .PR.Name }}">Profile {{ .PR.Name }}</a>{{ else }}Profile {{ .PR.Name }} <span class="text-body-secondary">(no longer on the element)</span>{{ end }}
+         {{ if .PR.Edited }}<span class="badge bg-warning text-dark ms-1">edited, unsaved</span>{{ end }}
+         {{ if .StoredChanged }}<span class="text-body-secondary ms-1">— the stored profile has changed since this run</span>{{ end }}
+         <form class="d-inline ms-2" method="post" action="/element/{{ .PR.ElementID }}/profile/{{ .PR.Name }}">
+            <input type="hidden" name="profile" value="{{ .PR.Profile }}">
+            <button type="submit" name="action" value="edit" class="btn btn-sm btn-outline-secondary py-0" title="Open the profile page with the YAML that ran, to edit and run it again"><i class="fa fa-pencil me-1"></i>Edit again</button>
+         </form>
+      </div>
+
+      <h6 class="text-body-secondary mt-3">Variables</h6>
+      {{ if .Vars }}
+      <table class="table table-sm mb-0"><thead><tr><th>Name</th><th>Kind</th><th>Value</th></tr></thead><tbody>
+         {{ range .Vars }}
+         <tr><td class="font-monospace">{{ .Name }}</td><td>{{ .Kind }}</td>
+             <td class="font-monospace">{{ if and (eq .Kind "cid") .Value }}<a href="/claim/{{ .Value }}">{{ .Value }}</a>{{ else if and (eq .Kind "rid") .Value }}<a href="/result/{{ .Value }}">{{ .Value }}</a>{{ else }}{{ .Value }}{{ end }}</td></tr>
+         {{ end }}
+      </tbody></table>
+      {{ else }}<i class="text-body-secondary">{{ if $.Tree.Running }}recorded when the run's steps are done{{ else }}none{{ end }}</i>{{ end }}
+
+      <h6 class="text-body-secondary mt-3">Follow</h6>
+      {{ if .Follow }}
+      <table class="table table-sm mb-0"><thead><tr><th>Relationship</th><th>Element</th><th>Profile</th><th>Outcome</th><th>Session</th></tr></thead><tbody>
+         {{ range .Follow }}
+         <tr>
+            <td><span class="badge bg-primary-subtle text-primary-emphasis">{{ .E.Relationship }}</span></td>
+            <td>{{ if .E.Target }}{{ if .TargetName }}<a href="/element/{{ .E.Target }}">{{ .TargetName }}</a>{{ else }}<span class="font-monospace">{{ .E.Target }}</span>{{ end }}{{ else }}–{{ end }}</td>
+            <td class="font-monospace">{{ if .E.Profile }}{{ .E.Profile }}{{ else }}<span class="text-body-secondary">default</span>{{ end }}</td>
+            <td><span class="badge {{ if eq .E.Kind "run" }}bg-success{{ else if eq .E.Kind "error" }}bg-danger{{ else }}bg-secondary{{ end }}">{{ .E.Kind }}</span> {{ .E.Message }}</td>
+            <td>{{ if .ChildSession }}<a class="font-monospace" href="/session/{{ .ChildSession }}">{{ .ChildSession }}</a>{{ else if .NotStarted }}<span class="text-danger">follow run not started</span>{{ else if eq .E.Kind "run" }}<span class="text-body-secondary">waiting</span>{{ end }}</td>
+         </tr>
+         {{ end }}
+      </tbody></table>
+      {{ else }}<i class="text-body-secondary">{{ if $.Tree.Running }}recorded when the run's steps are done{{ else }}none{{ end }}</i>{{ end }}
+
+      <details class="mt-3">
+         <summary class="text-body-secondary">Profile as run (YAML)</summary>
+         <pre class="font-monospace small border rounded p-2 mt-2 mb-0">{{ .PR.Profile }}</pre>
+      </details>
+   </div>
+</details>
+{{ end }}
+
+{{ if .Tree.Children }}
+<!-- sessions opened under this one (#130) -->
+<div class="card mb-3">
+   <div class="card-header py-2"><i class="fa fa-level-down me-1"></i> Sessions with this as parent <span class="badge bg-secondary">{{ len .Tree.Children }}</span></div>
+   <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+         <thead><tr><th>Session</th><th>Opened (UTC)</th><th>Closed (UTC)</th><th>Profile run</th></tr></thead>
+         <tbody>
+            {{ range .Tree.Children }}{{ $c := . }}
+            <tr>
+               <td class="font-monospace"><a href="/session/{{ .S.ItemID }}">{{ .S.ItemID }}</a></td>
+               <td class="text-nowrap">{{ epochToUTC .S.Timing.Opened }}</td>
+               <td class="text-nowrap">{{ if .S.Timing.Closed }}{{ epochToUTC .S.Timing.Closed }}{{ else }}<span class="badge bg-warning">open</span>{{ end }}</td>
+               <td>{{ with .S.AttestationProfileRun }}<span class="font-monospace">{{ .Name }}</span> on <a href="/element/{{ .ElementID }}">{{ if $c.ElementName }}{{ $c.ElementName }}{{ else }}{{ .ElementID }}{{ end }}</a>{{ if .Edited }} <i>edited</i>{{ end }}{{ else }}–{{ end }}</td>
+            </tr>
+            {{ end }}
+         </tbody>
+      </table>
+   </div>
 </div>
 {{ end }}
 

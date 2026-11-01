@@ -241,6 +241,8 @@ type sessionPage struct {
 	ClaimErrors  int
 	Elements     []sessionElement
 	ElementNames map[string]string // element ID -> name
+
+	Tree sessionTree // parent, sessions under this one, profile run (#130, #132)
 }
 
 func buildSessionPage(s structures.Session, cs []structures.Claim, rs []structures.Result, lk *lookups) sessionPage {
