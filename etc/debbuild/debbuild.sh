@@ -109,11 +109,13 @@ for t in $JANE_TARGETS; do
     BIN=$REPO/janeserver/$(distdir "$t")
 
     mkdir -p $JANEBASE/DEBIAN $JANEBASE/opt/jane $JANEBASE/var/log/jane $JANEBASE/etc/opt/jane \
-        $JANEBASE/lib/systemd/system $JANEBASE/usr/share/doc/janeattestationengine
+        $JANEBASE/lib/systemd/system $JANEBASE/usr/share/doc/janeattestationengine/skeletons
 
     cp $BIN/janeserver $JANEBASE/opt/jane
     cp ../addjaneuser/addjaneuser $JANEBASE/opt/jane/addjaneuser
     cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
+    # the example provisioning files (jp skeletons, #125), as in every distribution
+    cp $REPO/provisioner/skeleton/*.yaml $JANEBASE/usr/share/doc/janeattestationengine/skeletons/
 
     cp config.yaml $JANEBASE/etc/opt/jane/config.yaml
     cp REPLACE_ME.key $JANEBASE/etc/opt/jane/REPLACE_ME.key
@@ -132,7 +134,7 @@ for t in $JANE_TARGETS; do
     chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser
     chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
     chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
-    chmod 644 $JANEBASE/lib/systemd/system/jane.service
+    chmod 644 $JANEBASE/lib/systemd/system/jane.service $JANEBASE/usr/share/doc/janeattestationengine/skeletons/*.yaml
 
     control control_jane_base "$t" $JANEBASE/DEBIAN/control
     maintainer $JANEBASE jane
@@ -188,6 +190,8 @@ cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
 cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
 cp ../standardintents/standardintents.json ../standardobjects/standardobjects.json $WINJANE/
 cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt
+mkdir -p $WINJANE/skeletons
+cp $REPO/provisioner/skeleton/*.yaml $WINJANE/skeletons/
 
 WINTARZAN=$TMPBASE/tarzan-windows-amd64
 mkdir -p $WINTARZAN

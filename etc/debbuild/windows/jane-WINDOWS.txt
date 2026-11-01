@@ -18,6 +18,9 @@ no Windows service wrapper; a Windows administrator sets it up.
   REPLACE_ME.crt, .key    development certificate and key: replace them
   standardintents.json    backup copy of the standard intents
   standardobjects.json    backup copy of the standard opaque objects
+  skeletons\              example provisioning files for jp (in the tarzan
+                          zip), by what the machine has: full, full-vm,
+                          tpm2-nouefi, sysonly, windows-tpm2-uefi
 
 Jane also needs MongoDB and an MQTT broker (e.g. Mosquitto), which have their
 own Windows installers.

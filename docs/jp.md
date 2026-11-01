@@ -220,7 +220,7 @@ Use the endpoint names in `evs: protocol:` (the key is called `protocol` for his
 
 ### Skeletons
 
-Provisioning files to start from (#125), in `provisioner/skeleton/` and installed by the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/` (in `skeletons\` in the Windows zip). Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
+Provisioning files to start from (#125), in `provisioner/skeleton/` and shipped in every distribution: the tarzan package in `/usr/share/doc/tarzantrustagent/skeletons/`, the jane package and the container image in `/usr/share/doc/janeattestationengine/skeletons/`, and `skeletons\` in both Windows zips. Choose by what the machine can show, copy it and edit the copy (at least `element: name`, and the addresses if Jane or tarzan are elsewhere):
 
 | Skeleton | Machine | SYS | UEFI | TPM 2.0 | IMA |
 |---|---|---|---|---|---|

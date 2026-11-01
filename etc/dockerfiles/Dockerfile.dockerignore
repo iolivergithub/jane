@@ -10,3 +10,4 @@
 !etc/standardobjects/standardobjects.json
 !etc/dockerfiles/mosquitto.conf
 !etc/dockerfiles/start.sh
+!provisioner/skeleton/*.yaml

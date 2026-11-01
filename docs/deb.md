@@ -69,6 +69,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/lib/systemd/system/jane.service` | runs janeserver as the `jane` user, sandboxed |
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
+| `/usr/share/doc/janeattestationengine/skeletons/` | the jp [skeletons](jp.md#skeletons) (example provisioning files), the same as in the tarzan package, for preparing provisioning files on the Jane host (not conffiles) |
 
 **tarzan** (package `tarzantrustagent`)
 

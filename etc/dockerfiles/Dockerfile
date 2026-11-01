@@ -10,13 +10,13 @@
 #
 # Build janeserver first, then the image, from the top of the repository:
 #
-#   make -C janeserver binary VERSION=1.5.6
-#   docker build -f etc/dockerfiles/Dockerfile -t jane-allinone:1.5.6 .
+#   make -C janeserver binary VERSION=1.6
+#   docker build -f etc/dockerfiles/Dockerfile -t jane-allinone:1.6 .
 #
 # Run:
 #
 #   docker run -d --name jane -p 8520:8520 -p 8540:8540 -p 3270:3270 \
-#       -p 1883:1883 -p 8081:8081 jane-allinone:1.5.6
+#       -p 1883:1883 -p 8081:8081 jane-allinone:1.6
 
 # The official MongoDB image (Ubuntu 24.04 "noble").
 FROM mongo:8.0-noble
@@ -33,7 +33,10 @@ COPY etc/debbuild/config.yaml etc/debbuild/REPLACE_ME.crt etc/debbuild/REPLACE_M
 COPY etc/standardintents/standardintents.json etc/standardobjects/standardobjects.json /etc/opt/jane/
 COPY etc/dockerfiles/mosquitto.conf /etc/opt/jane/mosquitto.conf
 COPY etc/dockerfiles/start.sh /opt/jane/start.sh
+# the example provisioning files (jp skeletons), as in the deb
+COPY provisioner/skeleton/ /usr/share/doc/janeattestationengine/skeletons/
 RUN chmod 755 /opt/jane/janeserver /opt/jane/addjaneuser /opt/jane/start.sh \
+ && chmod 644 /usr/share/doc/janeattestationengine/skeletons/*.yaml \
  && mkdir -p /var/log/jane
 
 # 8520 REST API, 8540 Web UI, 3270 x3270, 1883 MQTT, 8081 MQTT over WebSockets

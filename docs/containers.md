@@ -13,7 +13,7 @@
 |---|---|
 | Base | the official `mongo:8.0-noble` image (MongoDB 8.0 on Ubuntu 24.04) |
 | Added | Mosquitto (Ubuntu package), `janeserver`, `addjaneuser` (with `python3-argon2`, `python3-pymongo`) |
-| Configuration | `/etc/opt/jane/config.yaml` as shipped in the deb (`etc/debbuild/config.yaml`): MongoDB and the broker at `127.0.0.1`, listening on all interfaces, plain HTTP, no logins; the `REPLACE_ME` development certificate; `standardintents.json` and `standardobjects.json` |
+| Configuration | `/etc/opt/jane/config.yaml` as shipped in the deb (`etc/debbuild/config.yaml`): MongoDB and the broker at `127.0.0.1`, listening on all interfaces, plain HTTP, no logins; the `REPLACE_ME` development certificate; `standardintents.json` and `standardobjects.json`; the jp skeletons (example provisioning files) in `/usr/share/doc/janeattestationengine/skeletons/` |
 | Started by | `/opt/jane/start.sh`: `mongod` and `mosquitto` in the background, then `janeserver` in the foreground once MongoDB answers, so the container stops when Jane does |
 | Log | `/var/log/jane/jane.log`; MongoDB's in `/var/log/mongod.log` |
 
@@ -36,15 +36,15 @@
 Build janeserver, then the image, from the top of the repository (the build context is the repository; `Dockerfile.dockerignore` limits it to the files the image copies):
 
 ```bash
-make -C janeserver binary VERSION=1.5.6
-docker build -f etc/dockerfiles/Dockerfile -t jane-allinone:1.5.6 .
+make -C janeserver binary VERSION=1.6
+docker build -f etc/dockerfiles/Dockerfile -t jane-allinone:1.6 .
 ```
 
 Run it, publishing the five ports:
 
 ```bash
 docker run -d --name jane -p 8520:8520 -p 8540:8540 -p 3270:3270 \
-    -p 1883:1883 -p 8081:8081 jane-allinone:1.5.6
+    -p 1883:1883 -p 8081:8081 jane-allinone:1.6
 docker logs -f jane
 ```
 
@@ -66,8 +66,8 @@ To stop and remove it: `docker rm -f jane` (and `docker volume rm jane-mongodb`)
 `etc/dockerfiles/jane-k8s.yaml` runs the image above: a Namespace `jane`, a Deployment with one replica (one pod: MongoDB and Mosquitto are inside it) on amd64 nodes, and a Service of type `LoadBalancer` with the five ports.
 
 1. Build the image as above and make it available to the cluster:
-   - with a registry: `docker tag jane-allinone:1.5.6 registry.example.org/jane/jane-allinone:1.5.6` and `docker push` it;
-   - on **K3s** without a registry: `docker save jane-allinone:1.5.6 -o jane.tar`, then on each node `sudo k3s ctr images import jane.tar`, and use the image name `docker.io/library/jane-allinone:1.5.6`.
+   - with a registry: `docker tag jane-allinone:1.6 registry.example.org/jane/jane-allinone:1.6` and `docker push` it;
+   - on **K3s** without a registry: `docker save jane-allinone:1.6 -o jane.tar`, then on each node `sudo k3s ctr images import jane.tar`, and use the image name `docker.io/library/jane-allinone:1.6`.
 2. Change the `image:` line in `jane-k8s.yaml` to that name.
 3. Apply it and find the addresses:
 
