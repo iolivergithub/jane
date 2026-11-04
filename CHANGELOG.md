@@ -5,7 +5,11 @@ commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
 ## Unreleased
-- Repository layout: the `localnames` library moved from `localnames/` to `lib/localnames/`, as the module `github.com/iolivergithub/jane/lib/localnames`; `lib/` is for library modules shared by janeserver, tarzan and jp. No change in behaviour.
+- **Shared code in `lib/`.** Code that janeserver, jp and tarzan each had a copy of, kept "in step" by hand, is now one Go library module each under `lib/`: `janeapi` (the element and attestation profile types jp writes and Jane stores, profile name and API key formats), `uefi` (the `UEFI_` rule variables and how their values are written, the measured UEFI state of the `uefi_log` rules), `machineid` and `tpmopen`. `localnames` moved from `localnames/` to `lib/localnames/` (module `github.com/iolivergithub/jane/lib/localnames`). No change in what Jane checks or stores; the differences are below.
+- Fix: tarzan now reads the machine ID as jp does (`/var/lib/dbus/machine-id`, `/etc/hostid` and, on macOS and the BSDs, the kernel's host UUID, after `/etc/machine-id`). Where only those exist, `sys_machineID_CrossRef` failed although nothing had changed.
+- tarzan opens TPMs as jp does: TPM simulators on a Unix socket (`unix:///path`, or a path that is a socket) work for `tpm2/device`. A `tcp://` simulator is refused unless tarzan runs with `-unsafe`, since the caller chooses the address.
+- jp sends a TPM key's `public` and `name` as `""` where it used to leave them out; Jane treats both the same.
+- Fix: `go.mod`/`go.sum` of janeserver, jp and `localnames` were incomplete since `localnames` was added (#127): without a `go.work`, `go build`, `go test`, `make binary` and `make vet` failed with "missing go.sum entry" (`make build` hid it by running `go mod tidy`). `.gitignore` ignored `lib/` (from its Python section); `/lib` is now excepted.
 
 ## [1.6] – 2026-11-01
 No breaking changes: elements, sessions and expected values from 1.5.6 work as before, and sessions without the new fields hash and sign exactly as before.
