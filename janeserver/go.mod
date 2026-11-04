@@ -44,6 +44,6 @@ require (
 )
 
 // localnames: multicast DNS for <name>.local (#127), in this repository
-require github.com/iolivergithub/jane/localnames v0.0.0
+require github.com/iolivergithub/jane/lib/localnames v0.0.0
 
-replace github.com/iolivergithub/jane/localnames => ../localnames
+replace github.com/iolivergithub/jane/lib/localnames => ../lib/localnames

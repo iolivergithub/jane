@@ -9,11 +9,11 @@ without cgo on every architecture.
 DNS failure for a `.local` name is retried with the address from multicast
 DNS. Normal DNS, `/etc/hosts` and IP addresses are unchanged.
 
-It is the module `github.com/iolivergithub/jane/localnames`, used through a
-`replace` to `../localnames` in their `go.mod` files, so it is never
+It is the module `github.com/iolivergithub/jane/lib/localnames`, used through a
+`replace` to `../lib/localnames` in their `go.mod` files, so it is never
 downloaded. (A path with a dot is needed for `go mod verify` to pass.)
 
 To remove it, delete the `localnames.Install()` call and the `localnames`
 lines in `janeserver/go.mod` and `provisioner/go.mod`, then this directory.
 
-See [docs/running.md](../docs/running.md#host-names-ending-in-local).
+See [docs/running.md](../../docs/running.md#host-names-ending-in-local).

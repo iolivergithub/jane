@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/iolivergithub/jane/localnames"
+	"github.com/iolivergithub/jane/lib/localnames"
 )
 
 const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile

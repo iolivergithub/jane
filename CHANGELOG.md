@@ -4,6 +4,9 @@ All notable changes to Jane are listed here, newest first. Days with several
 commits are grouped into a single entry. Versions before 1.0 are assigned
 retrospectively.
 
+## Unreleased
+- Repository layout: the `localnames` library moved from `localnames/` to `lib/localnames/`, as the module `github.com/iolivergithub/jane/lib/localnames`; `lib/` is for library modules shared by janeserver, tarzan and jp. No change in behaviour.
+
 ## [1.6] – 2026-11-01
 No breaking changes: elements, sessions and expected values from 1.5.6 work as before, and sessions without the new fields hash and sign exactly as before.
 - **Attestation profiles (#128–#131).** `jp create` and `jp update` store the provisioning file's `evs:` and `follow:` on the element as a named attestation profile (`defaultattestationprofile`, `attestationprofiledescription`) and make it the default; nothing else writes profiles, and nothing deletes them. Jane runs a profile on request — `POST /element/:itemid/runprov[/:name]` (`?followlimit`, `?parallel`, `?parent`), the Web UI, or the new `jp remoteattest` — through its ordinary attest and verify, with `$variables` scoped to the run, and follows the element's relationships to the profiles of related elements (planned first, each element and profile once, at most 10 levels by default). Each element runs in its own session, recording the profile run (the YAML that ran, options, variables, follow decisions). New endpoint `PUT /element/:itemid/attestationprofile/:name`; `PUT /element` keeps stored profiles. See `docs/attestationprofiles.md` and `docs/provisioning.md`.
