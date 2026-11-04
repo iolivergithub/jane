@@ -1,4 +1,4 @@
-package utilities
+package uefi
 
 import (
 	"encoding/base64"
@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestMeasuredUEFIState(t *testing.T) {
+func TestMeasuredState(t *testing.T) {
 	b, err := os.ReadFile("testdata/cos-85-amd-sev.bin")
 	if err != nil {
 		t.Fatal(err)
@@ -17,7 +17,7 @@ func TestMeasuredUEFIState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := MeasuredUEFIState(el)
+	st, err := MeasuredState(el)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,5 +49,18 @@ func TestSCRTMVersion(t *testing.T) {
 		if got := SCRTMVersion([]byte(in)); got != want {
 			t.Errorf("%q: got %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestValue(t *testing.T) {
+	if got := Value([]byte{1}); got != "01" {
+		t.Errorf("short value: %q", got)
+	}
+	long := make([]byte, InlineLimit+1)
+	if got := Value(long); len(got) != len("sha256:")+64 || got[:7] != "sha256:" {
+		t.Errorf("long value: %q", got)
+	}
+	if got := Value(make([]byte, InlineLimit)); len(got) != 2*InlineLimit {
+		t.Errorf("value at the limit is not hex: %q", got)
 	}
 }

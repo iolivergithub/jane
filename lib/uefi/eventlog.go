@@ -1,16 +1,16 @@
-package utilities
+package uefi
 
 // The measured UEFI state in a UEFI event log (#134): what the firmware
 // measured about Secure Boot into PCR 7 (and its version into PCR 0), as
-// opposed to the variables the running OS reports (uefi/efivars).
-//
-// jp computes the same values for its expected-value type uefieventlog
-// (provisioner/uefieventlog.go); keep the two in step. Both are tested
-// against testdata/cos-85-uefistate.json.
+// opposed to the variables the running OS reports (uefi/efivars). janeserver's
+// uefi_log rules check it against expected values of jp's type uefieventlog,
+// which jp computes with the same code. Tested against
+// testdata/cos-85-uefistate.json.
 
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"sort"
@@ -22,14 +22,32 @@ import (
 	"github.com/google/go-eventlog/tcg"
 )
 
-// UEFIStateVariables are the Secure Boot variables whose measured data the
+// DecodeEventLog base64-decodes an event log as sent by tarzan in a
+// uefi/eventlog claim (body field "eventlog") and parses it. The result is
+// not verified: replay it against PCR values before trusting it.
+func DecodeEventLog(b64 string) (*tcg.EventLog, error) {
+	raw, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, fmt.Errorf("base64 decoding the event log: %w", err)
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("the event log is empty")
+	}
+	el, err := tcg.ParseEventLog(raw, tcg.ParseOpts{AllowPadding: true})
+	if err != nil {
+		return nil, fmt.Errorf("parsing the event log: %w", err)
+	}
+	return el, nil
+}
+
+// StateVariables are the Secure Boot variables whose measured data the
 // uefi_log rules check, by name in the expected value.
-var UEFIStateVariables = []struct{ Name, Key string }{
+var StateVariables = []struct{ Name, Key string }{
 	{"PK", "pk"}, {"KEK", "kek"}, {"db", "db"}, {"dbx", "dbx"},
 }
 
-// UEFIState is the measured state, in the form of an expected value.
-type UEFIState struct {
+// State is the measured state, in the form of an expected value.
+type State struct {
 	Bank            string            // the digest bank the events were read with
 	SecureBoot      string            // "enabled" or "disabled"
 	Variables       map[string]string // "pk", "kek", "db", "dbx" -> "sha256:<hex>" of the measured data, or "absent"
@@ -39,13 +57,13 @@ type UEFIState struct {
 	FirmwareVersion string            // the S-CRTM version (PCR 0), "" if none
 }
 
-// MeasuredUEFIState reads the measured UEFI state from an event log. The
+// MeasuredState reads the measured UEFI state from an event log. The
 // events are not replayed here: they are as good as the log, which
 // tpm2_uefiLogReplay checks against the PCRs. A log go-eventlog considers
 // unsafe (a UEFI debugger, duplicate variables, digests that don't match
 // the data, ...) is an error.
-func MeasuredUEFIState(el *tcg.EventLog) (UEFIState, error) {
-	var st UEFIState
+func MeasuredState(el *tcg.EventLog) (State, error) {
+	var st State
 	if len(el.Algs) == 0 {
 		return st, fmt.Errorf("the event log has no digest banks")
 	}
@@ -95,10 +113,10 @@ func MeasuredUEFIState(el *tcg.EventLog) (UEFIState, error) {
 		}
 	}
 	st.Variables = map[string]string{}
-	for _, v := range UEFIStateVariables {
+	for _, v := range StateVariables {
 		d, ok := st.Data[v.Name]
 		if !ok {
-			st.Variables[v.Key] = "absent"
+			st.Variables[v.Key] = Absent
 			continue
 		}
 		h := sha256.Sum256(d)
@@ -108,7 +126,7 @@ func MeasuredUEFIState(el *tcg.EventLog) (UEFIState, error) {
 }
 
 // EVS is the state as the evs of an expected value (jp's uefieventlog type).
-func (st UEFIState) EVS() map[string]interface{} {
+func (st State) EVS() map[string]interface{} {
 	evs := map[string]interface{}{
 		"secureboot":      st.SecureBoot,
 		"dmaprotection":   st.DMAProtection,

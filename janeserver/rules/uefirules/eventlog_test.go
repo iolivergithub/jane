@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"a10/structures"
-	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 func logClaim(t *testing.T) structures.Claim {
-	b, err := os.ReadFile("../../utilities/testdata/cos-85-amd-sev.bin")
+	b, err := os.ReadFile("../../../lib/uefi/testdata/cos-85-amd-sev.bin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,9 +81,9 @@ func TestLogRulesFail(t *testing.T) {
 
 func TestLogMatchesEfivars(t *testing.T) {
 	logc := logClaim(t)
-	b, _ := os.ReadFile("../../utilities/testdata/cos-85-amd-sev.bin")
-	el, _ := utilities.DecodeEventLog(base64.StdEncoding.EncodeToString(b))
-	st, err := utilities.MeasuredUEFIState(el)
+	b, _ := os.ReadFile("../../../lib/uefi/testdata/cos-85-amd-sev.bin")
+	el, _ := uefi.DecodeEventLog(base64.StdEncoding.EncodeToString(b))
+	st, err := uefi.MeasuredState(el)
 	if err != nil {
 		t.Fatal(err)
 	}

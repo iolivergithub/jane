@@ -8,13 +8,6 @@ import (
 	"unicode/utf8"
 )
 
-// Vendor GUIDs of the UEFI variables Jane knows about
-const (
-	EfiGlobalVariableGUID        = "8be4df61-93ca-11d2-aa0d-00e098032b8c"
-	EfiImageSecurityDatabaseGUID = "d719b2cb-3d3a-4596-a3bc-dad00e67656f"
-	ShimLockGUID                 = "605dab50-e046-4300-abb6-3dd810dd8b23"
-)
-
 // EfiVariable is one UEFI variable from the body of a uefi/efivars claim.
 type EfiVariable struct {
 	Name       string

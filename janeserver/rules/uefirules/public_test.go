@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"a10/structures"
-	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 func efivar(name, guid string, data []byte) map[string]interface{} {
@@ -71,7 +72,7 @@ func TestRegistration(t *testing.T) {
 }
 
 func TestRules(t *testing.T) {
-	g, isdb, shim := utilities.EfiGlobalVariableGUID, utilities.EfiImageSecurityDatabaseGUID, utilities.ShimLockGUID
+	g, isdb, shim := uefi.EfiGlobalVariableGUID, uefi.EfiImageSecurityDatabaseGUID, uefi.ShimLockGUID
 	pk := make([]byte, 900)
 	for i := range pk {
 		pk[i] = byte(i * 7)
@@ -124,7 +125,7 @@ func TestRules(t *testing.T) {
 }
 
 func TestLegacyAgent(t *testing.T) {
-	g := utilities.EfiGlobalVariableGUID
+	g := uefi.EfiGlobalVariableGUID
 	// older tarzan: no rawvalue, the buffer is longer than the value, and PK has invalid UTF-8
 	claim := claimOf(t,
 		map[string]interface{}{"name": "SecureBoot", "guid": g, "attributes": 6, "somevalue": 1, "value": string([]byte{1, 0, 0, 0, 0, 0, 0, 0}), "errorvalue": ""},
@@ -139,7 +140,7 @@ func TestLegacyAgent(t *testing.T) {
 }
 
 func TestReadError(t *testing.T) {
-	claim := claimOf(t, map[string]interface{}{"name": "KEK", "guid": utilities.EfiGlobalVariableGUID, "attributes": 0, "somevalue": 0, "value": "", "errorvalue": "permission denied", "rawvalue": ""})
+	claim := claimOf(t, map[string]interface{}{"name": "KEK", "guid": uefi.EfiGlobalVariableGUID, "attributes": 0, "somevalue": 0, "value": "", "errorvalue": "permission denied", "rawvalue": ""})
 	if got, msg := run(t, "KEK", claim, map[string]interface{}{"KEK": "00"}); got != structures.Fail {
 		t.Errorf("read error: %v %v", got, msg)
 	}
@@ -160,7 +161,7 @@ type kv struct {
 
 // As read back from Mongo: bson.D-like documents and int32/int64 numbers.
 func TestDatabaseShapedBody(t *testing.T) {
-	d := []kv{{"name", "SecureBoot"}, {"guid", utilities.EfiGlobalVariableGUID}, {"attributes", int32(6)}, {"somevalue", int64(1)}, {"value", "\x01"}, {"errorvalue", ""}, {"rawvalue", "AQ=="}}
+	d := []kv{{"name", "SecureBoot"}, {"guid", uefi.EfiGlobalVariableGUID}, {"attributes", int32(6)}, {"somevalue", int64(1)}, {"value", "\x01"}, {"errorvalue", ""}, {"rawvalue", "AQ=="}}
 	claim := structures.Claim{Body: map[string]interface{}{"efivars": []interface{}{d}, "count": int32(1)}}
 	if got, msg := run(t, "SecureBoot", claim, map[string]interface{}{"SecureBoot": "01"}); got != structures.Success {
 		t.Errorf("db-shaped: %v %v", got, msg)

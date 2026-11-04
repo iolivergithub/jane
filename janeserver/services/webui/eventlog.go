@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-eventlog/tcg"
 
 	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 // EventLogEntry is one event of a uefi/eventlog claim, prepared for display.
@@ -48,7 +50,7 @@ func EventLogBody(body map[string]interface{}) EventLogView {
 		view.Error = "the claim has no eventlog field"
 		return view
 	}
-	el, err := utilities.DecodeEventLog(b64)
+	el, err := uefi.DecodeEventLog(b64)
 	if err != nil {
 		view.Error = err.Error()
 		return view
@@ -124,7 +126,7 @@ func describeEvent(typ string, data []byte) string {
 	}
 
 	if typ == "EV_S_CRTM_VERSION" {
-		return "Firmware version: " + utilities.SCRTMVersion(data)
+		return "Firmware version: " + uefi.SCRTMVersion(data)
 	}
 	if s, ok := printableText(data); ok {
 		return s

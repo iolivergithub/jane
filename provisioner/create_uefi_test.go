@@ -10,9 +10,11 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
-// fakePK is a value longer than uefiInlineLimit, so it is recorded by hash.
+// fakePK is a value longer than uefi.InlineLimit, so it is recorded by hash.
 var fakePK = func() []byte {
 	b := make([]byte, 40)
 	for i := range b {
@@ -78,8 +80,8 @@ func TestUEFIEFIVarsEV(t *testing.T) {
 			t.Errorf("evs[%s] = %v, want %v", name, evs[name], want)
 		}
 	}
-	if len(evs) != len(uefiRuleVariables)-1 {
-		t.Errorf("evs has %d entries, want %d (every rule variable but dbx)", len(evs), len(uefiRuleVariables)-1)
+	if len(evs) != len(uefi.RuleVariables)-1 {
+		t.Errorf("evs has %d entries, want %d (every rule variable but dbx)", len(evs), len(uefi.RuleVariables)-1)
 	}
 	if _, ok := evs["BootCurrent"]; ok {
 		t.Error("variables without a UEFI_ rule should not be recorded")
@@ -316,11 +318,11 @@ func TestSkeletonUEFIRulesMatchVariables(t *testing.T) {
 				}
 			}
 		}
-		if len(rules) != len(uefiRuleVariables) {
-			t.Errorf("%s: %d UEFI rules, want %d", f, len(rules), len(uefiRuleVariables))
+		if len(rules) != len(uefi.RuleVariables) {
+			t.Errorf("%s: %d UEFI rules, want %d", f, len(rules), len(uefi.RuleVariables))
 			continue
 		}
-		for i, v := range uefiRuleVariables {
+		for i, v := range uefi.RuleVariables {
 			if rules[i] != "UEFI_"+v.Name {
 				t.Errorf("%s: rule %d is %s, want UEFI_%s", f, i, rules[i], v.Name)
 			}

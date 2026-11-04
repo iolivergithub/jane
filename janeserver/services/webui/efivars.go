@@ -13,6 +13,8 @@ import (
 
 	"a10/rules/uefirules"
 	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 // EfiVar is one UEFI variable from a uefi/efivars claim, prepared for display.
@@ -41,9 +43,9 @@ type EfiVarsView struct {
 }
 
 var efiKnownGUIDs = map[string]string{
-	utilities.EfiGlobalVariableGUID:        "EFI Global Variable",
-	utilities.EfiImageSecurityDatabaseGUID: "Image Security Database",
-	utilities.ShimLockGUID:                 "Shim",
+	uefi.EfiGlobalVariableGUID:             "EFI Global Variable",
+	uefi.EfiImageSecurityDatabaseGUID:      "Image Security Database",
+	uefi.ShimLockGUID:                      "Shim",
 	"4a67b082-0a4c-41cf-b6c7-440b29bb8c4f": "systemd-boot / Loader",
 	"eb704011-1402-11d3-8e77-00a0c969723b": "MTC Vendor",
 	"77fa9abd-0359-4d32-bd60-28f4e78f784b": "Microsoft",
@@ -155,7 +157,7 @@ func makeEfiVar(e utilities.EfiVariable) EfiVar {
 
 // decodeKnownEfiVar interprets the handful of well-known variables whose formats are simple.
 func decodeKnownEfiVar(name, guid string, data []byte) string {
-	if guid != utilities.EfiGlobalVariableGUID {
+	if guid != uefi.EfiGlobalVariableGUID {
 		return ""
 	}
 	switch name {
