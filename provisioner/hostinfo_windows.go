@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iolivergithub/jane/lib/machineid"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -19,15 +20,9 @@ func collectHostInfo() (HostInfo, error) {
 		return HostInfo{}, err
 	}
 
-	crypto, err := registry.OpenKey(registry.LOCAL_MACHINE,
-		`SOFTWARE\Microsoft\Cryptography`, registry.QUERY_VALUE|registry.WOW64_64KEY)
+	mid, err := machineid.Get() // MachineGuid
 	if err != nil {
-		return HostInfo{}, fmt.Errorf("opening Cryptography key: %w", err)
-	}
-	defer crypto.Close()
-	mid, _, err := crypto.GetStringValue("MachineGuid")
-	if err != nil {
-		return HostInfo{}, fmt.Errorf("reading MachineGuid: %w", err)
+		return HostInfo{}, err
 	}
 
 	osName := "Windows"

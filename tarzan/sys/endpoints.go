@@ -8,6 +8,7 @@ import (
 
 	"ta10/common"
 
+	"github.com/iolivergithub/jane/lib/machineid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -36,17 +37,16 @@ func getHostname() string {
 }
 
 func Sysinfo(c echo.Context) error {
-	var machineid string
-
 	fmt.Println("sysinfo called")
 
-	machineid = machineID()
-	if machineid != "" {
-		fmt.Printf("Machine id: %v %v\n", len(machineid), machineid)
+	// the same machine ID as jp records on the element; "" if there is none
+	mid, _ := machineid.Get()
+	if mid != "" {
+		fmt.Printf("Machine id: %v %v\n", len(mid), mid)
 	}
 
 	ncpus := runtime.NumCPU()
-	s := sysinfoReturn{runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid(), os.Getuid(), utilities.RUNSESSION, machineid}
+	s := sysinfoReturn{runtime.GOOS, runtime.GOARCH, ncpus, getHostname(), utilities.IsUnsafe(), os.Getpid(), os.Getppid(), os.Getuid(), utilities.RUNSESSION, mid}
 
 	return c.JSON(http.StatusOK, s)
 }

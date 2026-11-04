@@ -25,3 +25,9 @@ require (
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 )
+
+// Library modules in this repository (lib/), used through replace so they
+// are never downloaded
+require github.com/iolivergithub/jane/lib/machineid v0.0.0 // machine ID, the same as jp records
+
+replace github.com/iolivergithub/jane/lib/machineid => ../lib/machineid
