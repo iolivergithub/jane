@@ -18,7 +18,11 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 )
 
-require google.golang.org/protobuf v1.34.2 // indirect
+require (
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/mdns/v2 v2.2.2 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
+)
 
 require (
 	github.com/golang/snappy v1.0.0 // indirect

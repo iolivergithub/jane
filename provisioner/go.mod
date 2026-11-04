@@ -9,7 +9,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require google.golang.org/protobuf v1.34.2 // indirect
+require (
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/mdns/v2 v2.2.2 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
+)
 
 // localnames: multicast DNS for <name>.local (#127), in this repository
 require github.com/iolivergithub/jane/lib/localnames v0.0.0

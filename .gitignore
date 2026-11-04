@@ -52,6 +52,8 @@ downloads/
 eggs/
 .eggs/
 lib/
+# ... but /lib holds Jane's shared Go library modules
+!/lib/
 lib64/
 parts/
 sdist/
