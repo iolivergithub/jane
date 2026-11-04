@@ -9,12 +9,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"os"
-	"runtime"
 	"slices"
 	"testing"
 
 	"github.com/google/go-tpm/tpm2"
 	"github.com/google/go-tpm/tpm2/transport"
+
+	"github.com/iolivergithub/jane/lib/tpmopen"
 )
 
 func TestParseHandle(t *testing.T) {
@@ -52,21 +53,8 @@ func TestAKTemplate(t *testing.T) {
 	}
 }
 
-func TestOpenErrors(t *testing.T) {
-	bad := []string{"tcp://no-port", "tcp://localhost:notaport", "tcp://localhost:0"}
-	if runtime.GOOS != "windows" {
-		bad = append(bad, "http://x", "/nonexistent/tpm", "unix:///nonexistent/sock")
-	}
-	for _, d := range bad {
-		if tp, _, err := Open(d); err == nil {
-			tp.Close()
-			t.Errorf("Open(%q) succeeded", d)
-		}
-	}
-}
-
 // openTestTPM opens the TPM for the integration test. By default it uses the
-// device in JP_TEST_TPM (any form Open accepts); builds can replace it, e.g.
+// device in JP_TEST_TPM (any form tpmopen.Open accepts); builds can replace it, e.g.
 // with an in-process simulator.
 var openTestTPM = func(t *testing.T) transport.TPMCloser {
 	dev, ok := os.LookupEnv("JP_TEST_TPM")
@@ -74,7 +62,7 @@ var openTestTPM = func(t *testing.T) transport.TPMCloser {
 		t.Skip("set JP_TEST_TPM to a TPM (device path, unix://, tcp://, or empty for the default) to run; " +
 			"it creates and evicts keys at 0x817FFFE0 and 0x817FFFE1")
 	}
-	tp, desc, err := Open(dev)
+	tp, desc, err := tpmopen.Open(dev)
 	if err != nil {
 		t.Fatal(err)
 	}

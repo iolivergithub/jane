@@ -1,6 +1,6 @@
 //go:build !windows
 
-package tpm
+package tpmopen
 
 import (
 	"errors"

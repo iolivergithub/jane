@@ -28,6 +28,12 @@ require (
 
 // Library modules in this repository (lib/), used through replace so they
 // are never downloaded
-require github.com/iolivergithub/jane/lib/machineid v0.0.0 // machine ID, the same as jp records
+require (
+	github.com/iolivergithub/jane/lib/machineid v0.0.0 // machine ID, the same as jp records
+	github.com/iolivergithub/jane/lib/tpmopen v0.0.0 // opening a TPM, shared with jp
+)
 
-replace github.com/iolivergithub/jane/lib/machineid => ../lib/machineid
+replace (
+	github.com/iolivergithub/jane/lib/machineid => ../lib/machineid
+	github.com/iolivergithub/jane/lib/tpmopen => ../lib/tpmopen
+)

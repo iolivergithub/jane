@@ -18,6 +18,8 @@ Note, some parameters may be set in the element definition or overridden by any 
 
 On Windows machines the tpm2/device parameter has no effect as the operating system decides which device to use.
 
+tarzan accepts the same `tpm2/device` forms as jp: a device such as `/dev/tpmrm0`, or a TPM simulator on a Unix socket (`unix:///path`, or a path that is a socket). A simulator over TCP (`tcp://host:port`) would make tarzan connect to an address the caller chose, so tarzan refuses it unless started with `-unsafe`.
+
 The allowed banks are sha1, sha256, sha384 and sha512. Not all TPMs support all banks.
 
 ## tpm2/pcrs

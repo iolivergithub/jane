@@ -162,7 +162,7 @@ func main() {
 	flagIMA := flag.Bool("ima", false, "Expose the ima attestation API")
 	flagTXT := flag.Bool("txt", false, "Expose the txt attestation API")
 
-	flagUNSAFEFILEACCESS := flag.Bool("unsafe", false, "Allow caller to request ANY file instead of the default UEFI and IMA locations. THIS IS UNSAFE!")
+	flagUNSAFEFILEACCESS := flag.Bool("unsafe", false, "Allow caller to request ANY file instead of the default UEFI and IMA locations, and a tcp:// TPM simulator. THIS IS UNSAFE!")
 
 	flagPort := flag.String("port", "8530", "Run the TA on the given port. Defaults to 8530")
 

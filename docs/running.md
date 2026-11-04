@@ -167,7 +167,7 @@ At least one API must be enabled.
 | `-ima` | Linux IMA measurement log |
 | `-txt` | Intel TXT log (not implemented yet) |
 | `-port=N` | listen on port N (default 8530) |
-| `-unsafe` | **never use**: lets callers ask for any file instead of the standard log locations, i.e. read any file as root |
+| `-unsafe` | **never use**: lets callers ask for any file instead of the standard log locations, i.e. read any file as root, and use a `tcp://` TPM simulator, i.e. make tarzan connect to any address |
 
 Flags may be written with one or two dashes (`-tpm2` or `--tpm2`).
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-tpm/tpm2"
+	"github.com/iolivergithub/jane/lib/tpmopen"
 
 	"jp/tpm"
 )
@@ -372,7 +373,7 @@ type tpmConn struct {
 }
 
 func openTPMDevice(device string) (TPMDevice, string, error) {
-	t, desc, err := tpm.Open(device)
+	t, desc, err := tpmopen.Open(device)
 	if err != nil {
 		return nil, "", err
 	}

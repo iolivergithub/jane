@@ -1,6 +1,6 @@
 //go:build windows
 
-package tpm
+package tpmopen
 
 import (
 	"github.com/google/go-tpm/tpm2/transport"

@@ -1,4 +1,7 @@
-package tpm
+// Package tpmopen opens a TPM 2.0 from a device string, for jp and tarzan:
+// a character device, TPM Base Services on Windows, or a TPM simulator on a
+// Unix socket or TCP.
+package tpmopen
 
 import (
 	"fmt"
@@ -48,4 +51,11 @@ func openTCP(addr string) (transport.TPMCloser, string, error) {
 		return nil, "", err
 	}
 	return t, "TPM simulator at " + addr, nil
+}
+
+// IsNetwork reports whether device names a TPM simulator reached over the
+// network (tcp://). A program that takes the device from a remote caller,
+// as tarzan does, can refuse these so a caller cannot make it connect out.
+func IsNetwork(device string) bool {
+	return strings.HasPrefix(strings.TrimSpace(device), "tcp://")
 }
