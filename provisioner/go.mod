@@ -12,7 +12,7 @@ require (
 	github.com/google/go-eventlog v0.0.2 // indirect
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/mdns/v2 v2.2.2 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
 
