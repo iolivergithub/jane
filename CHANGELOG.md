@@ -9,6 +9,7 @@ retrospectively.
 - Fix: tarzan now reads the machine ID as jp does (`/var/lib/dbus/machine-id`, `/etc/hostid` and, on macOS and the BSDs, the kernel's host UUID, after `/etc/machine-id`). Where only those exist, `sys_machineID_CrossRef` failed although nothing had changed.
 - Fix: tarzan builds for the BSDs and macOS again. Its UEFI variable library (github.com/0x5a17ed/uefi) builds only for Linux and Windows, so `uefi/efivars` and `uefi/bootconfig` now answer HTTP 501 "not supported" elsewhere, with a warning at start-up; everything else works.
 - tarzan opens TPMs as jp does: TPM simulators on a Unix socket (`unix:///path`, or a path that is a socket) work for `tpm2/device`. A `tcp://` simulator is refused unless tarzan runs with `-unsafe`, since the caller chooses the address.
+- Tests: the tests that ran against a real TPM when `JANE_TEST_TPM`, `TARZAN_TEST_TPM` or `JP_TEST_TPM` was set are removed; `go test ./...` needs no TPM and no environment variables.
 - jp sends a TPM key's `public` and `name` as `""` where it used to leave them out; Jane treats both the same.
 - Fix: `go.mod`/`go.sum` of janeserver, jp and `localnames` were incomplete since `localnames` was added (#127): without a `go.work`, `go build`, `go test`, `make binary` and `make vet` failed with "missing go.sum entry" (`make build` hid it by running `go mod tidy`). `.gitignore` ignored `lib/` (from its Python section); `/lib` is now excepted.
 

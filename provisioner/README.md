@@ -253,11 +253,7 @@ password if unset, as with tpm2-tools' defaults.
 
     go test ./...
 
-Unit tests use a fake Jane server and an in-memory TPM. The TPM integration
-test (`tpm.TestProvisioning`) needs a TPM and is skipped unless `JP_TEST_TPM`
-is set, to a device (`/dev/tpmrm0`), `unix://…`, `tcp://…`, or empty for the
-default. It creates and evicts keys at 0x817FFFE0 and 0x817FFFE1, and checks
-that a quote from the new AK verifies with its exported PEM key.
+Unit tests use a fake Jane server and an in-memory TPM; none needs a real TPM.
 
 ## Differences from jp.py
 

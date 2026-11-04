@@ -104,7 +104,7 @@ go test ./...
 
 and in each module under `lib/`, `go test ./...`.
 
-Tests that need a real TPM are skipped unless an environment variable names the device: `JANE_TEST_TPM` (janeserver), `TARZAN_TEST_TPM` (tarzan), `JP_TEST_TPM` (jp), e.g. `TARZAN_TEST_TPM=/dev/tpmrm0 go test ./tpm2`. They create only transient objects. Some jp tests check behaviour without root and are skipped when run as root.
+The tests need no TPM. Some jp tests check behaviour without root and are skipped when run as root.
 
 ## Building the packages
 
