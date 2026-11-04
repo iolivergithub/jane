@@ -19,6 +19,7 @@ require (
 // Library modules in this repository (lib/), used through replace so they
 // are never downloaded
 require (
+	github.com/iolivergithub/jane/lib/janeapi v0.0.0 // types and formats shared with Jane over the REST API
 	github.com/iolivergithub/jane/lib/localnames v0.0.0 // multicast DNS for <name>.local (#127)
 	github.com/iolivergithub/jane/lib/machineid v0.0.0 // machine ID, the same as tarzan reports
 	github.com/iolivergithub/jane/lib/tpmopen v0.0.0 // opening a TPM, shared with tarzan
@@ -26,6 +27,7 @@ require (
 )
 
 replace (
+	github.com/iolivergithub/jane/lib/janeapi => ../lib/janeapi
 	github.com/iolivergithub/jane/lib/localnames => ../lib/localnames
 	github.com/iolivergithub/jane/lib/machineid => ../lib/machineid
 	github.com/iolivergithub/jane/lib/tpmopen => ../lib/tpmopen

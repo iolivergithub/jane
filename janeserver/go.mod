@@ -50,11 +50,13 @@ require (
 // Library modules in this repository (lib/), used through replace so they
 // are never downloaded
 require (
+	github.com/iolivergithub/jane/lib/janeapi v0.0.0 // types and formats shared with jp over the REST API
 	github.com/iolivergithub/jane/lib/localnames v0.0.0 // multicast DNS for <name>.local (#127)
 	github.com/iolivergithub/jane/lib/uefi v0.0.0 // UEFI variables and measured state, shared with jp
 )
 
 replace (
+	github.com/iolivergithub/jane/lib/janeapi => ../lib/janeapi
 	github.com/iolivergithub/jane/lib/localnames => ../lib/localnames
 	github.com/iolivergithub/jane/lib/uefi => ../lib/uefi
 )

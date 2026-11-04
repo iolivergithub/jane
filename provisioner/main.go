@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/iolivergithub/jane/lib/localnames"
+
+	"github.com/iolivergithub/jane/lib/janeapi"
 )
 
 const usage = `usage: jp [-h] [--reprovisiontpm] [--recreate] [--apikeyfile PATH] operation pfile
@@ -246,19 +248,9 @@ func apiKey(file *string, getenv func(string) string, readFile func(string) ([]b
 	return key, nil
 }
 
-// validAPIKey mirrors Jane's check (auth/restkeys.go): "jane_" and 43 base64url characters.
-func validAPIKey(k string) bool {
-	const prefix = "jane_"
-	if len(k) != len(prefix)+43 || !strings.HasPrefix(k, prefix) {
-		return false
-	}
-	for _, ch := range k[len(prefix):] {
-		if !(ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-' || ch == '_') {
-			return false
-		}
-	}
-	return true
-}
+// validAPIKey is Jane's check (lib/janeapi): "jane_" and 43 base64url
+// characters.
+func validAPIKey(k string) bool { return janeapi.ValidAPIKey(k) }
 
 // insecureRemote reports whether the attestation server URL is plain HTTP to
 // a host other than this machine.

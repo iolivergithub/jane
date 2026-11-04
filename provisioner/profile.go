@@ -10,17 +10,17 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
+
+	"github.com/iolivergithub/jane/lib/janeapi"
 )
 
 // defaultProfileName is used when the provisioning file names no profile.
 const defaultProfileName = "default"
 
-var profileNameRE = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
-
-// validProfileName mirrors Jane's check: letters, digits, _ and -, at most 64.
-func validProfileName(n string) bool { return profileNameRE.MatchString(n) }
+// validProfileName is Jane's check (lib/janeapi): letters, digits, _ and -,
+// at most 64.
+func validProfileName(n string) bool { return janeapi.ValidProfileName(n) }
 
 // checkProfile checks the profile names in the file before anything runs
 // (exit 2 on a mistake, like the variables).
@@ -39,26 +39,12 @@ func (p *ProvisioningFile) checkProfile() error {
 	return nil
 }
 
-// The profile as Jane stores it (janeserver structures.AttestationProfile).
-type AttestationProfile struct {
-	Description string        `json:"description,omitempty"`
-	Steps       []ProfileStep `json:"steps,omitempty"`
-	Follow      []FollowSpec  `json:"follow,omitempty"`
-}
-
-type ProfileStep struct {
-	Intent   string        `json:"intent"`
-	Endpoint string        `json:"endpoint"`
-	CID      string        `json:"cid,omitempty"`
-	Rules    []ProfileRule `json:"rules,omitempty"`
-}
-
-type ProfileRule struct {
-	Name       string         `json:"name"`
-	RID        string         `json:"rid,omitempty"`
-	ResVar     string         `json:"resvar,omitempty"`
-	Parameters map[string]any `json:"parameters,omitempty"`
-}
+// The profile as Jane stores it (lib/janeapi, shared with janeserver).
+type (
+	AttestationProfile = janeapi.AttestationProfile
+	ProfileStep        = janeapi.ProfileStep
+	ProfileRule        = janeapi.ProfileRule
+)
 
 // profileName is the name of the profile this file writes.
 func (p *ProvisioningFile) profileName() string {

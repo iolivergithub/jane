@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/iolivergithub/jane/lib/janeapi"
 )
 
 // ProvisioningFile is the YAML provisioning file (see skeleton/full.yaml).
@@ -28,10 +30,7 @@ type ProvisioningFile struct {
 
 // FollowSpec is one entry of follow: run Profile (empty: the related
 // element's default) on every element this one has a Relationship to.
-type FollowSpec struct {
-	Relationship string `yaml:"relationship" json:"relationship"`
-	Profile      string `yaml:"profile" json:"profile,omitempty"`
-}
+type FollowSpec = janeapi.ProfileFollow
 
 type ElementConfig struct {
 	Name        string   `yaml:"name"`
@@ -41,29 +40,13 @@ type ElementConfig struct {
 	ElementType string `yaml:"elementtype"`
 }
 
-// Endpoint matches janeserver's structures.Endpoint.
-type Endpoint struct {
-	Endpoint string `yaml:"endpoint" json:"endpoint"`
-	Protocol string `yaml:"protocol" json:"protocol"`
-}
-
-// TPM2 matches janeserver's structures.TPM2. Handles are strings; yaml.v3
-// keeps the literal text of an unquoted hex scalar such as 0x810100EE.
-type TPM2 struct {
-	Device       string `yaml:"device" json:"device"`
-	EKCertHandle string `yaml:"ekcerthandle" json:"ekcerthandle"`
-	EK           TPMKey `yaml:"ek" json:"ek"`
-	AK           TPMKey `yaml:"ak" json:"ak"`
-	// PCRNaming: the register naming scheme for this TPM's PCRs, e.g.
-	// tcg-pcclient-uefi (the default), linux-uefi, windows-bitlocker (#101)
-	PCRNaming string `yaml:"pcrnaming,omitempty" json:"pcrnaming,omitempty"`
-}
-
-type TPMKey struct {
-	Handle string `yaml:"handle" json:"handle"`
-	Public string `yaml:"public,omitempty" json:"public,omitempty"`
-	Name   string `yaml:"name,omitempty" json:"name,omitempty"`
-}
+// Endpoint, TPM2 and TPMKey are the element's parts as Jane stores them
+// (lib/janeapi, shared with janeserver).
+type (
+	Endpoint = janeapi.Endpoint
+	TPM2     = janeapi.TPM2
+	TPMKey   = janeapi.TPMKey
+)
 
 // EVSpec is the body of one entry in the evs list. CID, if set, names a
 // variable that holds the itemid of the claim made for this intent (#72).
