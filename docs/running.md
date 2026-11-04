@@ -187,7 +187,7 @@ sudo ./tarzan -sys -tpm2 -uefi -ima
 
 **Deb install (systemd):** the packaged unit starts `-sys -tpm2 -uefi -ima` and reads `/etc/opt/jane/tarzan.env`; see [Installing with dpkg/apt](deb.md).
 
-**OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`:
+**OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`. On the BSDs and macOS tarzan cannot read UEFI variables (`uefi/efivars` answers "not supported"); the other APIs work as on Linux.
 
 ```sh
 #!/bin/ksh

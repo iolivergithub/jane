@@ -141,6 +141,8 @@ The contents will vary by operating system.
 
 Returns UEFI variables (Secure Boot state, PK, KEK, db, dbx, MOK lists, SBAT level and the factory defaults) from `/sys/firmware/efi/efivars`. No parameters. Checked by the `UEFI_*` rules against an expected value recorded by jp (type `uefiefivars`).
 
+tarzan reads UEFI variables on Linux and Windows only; elsewhere (the BSDs, macOS) `uefi/efivars` and `uefi/bootconfig` answer HTTP 501 "not supported".
+
 ## uefi/bootconfig
 
 Meant to return the UEFI boot configuration (BootCurrent, BootOrder, BootNext). Not implemented yet: tarzan answers with a message saying so. No parameters.
