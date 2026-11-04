@@ -25,6 +25,10 @@ var BUILD string = "not set"
 
 const PREFIX = ""
 
+// efivarsSupported: whether uefi/efivars works on this OS (read here, where
+// the package name is not shadowed by the uefi flag).
+const efivarsSupported = uefi.EfivarsSupported
+
 // Provides the standard welcome message to stdout.
 func welcomeMessage(unsafe bool) {
 	fmt.Printf("\n")
@@ -80,6 +84,9 @@ func startRESTInterface(sys, tpm2, uefi, ima, txt bool, p *string) {
 	}
 	if uefi == true {
 		fmt.Println("   +-- UEFI attestation API enabled")
+		if !efivarsSupported {
+			fmt.Printf("   +-- WARNING: tarzan cannot read UEFI variables on %v; uefi/efivars and uefi/bootconfig will answer \"not supported\"\n", runtime.GOOS)
+		}
 		setupUEFIendpoints(router)
 	}
 	if ima == true {
@@ -162,7 +169,7 @@ func main() {
 	flagIMA := flag.Bool("ima", false, "Expose the ima attestation API")
 	flagTXT := flag.Bool("txt", false, "Expose the txt attestation API")
 
-	flagUNSAFEFILEACCESS := flag.Bool("unsafe", false, "Allow caller to request ANY file instead of the default UEFI and IMA locations. THIS IS UNSAFE!")
+	flagUNSAFEFILEACCESS := flag.Bool("unsafe", false, "Allow caller to request ANY file instead of the default UEFI and IMA locations, and a tcp:// TPM simulator. THIS IS UNSAFE!")
 
 	flagPort := flag.String("port", "8530", "Run the TA on the given port. Defaults to 8530")
 

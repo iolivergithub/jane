@@ -17,6 +17,7 @@ import (
 	"a10/logging"
 	"a10/structures"
 
+	"github.com/iolivergithub/jane/lib/janeapi"
 	"go.mongodb.org/mongo-driver/bson"
 	"gopkg.in/yaml.v3"
 )
@@ -31,12 +32,11 @@ var (
 	ErrorNoDefault       = errors.New("the element has no default attestation profile")
 )
 
-var profileName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
-
 // ValidProfileName reports whether name may name an attestation profile; such
-// names are safe in URLs and as MongoDB field names.
+// names are safe in URLs and as MongoDB field names. jp checks the same
+// (lib/janeapi).
 func ValidProfileName(name string) bool {
-	return profileName.MatchString(name)
+	return janeapi.ValidProfileName(name)
 }
 
 var variableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)

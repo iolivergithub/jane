@@ -21,38 +21,13 @@ import (
 
 	"a10/structures"
 	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
-// Variable is a UEFI variable that has a UEFI_ rule.
-type Variable struct {
-	Name        string
-	GUID        string
-	Description string
-}
-
-// Variables lists the variables checked by the UEFI_ rules, in registration order.
-// provisioner/uefi.go (uefiRuleVariables) records expected values for the same list; keep them in step.
-var Variables = []Variable{
-	// static, security relevant
-	{"SecureBoot", utilities.EfiGlobalVariableGUID, "Secure Boot enabled state"},
-	{"SetupMode", utilities.EfiGlobalVariableGUID, "Setup mode; 1 means no PK is enrolled and keys can be enrolled without authentication"},
-	{"AuditMode", utilities.EfiGlobalVariableGUID, "Audit mode"},
-	{"DeployedMode", utilities.EfiGlobalVariableGUID, "Deployed mode"},
-	{"VendorKeys", utilities.EfiGlobalVariableGUID, "Whether the Secure Boot keys are unmodified from the vendor's"},
-	{"PK", utilities.EfiGlobalVariableGUID, "Platform Key"},
-	{"KEK", utilities.EfiGlobalVariableGUID, "Key Exchange Keys"},
-	{"db", utilities.EfiImageSecurityDatabaseGUID, "Allowed signature database"},
-	{"MokSBStateRT", utilities.ShimLockGUID, "Shim validation state; normally absent, present means shim signature checking is disabled"},
-	// expected to be updated deliberately
-	{"dbx", utilities.EfiImageSecurityDatabaseGUID, "Forbidden signature database (revocations)"},
-	{"SbatLevelRT", utilities.ShimLockGUID, "SBAT revocation level"},
-	{"MokListRT", utilities.ShimLockGUID, "Machine Owner Keys"},
-	{"MokListXRT", utilities.ShimLockGUID, "Forbidden Machine Owner Keys"},
-	{"PKDefault", utilities.EfiGlobalVariableGUID, "Factory default Platform Key"},
-	{"KEKDefault", utilities.EfiGlobalVariableGUID, "Factory default Key Exchange Keys"},
-	{"dbDefault", utilities.EfiGlobalVariableGUID, "Factory default allowed signature database"},
-	{"dbxDefault", utilities.EfiGlobalVariableGUID, "Factory default forbidden signature database"},
-}
+// Variables lists the variables checked by the UEFI_ rules, in registration
+// order: uefi.RuleVariables, from which jp also records expected values.
+var Variables = uefi.RuleVariables
 
 // RuleName is the name of the rule that checks the named variable.
 func RuleName(variable string) string {
@@ -73,15 +48,13 @@ func Registration() []structures.Rule {
 	return append(rules, logRegistration()...)
 }
 
-func ruleFor(v Variable) structures.RuleCall {
+func ruleFor(v uefi.Variable) structures.RuleCall {
 	return func(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 		return checkVariable(v, claim, ev)
 	}
 }
 
-const absent = "absent"
-
-func checkVariable(v Variable, claim structures.Claim, ev structures.ExpectedValue) (structures.ResultValue, string, error) {
+func checkVariable(v uefi.Variable, claim structures.Claim, ev structures.ExpectedValue) (structures.ResultValue, string, error) {
 	evEntry, ok := ev.EVS[v.Name]
 	if !ok || evEntry == nil {
 		return structures.Fail, fmt.Sprintf("Expected value %v does not mention %v", ev.Name, v.Name), nil
@@ -95,7 +68,7 @@ func checkVariable(v Variable, claim structures.Claim, ev structures.ExpectedVal
 
 	got, present := body.Find(v.Name, v.GUID)
 
-	if expected == absent {
+	if expected == uefi.Absent {
 		if present {
 			return structures.Fail, fmt.Sprintf("%v is present but expected to be absent", v.Name), nil
 		}
@@ -123,7 +96,7 @@ func checkVariable(v Variable, claim structures.Claim, ev structures.ExpectedVal
 
 	expectedBytes, err := hex.DecodeString(expected)
 	if err != nil {
-		return structures.Fail, fmt.Sprintf("Expected value for %v is neither hex, sha256:<hex> nor %q: %v", v.Name, absent, evEntry), err
+		return structures.Fail, fmt.Sprintf("Expected value for %v is neither hex, sha256:<hex> nor %q: %v", v.Name, uefi.Absent, evEntry), err
 	}
 	if bytes.Equal(got.Data, expectedBytes) {
 		return structures.Success, fmt.Sprintf("%v matches (%v)", v.Name, describe(got.Data)), nil
@@ -149,11 +122,8 @@ func normalise(s string) string {
 	return prefix + s
 }
 
-// describe shows short values as hex and long ones by their SHA-256, to keep messages readable.
+// describe shows short values as hex and long ones by their SHA-256, as an
+// expected value writes them, to keep messages readable.
 func describe(b []byte) string {
-	if len(b) <= 32 {
-		return hex.EncodeToString(b)
-	}
-	h := sha256.Sum256(b)
-	return "sha256:" + hex.EncodeToString(h[:])
+	return uefi.Value(b)
 }

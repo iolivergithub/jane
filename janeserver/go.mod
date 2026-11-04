@@ -18,7 +18,11 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 )
 
-require google.golang.org/protobuf v1.34.2 // indirect
+require (
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/mdns/v2 v2.2.2 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
+)
 
 require (
 	github.com/golang/snappy v1.0.0 // indirect
@@ -36,14 +40,23 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/crypto v0.58.0
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 )
 
-// localnames: multicast DNS for <name>.local (#127), in this repository
-require github.com/iolivergithub/jane/localnames v0.0.0
+// Library modules in this repository (lib/), used through replace so they
+// are never downloaded
+require (
+	github.com/iolivergithub/jane/lib/janeapi v0.0.0 // types and formats shared with jp over the REST API
+	github.com/iolivergithub/jane/lib/localnames v0.0.0 // multicast DNS for <name>.local (#127)
+	github.com/iolivergithub/jane/lib/uefi v0.0.0 // UEFI variables and measured state, shared with jp
+)
 
-replace github.com/iolivergithub/jane/localnames => ../localnames
+replace (
+	github.com/iolivergithub/jane/lib/janeapi => ../lib/janeapi
+	github.com/iolivergithub/jane/lib/localnames => ../lib/localnames
+	github.com/iolivergithub/jane/lib/uefi => ../lib/uefi
+)

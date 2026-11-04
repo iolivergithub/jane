@@ -74,7 +74,7 @@ func copyBank(b map[string]interface{}) map[string]interface{} {
 }
 
 func TestUEFILogReplay(t *testing.T) {
-	raw, err := os.ReadFile("../../utilities/testdata/cos-85-amd-sev.bin")
+	raw, err := os.ReadFile("../../../lib/uefi/testdata/cos-85-amd-sev.bin")
 	if err != nil {
 		t.Fatal(err)
 	}

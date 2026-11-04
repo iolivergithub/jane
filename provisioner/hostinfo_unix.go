@@ -3,10 +3,9 @@
 package main
 
 import (
-	"errors"
 	"os"
-	"strings"
 
+	"github.com/iolivergithub/jane/lib/machineid"
 	"golang.org/x/sys/unix"
 )
 
@@ -22,7 +21,7 @@ func collectHostInfo() (HostInfo, error) {
 	if err != nil {
 		return HostInfo{}, err
 	}
-	mid, err := machineID()
+	mid, err := machineid.Get()
 	if err != nil {
 		return HostInfo{}, err
 	}
@@ -33,19 +32,4 @@ func collectHostInfo() (HostInfo, error) {
 		Hostname:  h,
 		MachineID: mid,
 	}, nil
-}
-
-// firstLineOf returns the first non-empty first line among files.
-func firstLineOf(files ...string) (string, error) {
-	for _, f := range files {
-		b, err := os.ReadFile(f)
-		if err != nil {
-			continue
-		}
-		line, _, _ := strings.Cut(string(b), "\n")
-		if line = strings.TrimSpace(line); line != "" {
-			return line, nil
-		}
-	}
-	return "", errors.New("no machine ID found in " + strings.Join(files, ", "))
 }

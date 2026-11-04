@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"a10/utilities"
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 func efivarsBody(t *testing.T, vars ...map[string]interface{}) map[string]interface{} {
@@ -31,7 +31,7 @@ func raw(name, guid string, attrs int, data []byte) map[string]interface{} {
 }
 
 func TestEfiVarsView(t *testing.T) {
-	g := utilities.EfiGlobalVariableGUID
+	g := uefi.EfiGlobalVariableGUID
 	bootorder := []byte{1, 0, 3, 0}
 	boot0001 := append([]byte{1, 0, 0, 0, 4, 0}, []byte{'u', 0, 'b', 0, 'u', 0, 'n', 0, 't', 0, 'u', 0, 0, 0, 0x7f, 0xff, 4, 0}...)
 	pk := bytes.Repeat([]byte{0xa1, 0x59, 0xc0}, 40)

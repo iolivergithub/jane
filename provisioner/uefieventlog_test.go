@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-// jp's uefieventlog values equal janeserver's for the same log (#134).
+// jp's uefieventlog values are the measured state of the log (#134).
 func TestUEFIEventLogEVsMatchJane(t *testing.T) {
-	b, err := os.ReadFile("../janeserver/utilities/testdata/cos-85-amd-sev.bin")
+	b, err := os.ReadFile("../lib/uefi/testdata/cos-85-amd-sev.bin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestUEFIEventLogEVsMatchJane(t *testing.T) {
 	var golden struct {
 		EVS map[string]any `json:"evs"`
 	}
-	g, _ := os.ReadFile("../janeserver/utilities/testdata/cos-85-uefistate.json")
+	g, _ := os.ReadFile("../lib/uefi/testdata/cos-85-uefistate.json")
 	if err := json.Unmarshal(g, &golden); err != nil {
 		t.Fatal(err)
 	}

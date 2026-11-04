@@ -167,7 +167,7 @@ At least one API must be enabled.
 | `-ima` | Linux IMA measurement log |
 | `-txt` | Intel TXT log (not implemented yet) |
 | `-port=N` | listen on port N (default 8530) |
-| `-unsafe` | **never use**: lets callers ask for any file instead of the standard log locations, i.e. read any file as root |
+| `-unsafe` | **never use**: lets callers ask for any file instead of the standard log locations, i.e. read any file as root, and use a `tcp://` TPM simulator, i.e. make tarzan connect to any address |
 
 Flags may be written with one or two dashes (`-tpm2` or `--tpm2`).
 
@@ -187,7 +187,7 @@ sudo ./tarzan -sys -tpm2 -uefi -ima
 
 **Deb install (systemd):** the packaged unit starts `-sys -tpm2 -uefi -ima` and reads `/etc/opt/jane/tarzan.env`; see [Installing with dpkg/apt](deb.md).
 
-**OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`:
+**OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`. On the BSDs and macOS tarzan cannot read UEFI variables (`uefi/efivars` answers "not supported"); the other APIs work as on Linux.
 
 ```sh
 #!/bin/ksh

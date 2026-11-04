@@ -10,9 +10,9 @@ import (
 )
 
 // eventLogClaimBody is a uefi/eventlog claim body as tarzan sends it, for the
-// COS 85 test log (see utilities/testdata/README.md).
+// COS 85 test log (see lib/uefi/testdata/README.md).
 func eventLogClaimBody(t *testing.T) map[string]interface{} {
-	raw, err := os.ReadFile("../../utilities/testdata/cos-85-amd-sev.bin")
+	raw, err := os.ReadFile("../../../lib/uefi/testdata/cos-85-amd-sev.bin")
 	if err != nil {
 		t.Fatal(err)
 	}

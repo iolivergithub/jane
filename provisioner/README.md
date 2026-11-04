@@ -187,19 +187,18 @@ element, intent and endpoint (created by `create`, replaced by `update`):
   `tpm2_ekCertIssuer`.
 - `uefieventlog` (1.6): the Secure Boot state measured in the UEFI event log
   (`secureboot`, `pk`, `kek`, `db`, `dbx`, `authorities`, `dmaprotection`,
-  `firmwareversion`), for the `uefi_log` rules. It is computed as
-  janeserver's `utilities/uefistate.go` does (`uefieventlog.go`; both are
-  tested against the same golden file). A log that can't be parsed is
-  reported and nothing is recorded; the run carries on.
+  `firmwareversion`), for the `uefi_log` rules, computed by the same code
+  as the rules use (`lib/uefi`). A log that can't be parsed is reported and
+  nothing is recorded; the run carries on.
 - `uefiefivars`: one entry per variable checked by the `UEFI_` rules
-  (`janeserver/rules/uefirules`), matched by name and vendor GUID: the value
-  as hex if it is at most 32 bytes, otherwise `sha256:<hex>`, or `absent` if
+  (the list in `lib/uefi`, shared with janeserver), matched by name and
+  vendor GUID: the value as hex if it is at most 32 bytes, otherwise
+  `sha256:<hex>`, or `absent` if
   the variable is not in the claim (tarzan sends every variable efivarfs
   lists). A variable the agent could not read is left out with a warning, so
   its rule fails until it can be read. A claim with no variables at all (the
   agent could not list efivarfs) or from an agent too old to send `rawvalue`
-  is refused rather than recorded. The variable list in `uefi.go` must be kept
-  in step with janeserver's.
+  is refused rather than recorded.
 
 An entry without a `type` is attested but records nothing.
 
@@ -254,11 +253,7 @@ password if unset, as with tpm2-tools' defaults.
 
     go test ./...
 
-Unit tests use a fake Jane server and an in-memory TPM. The TPM integration
-test (`tpm.TestProvisioning`) needs a TPM and is skipped unless `JP_TEST_TPM`
-is set, to a device (`/dev/tpmrm0`), `unix://…`, `tcp://…`, or empty for the
-default. It creates and evicts keys at 0x817FFFE0 and 0x817FFFE1, and checks
-that a quote from the new AK verifies with its exported PEM key.
+Unit tests use a fake Jane server and an in-memory TPM; none needs a real TPM.
 
 ## Differences from jp.py
 

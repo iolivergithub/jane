@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/iolivergithub/jane/lib/janeapi"
 	"github.com/labstack/echo/v4"
 )
 
@@ -28,23 +29,12 @@ import (
 // The REST API and the Web UI are kept separate: this file is the REST side;
 // they share only the user store and the failed-attempt limiter.
 
-const (
-	apiKeyPrefix  = "jane_"
-	apiKeyEncoded = 43 // base64url of 32 bytes, unpadded
-	apiKeyHashTag = "sha256:"
-)
+const apiKeyHashTag = "sha256:"
 
-// validKeyFormat reports whether k looks like a key made by addjaneuser.
+// validKeyFormat reports whether k looks like a key made by addjaneuser
+// (the same check as jp's, lib/janeapi).
 func validKeyFormat(k string) bool {
-	if len(k) != len(apiKeyPrefix)+apiKeyEncoded || !strings.HasPrefix(k, apiKeyPrefix) {
-		return false
-	}
-	for _, ch := range k[len(apiKeyPrefix):] {
-		if !(ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-' || ch == '_') {
-			return false
-		}
-	}
-	return true
+	return janeapi.ValidAPIKey(k)
 }
 
 // hashAPIKey is the form stored in the users collection (addjaneuser computes the same).

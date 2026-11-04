@@ -1,5 +1,7 @@
 package structures
 
+import "github.com/iolivergithub/jane/lib/janeapi"
+
 type Element struct {
 	ItemID      string `json:"itemid,omitempty" bson:"itemid,omitempty" yaml:"itemid,omitempty"`
 	Name        string `json:"name" bson:"name" yaml:"name"`
@@ -59,17 +61,11 @@ const (
 // RelationshipTypes lists the known relationship types.
 var RelationshipTypes = []string{RelationshipRunsOn, RelationshipHostedOn}
 
-type Endpoint struct {
-	Endpoint string `json:"endpoint" bson:"endpoint"  yaml:"endpoint"`
-	Protocol string `json:"protocol" bson:"protocol"  yaml:"protocol"`
-}
+// Endpoint, HostMachine, UEFI, IMA, TPM2 and TPMKey are shared with jp
+// (lib/janeapi), so what jp sends is what Jane stores.
+type Endpoint = janeapi.Endpoint
 
-type HostMachine struct {
-	OS        string `json:"os" bson:"os"  yaml:"os"`
-	Arch      string `json:"arch" bson:"arch"  yaml:"arch"`
-	Hostname  string `json:"hostname" bson:"hostname"  yaml:"hostname"`
-	MachineID string `json:"machineid" bson:"machineid"  yaml:"machineid"`
-}
+type HostMachine = janeapi.HostMachine
 
 type SSHKEY struct {
 	Key      string `json:"key" bson:"key"  yaml:"key"`
@@ -77,31 +73,14 @@ type SSHKEY struct {
 	Username string `json:"username" bson:"username"  yaml:"username"`
 }
 
-type UEFI struct {
-	Eventlog string `json:"eventlog" bson:"eventlog" yaml:"eventlog"`
-}
+type UEFI = janeapi.UEFI
 
-type IMA struct {
-	ASCIILog string `json:"asciilog" bson:"asciilog" yaml:"asciilog"`
-}
+type IMA = janeapi.IMA
 
 type TXT struct {
 	Log string `json:"log" bson:"log"  yaml:"log"`
 }
 
-type TPM2 struct {
-	Device       string `json:"device" bson:"device"  yaml:"device"`
-	EKCertHandle string `json:"ekcerthandle" bson:"ekcerthandle"  yaml:"ekcerthandle"`
-	EK           TPMKey `json:"ek" bson:"ek"  yaml:"ek"`
-	AK           TPMKey `json:"ak" bson:"ak"  yaml:"ak"`
-	// PCRNaming names the register naming scheme for this TPM's PCRs (see
-	// package registernames, #101); empty or unknown means the default.
-	PCRNaming string `json:"pcrnaming,omitempty" bson:"pcrnaming,omitempty" yaml:"pcrnaming,omitempty"`
-}
+type TPM2 = janeapi.TPM2
 
-type TPMKey struct {
-	Handle string `json:"handle" bson:"handle"  yaml:"handle"`
-	// Public portion of the key marshalled as TPM2BPublic
-	Public string `json:"public" bson:"public"  yaml:"public"`
-	Name   string `json:"name" bson:"name"  yaml:"name"`
-}
+type TPMKey = janeapi.TPMKey

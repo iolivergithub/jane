@@ -32,6 +32,8 @@ import (
 	"a10/operations"
 	"a10/structures"
 	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 // getClaim fetches a claim by itemid; replaced in tests.
@@ -42,40 +44,40 @@ func logRegistration() []structures.Rule {
 		return structures.Rule{Name: name, Description: desc, CallFunction: f, NeedsEV: ev}
 	}
 	rules := []structures.Rule{
-		rule("uefi_logSecureBoot", "Checks the Secure Boot state measured in the UEFI event log (enabled or disabled) against the expected value", logValue("secureboot", func(s utilities.UEFIState) string { return s.SecureBoot }), true),
+		rule("uefi_logSecureBoot", "Checks the Secure Boot state measured in the UEFI event log (enabled or disabled) against the expected value", logValue("secureboot", func(s uefi.State) string { return s.SecureBoot }), true),
 		rule("uefi_logAuthorities", "Checks that every certificate that verified a boot image, as measured in the UEFI event log, is one of the expected value's authorities", logAuthorities, true),
-		rule("uefi_logDMAProtection", "Checks whether the firmware reported DMA protection disabled in the UEFI event log, against the expected value", logValue("dmaprotection", func(s utilities.UEFIState) string { return s.DMAProtection }), true),
-		rule("uefi_logFirmwareVersion", "Checks the firmware (S-CRTM) version measured in the UEFI event log against the expected value", logValue("firmwareversion", func(s utilities.UEFIState) string { return s.FirmwareVersion }), true),
+		rule("uefi_logDMAProtection", "Checks whether the firmware reported DMA protection disabled in the UEFI event log, against the expected value", logValue("dmaprotection", func(s uefi.State) string { return s.DMAProtection }), true),
+		rule("uefi_logFirmwareVersion", "Checks the firmware (S-CRTM) version measured in the UEFI event log against the expected value", logValue("firmwareversion", func(s uefi.State) string { return s.FirmwareVersion }), true),
 		rule("uefi_logMatchesEfivars", "On a uefi/efivars claim: checks that SecureBoot, PK, KEK, db and dbx as the OS reports them match what was measured in the UEFI event log (parameter uefilogcid)", logMatchesEfivars, false),
 	}
-	for _, v := range utilities.UEFIStateVariables {
+	for _, v := range uefi.StateVariables {
 		key := v.Key
 		rules = append(rules, rule("uefi_log"+v.Name, "Checks the "+v.Name+" variable measured in the UEFI event log against the expected value",
-			logValue(key, func(s utilities.UEFIState) string { return s.Variables[key] }), true))
+			logValue(key, func(s uefi.State) string { return s.Variables[key] }), true))
 	}
 	return rules
 }
 
 // measured reads the measured state from a uefi/eventlog claim; msg is set
 // if it can't.
-func measured(claim structures.Claim) (utilities.UEFIState, string) {
+func measured(claim structures.Claim) (uefi.State, string) {
 	if f := claim.Header.Intent.Function; f != "uefi/eventlog" {
-		return utilities.UEFIState{}, fmt.Sprintf("This rule runs on a uefi/eventlog claim, not %s", f)
+		return uefi.State{}, fmt.Sprintf("This rule runs on a uefi/eventlog claim, not %s", f)
 	}
 	b64, _ := claim.Body["eventlog"].(string)
-	el, err := utilities.DecodeEventLog(b64)
+	el, err := uefi.DecodeEventLog(b64)
 	if err != nil {
-		return utilities.UEFIState{}, "The event log could not be parsed: " + err.Error()
+		return uefi.State{}, "The event log could not be parsed: " + err.Error()
 	}
-	st, err := utilities.MeasuredUEFIState(el)
+	st, err := uefi.MeasuredState(el)
 	if err != nil {
-		return utilities.UEFIState{}, err.Error()
+		return uefi.State{}, err.Error()
 	}
 	return st, ""
 }
 
 // logValue checks one measured value against the expected value's entry key.
-func logValue(key string, get func(utilities.UEFIState) string) structures.RuleCall {
+func logValue(key string, get func(uefi.State) string) structures.RuleCall {
 	return func(claim structures.Claim, rule string, ev structures.ExpectedValue, session structures.Session, parameter map[string]interface{}) (structures.ResultValue, string, error) {
 		want, ok := ev.EVS[key]
 		if !ok || want == nil {
@@ -174,7 +176,7 @@ func logMatchesEfivars(claim structures.Claim, rule string, ev structures.Expect
 		}
 	}
 	compare("SecureBoot")
-	for _, v := range utilities.UEFIStateVariables {
+	for _, v := range uefi.StateVariables {
 		compare(v.Name)
 	}
 	if len(diffs) > 0 {
@@ -183,13 +185,13 @@ func logMatchesEfivars(claim structures.Claim, rule string, ev structures.Expect
 	return structures.Success, "SecureBoot, PK, KEK, db and dbx as reported match what was measured at boot", nil
 }
 
-func variableNamed(name string) Variable {
+func variableNamed(name string) uefi.Variable {
 	for _, v := range Variables {
 		if v.Name == name {
 			return v
 		}
 	}
-	return Variable{Name: name}
+	return uefi.Variable{Name: name}
 }
 
 func short(b []byte) string {

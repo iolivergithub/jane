@@ -12,8 +12,11 @@ import (
 	"time"
 
 	"github.com/google/go-tpm/tpm2"
+	"github.com/iolivergithub/jane/lib/tpmopen"
 
 	"jp/tpm"
+
+	"github.com/iolivergithub/jane/lib/janeapi"
 )
 
 // Element is the element record sent to janeserver (a subset of its
@@ -31,20 +34,13 @@ type Element struct {
 	IMA         *IMAInfo            `json:"ima,omitempty"`
 }
 
-type HostInfo struct {
-	OS        string `json:"os"`
-	Arch      string `json:"arch"`
-	Hostname  string `json:"hostname"`
-	MachineID string `json:"machineid"`
-}
-
-type UEFIInfo struct {
-	Eventlog string `json:"eventlog"`
-}
-
-type IMAInfo struct {
-	ASCIILog string `json:"asciilog"`
-}
+// HostInfo, UEFIInfo and IMAInfo are the element's sections as Jane stores
+// them (lib/janeapi, shared with janeserver).
+type (
+	HostInfo = janeapi.HostMachine
+	UEFIInfo = janeapi.UEFI
+	IMAInfo  = janeapi.IMA
+)
 
 const (
 	uefiEventLog = "/sys/kernel/security/tpm0/binary_bios_measurements"
@@ -372,7 +368,7 @@ type tpmConn struct {
 }
 
 func openTPMDevice(device string) (TPMDevice, string, error) {
-	t, desc, err := tpm.Open(device)
+	t, desc, err := tpmopen.Open(device)
 	if err != nil {
 		return nil, "", err
 	}

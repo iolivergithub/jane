@@ -26,7 +26,7 @@ import (
 	"a10/services/webui"
 	"a10/services/x3270"
 
-	"github.com/iolivergithub/jane/localnames"
+	"github.com/iolivergithub/jane/lib/localnames"
 )
 
 // Version number. A var rather than a const so it can be overridden at build time with

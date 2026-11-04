@@ -1,7 +1,7 @@
 //go:build linux
 
-package main
+package machineid
 
-func machineID() (string, error) {
+func get() (string, error) {
 	return firstLineOf("/etc/machine-id", "/var/lib/dbus/machine-id")
 }

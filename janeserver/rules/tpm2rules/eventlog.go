@@ -13,6 +13,8 @@ import (
 
 	"a10/structures"
 	"a10/utilities"
+
+	"github.com/iolivergithub/jane/lib/uefi"
 )
 
 // pcrBankNames are the bank names tarzan uses in tpm2/pcrs claims.
@@ -33,7 +35,7 @@ func UEFILogReplay(claim structures.Claim, rule string, ev structures.ExpectedVa
 		return structures.Fail, msg, nil
 	}
 	b64, _ := logClaim.Body["eventlog"].(string)
-	el, err := utilities.DecodeEventLog(b64)
+	el, err := uefi.DecodeEventLog(b64)
 	if err != nil {
 		return structures.Fail, "The event log could not be parsed: " + err.Error(), nil
 	}
