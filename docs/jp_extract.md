@@ -6,7 +6,7 @@
 jp_extract [--delete] [--config PATH] [--mongodb URL] [--database NAME] [--server URL] ELEMENTID FILE
 ```
 
-`ELEMENTID` is the element's itemid. `FILE` must not exist yet: jp_extract never overwrites a file.
+It is installed with Jane: `/opt/jane/jp_extract` from the jane deb (amd64, arm64, s390x), `jp_extract.exe` in the Windows zip. `ELEMENTID` is the element's itemid. `FILE` must not exist yet: jp_extract never overwrites a file.
 
 jp_extract reads and writes MongoDB directly, as `addjaneuser` does. Jane's REST API cannot read log entries by element and has no way to delete claims, results or log entries. jp_extract writes nothing into Jane's log.
 
@@ -57,7 +57,7 @@ The connection string and database name come from Jane's `config.yaml` (`--confi
 ```bash
 systemctl stop jane
 set -a; . /etc/opt/jane/jane.env; set +a
-jp_extract --delete 3f2a...e1 /var/tmp/host1-extract.json
+/opt/jane/jp_extract --delete 3f2a...e1 /var/tmp/host1-extract.json
 ```
 
 ## The file

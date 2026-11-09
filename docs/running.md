@@ -17,6 +17,7 @@ This is the reference for every option, flag and environment variable of the pro
 |---|---|---|
 | janeserver | the Jane host | MongoDB, the MQTT broker, trust agents (tarzan, ratsd) |
 | addjaneuser | wherever it can reach Jane's MongoDB | MongoDB |
+| jp_extract | wherever it can reach Jane's MongoDB, best on the Jane host (it checks Jane's ports there); see [jp_extract](jp_extract.md) | MongoDB |
 | tarzan | each element (machine being attested), as root | answers janeserver |
 | jp | each element | janeserver's REST API; the local TPM |
 

@@ -71,12 +71,12 @@ The targets that are built and packaged (decisions in the 1.5.6 plan: build only
 ## Windows
 
 ```bash
-make binary OS=windows      # in janeserver, tarzan or provisioner
+make binary OS=windows      # in janeserver, extractor, tarzan or provisioner
 ```
 
-janeserver, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
+janeserver, jp_extract, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
 
-- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`, `skeletons\` (the [jp skeletons](jp.md#skeletons)).
+- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `jp_extract.exe` and `jp_extract.md`, `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`, `skeletons\` (the [jp skeletons](jp.md#skeletons)).
 - `tarzan_<version>_windows-amd64.zip`: `tarzan.exe`, `jp.exe`, `provisioning.yaml.example`, `skeletons\` (the [jp skeletons](jp.md#skeletons)), `tarzan.env`.
 
 ## Version and build strings

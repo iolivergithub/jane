@@ -41,7 +41,7 @@ fi
 # as root.
 chown root:root /opt/jane
 chmod 755 /opt/jane
-for f in /opt/jane/janeserver /opt/jane/addjaneuser; do
+for f in /opt/jane/janeserver /opt/jane/addjaneuser /opt/jane/jp_extract; do
     if [ -f "$f" ]; then
         chown root:root "$f"
         chmod 755 "$f"
