@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -21,8 +23,15 @@ func extractCommand(o cmdline) error {
 		return fmt.Errorf("%s exists; jp_extract never overwrites a file", o.file)
 	}
 	if o.delete {
-		if err := checkJaneStopped(cfg, o.server); err != nil {
+		running, err := janeRunning(cfg, o.server)
+		if err != nil {
 			return err
+		}
+		if running != "" {
+			fmt.Printf("WARNING: %s\n", running)
+			if !confirm(os.Stdin, os.Stdout, "Jane is still running, continue? [yes/no] ") {
+				return fmt.Errorf("stopped: nothing written or deleted")
+			}
 		}
 	}
 
@@ -35,8 +44,8 @@ func extractCommand(o cmdline) error {
 }
 
 // extractWith is the work after the database is open; the tests call it
-// with a fake store. With --delete the caller has already checked that Jane
-// is stopped.
+// with a fake store. With --delete the caller has already checked whether
+// Jane is running and asked.
 func extractWith(s store, cfg settings, o cmdline) error {
 	md := &metadata{
 		Tool: "jp_extract", Version: VERSION, Build: BUILD, FormatVersion: formatVersion,
@@ -61,22 +70,11 @@ func extractWith(s store, cfg settings, o cmdline) error {
 	md.Sessions.Exclusive = nonNil(c.exclusiveSessions)
 	md.Sessions.Shared = nonNil(c.sharedSessions)
 	md.Sessions.Children = nonNil(c.childSessions)
-	md.IncomingRelationships = c.incoming
-	if md.IncomingRelationships == nil {
-		md.IncomingRelationships = []incomingRelationship{}
-	}
 	md.MissingIntents = nonNil(c.missingIntents)
 
 	if o.delete {
-		if len(c.incoming) > 0 && !o.force {
-			msg := fmt.Sprintf("element %s (%s): other elements have relationships to it:\n", c.elementID, c.elementName)
-			for _, r := range c.incoming {
-				msg += fmt.Sprintf("  %s (%s) %s %s\n", r.ElementID, r.Name, r.RelationshipType, c.elementID)
-			}
-			return fmt.Errorf("%snothing written or deleted; give --force to delete anyway and remove these relationships, or extract without --delete", msg)
-		}
 		md.Operation = "extract+delete"
-		md.Delete = &deletePlan{Force: o.force, Remove: map[string]int{}, RelationshipsRemoved: len(c.incoming),
+		md.Delete = &deletePlan{Remove: map[string]int{}, RelationshipsRemoved: len(c.relationshipsTo),
 			Kept: "intents; sessions listed as shared; the jane.log file and MQTT copies of log entries"}
 		for _, coll := range deleteOrder {
 			md.Delete.Remove[coll] = len(c.remove[coll])
@@ -102,18 +100,19 @@ func extractWith(s store, cfg settings, o cmdline) error {
 }
 
 // deleteClosure removes what the file holds and --delete covers, in
-// deleteOrder, with the incoming relationships before the element itself.
+// deleteOrder, with other elements' relationships to it (relationshipsTo)
+// removed just before the element itself.
 func deleteClosure(s store, c *closure, md *metadata) error {
 	fmt.Printf("Deleting element %s (%s) from Jane\n", c.elementID, c.elementName)
 	var problems []string
 	for _, coll := range deleteOrder {
-		if coll == "elements" && len(c.incoming) > 0 {
-			n, err := s.pullRelationships(c.incomingElementIDs(), c.elementID)
+		if coll == "elements" && len(c.relationshipsTo) > 0 {
+			n, err := s.pullRelationships(c.relatedElementIDs(), c.elementID)
 			if err != nil {
 				return fmt.Errorf("removing relationships to %s: %w", c.elementID, err)
 			}
 			fmt.Printf("  relationships     %6d elements changed\n", n)
-			if want := len(c.incomingElementIDs()); int(n) != want {
+			if want := len(c.relatedElementIDs()); int(n) != want {
 				problems = append(problems, fmt.Sprintf("relationships: %d elements changed, expected %d", n, want))
 			}
 		}
@@ -128,7 +127,7 @@ func deleteClosure(s store, c *closure, md *metadata) error {
 		}
 	}
 	if len(problems) > 0 {
-		return fmt.Errorf("deletion did not remove what was planned (was Jane really stopped?): %s", strings.Join(problems, "; "))
+		return fmt.Errorf("deletion did not remove what was planned (is Jane running?): %s", strings.Join(problems, "; "))
 	}
 	return nil
 }
@@ -140,49 +139,69 @@ func report(file string, c *closure, md *metadata) {
 		ci := md.Collections[coll]
 		fmt.Printf("  %-17s %6d documents %10d bytes\n", coll, ci.Count, ci.Bytes)
 	}
+	for _, r := range c.relationshipsTo {
+		fmt.Printf("  relationship: %s (%s) %s this element\n", r.ElementID, r.Name, r.RelationshipType)
+	}
 	if len(c.sharedSessions) > 0 {
 		fmt.Printf("  %d session(s) also hold other elements' items; they are never deleted\n", len(c.sharedSessions))
 	}
 	if len(c.childSessions) > 0 {
 		fmt.Printf("  %d session(s) not extracted have one of these sessions as parent\n", len(c.childSessions))
 	}
-	if len(c.incoming) > 0 {
-		fmt.Printf("  %d relationship(s) from other elements point at this element\n", len(c.incoming))
-	}
 	if len(c.missingIntents) > 0 {
 		fmt.Printf("  %d intent(s) used are no longer in Jane: %s\n", len(c.missingIntents), strings.Join(c.missingIntents, ", "))
 	}
 }
 
-// checkJaneStopped refuses if anything listens on Jane's ports (from the
-// configuration), at the server URL, or if systemd reports jane active.
-func checkJaneStopped(cfg settings, server string) error {
+// janeRunning says why Jane looks to be running, or "" if it does not:
+// something listens on Jane's ports (from the configuration) or at the
+// server URL, or systemd reports jane active. With nothing to check it says
+// so, since Jane may then be running unseen.
+func janeRunning(cfg settings, server string) (string, error) {
 	addrs := append([]string(nil), cfg.listens...)
 	if server != "" {
 		a, err := serverAddress(server)
 		if err != nil {
-			return err
+			return "", err
 		}
 		addrs = append(addrs, a)
 	}
-	if len(addrs) == 0 {
-		return fmt.Errorf("--delete: cannot check that Jane is stopped: give --config (Jane's config.yaml) or --server")
+	if runtime.GOOS == "linux" {
+		if path, err := exec.LookPath("systemctl"); err == nil {
+			if exec.Command(path, "is-active", "--quiet", "jane").Run() == nil {
+				return "systemd reports jane active", nil
+			}
+		}
 	}
 	for _, a := range addrs {
 		conn, err := net.DialTimeout("tcp", a, 2*time.Second)
 		if err == nil {
 			conn.Close()
-			return fmt.Errorf("--delete: something is listening on %s, Jane's address; stop Jane first", a)
+			return fmt.Sprintf("something is listening on %s, Jane's address", a), nil
 		}
 	}
-	if runtime.GOOS == "linux" {
-		if path, err := exec.LookPath("systemctl"); err == nil {
-			if exec.Command(path, "is-active", "--quiet", "jane").Run() == nil {
-				return fmt.Errorf("--delete: systemd reports jane active; stop Jane first (systemctl stop jane)")
-			}
-		}
+	if len(addrs) == 0 {
+		return "cannot tell whether Jane is running: no --config (Jane's config.yaml) or --server", nil
 	}
-	return nil
+	return "", nil
+}
+
+// confirm asks until it gets an answer: "yes" in full continues, an empty
+// line asks again, anything else (or the end of the input) is no.
+func confirm(in io.Reader, out io.Writer, question string) bool {
+	r := bufio.NewReader(in)
+	for {
+		fmt.Fprint(out, question)
+		line, err := r.ReadString('\n')
+		answer := strings.TrimSpace(line)
+		if answer == "" && err == nil {
+			continue
+		}
+		if err != nil && answer == "" {
+			fmt.Fprintln(out)
+		}
+		return answer == "yes"
+	}
 }
 
 // serverAddress is host:port of a REST API URL.

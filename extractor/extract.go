@@ -12,12 +12,22 @@ import (
 // collections, in the order they appear in the file.
 var collections = []string{"elements", "expectedvalues", "intents", "claims", "results", "sessions", "log"}
 
-// incomingRelationship is a relationship another element has to the
-// extracted one.
-type incomingRelationship struct {
+// relationshipsTo is the extract section after the collections: the
+// relationships other elements have to the extracted one. --delete removes
+// them from those elements.
+const relationshipsTo = "relationshipsTo"
+
+// sections of the extract, in file order.
+var sections = append(append([]string(nil), collections...), relationshipsTo)
+
+// relationshipTo is one relationship another element (elementid, name) has
+// to the extracted element (itemid): the entry in that element's
+// relationships list is {relationshiptype, itemid}.
+type relationshipTo struct {
 	ElementID        string `json:"elementid"`
 	Name             string `json:"name"`
 	RelationshipType string `json:"relationshiptype"`
+	ItemID           string `json:"itemid"`
 }
 
 // closure is everything that belongs to one element.
@@ -26,11 +36,11 @@ type closure struct {
 	elementName string
 	docs        map[string][]bson.Raw // by collection
 
-	exclusiveSessions []string // hold only this element's claims and results: deleted with it
-	sharedSessions    []string // also hold other elements' items: extracted, never deleted
-	childSessions     []string // not extracted, but their parent is an exclusive session
-	missingIntents    []string // referenced, but not in the database
-	incoming          []incomingRelationship
+	exclusiveSessions []string         // hold only this element's claims and results: deleted with it
+	sharedSessions    []string         // also hold other elements' items: extracted, never deleted
+	childSessions     []string         // not extracted, but their parent is an exclusive session
+	missingIntents    []string         // referenced, but not in the database
+	relationshipsTo   []relationshipTo // other elements' relationships to this one
 
 	// what --delete removes: _id values by collection, elements last
 	remove map[string][]bson.RawValue
@@ -49,8 +59,8 @@ type closure struct {
 //     intents (which are shared)
 //
 // Sessions are exclusive when every claim and result they list belongs to
-// eid, otherwise shared. Elements with a relationship to eid are found, but
-// not extracted.
+// eid, otherwise shared. The relationships other elements have to eid are
+// recorded; those elements are not extracted.
 func collect(s store, eid string) (*closure, error) {
 	c := &closure{elementID: eid, docs: map[string][]bson.Raw{}, remove: map[string][]bson.RawValue{}}
 
@@ -161,7 +171,7 @@ func collect(s store, eid string) (*closure, error) {
 		}
 		for _, r := range docsAt(d, "relationships") {
 			if str(r, "itemid") == eid {
-				c.incoming = append(c.incoming, incomingRelationship{other, str(d, "name"), str(r, "relationshiptype")})
+				c.relationshipsTo = append(c.relationshipsTo, relationshipTo{other, str(d, "name"), str(r, "relationshiptype"), eid})
 			}
 		}
 	}
@@ -187,10 +197,10 @@ func collect(s store, eid string) (*closure, error) {
 // second run picks up what is left.
 var deleteOrder = []string{"results", "claims", "sessions", "log", "expectedvalues", "elements"}
 
-// incomingElementIDs are the other elements with a relationship to this one.
-func (c *closure) incomingElementIDs() []string {
+// relatedElementIDs are the other elements with a relationship to this one.
+func (c *closure) relatedElementIDs() []string {
 	var out []string
-	for _, r := range c.incoming {
+	for _, r := range c.relationshipsTo {
 		out = append(out, r.ElementID)
 	}
 	return uniq(out)

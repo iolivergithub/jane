@@ -43,16 +43,15 @@ type metadata struct {
 	Connection string `json:"connection"` // without any password
 
 	DocumentFormat string                    `json:"documentformat"`
-	Collections    map[string]collectionInfo `json:"collections"`
-	Totals         collectionInfo            `json:"totals"` // sha256 empty
+	Collections    map[string]collectionInfo `json:"collections"` // the extract's sections, relationshipsTo included
+	Totals         collectionInfo            `json:"totals"`      // sha256 empty
 
 	Sessions struct {
 		Exclusive []string `json:"exclusive"` // only this element's claims and results
 		Shared    []string `json:"shared"`    // also other elements': never deleted
 		Children  []string `json:"children"`  // not extracted; parent is an exclusive session
 	} `json:"sessions"`
-	IncomingRelationships []incomingRelationship `json:"incomingrelationships"`
-	MissingIntents        []string               `json:"missingintents"`
+	MissingIntents []string `json:"missingintents"`
 
 	Delete *deletePlan `json:"delete,omitempty"`
 }
@@ -65,7 +64,6 @@ type collectionInfo struct {
 
 // deletePlan is what --delete removes after the file is written.
 type deletePlan struct {
-	Force                bool           `json:"force"`
 	Remove               map[string]int `json:"remove"`               // documents by collection
 	RelationshipsRemoved int            `json:"relationshipsremoved"` // entries pulled from other elements
 	Kept                 string         `json:"kept"`
@@ -77,22 +75,18 @@ type encoded struct {
 	info collectionInfo
 }
 
-func encodeCollection(docs []bson.Raw) (encoded, error) {
-	var e encoded
+// encodeSection hashes and measures one section's encoded entries.
+func encodeSection(entries [][]byte) encoded {
+	e := encoded{docs: entries}
 	h := sha256.New()
-	for _, d := range docs {
-		j, err := bson.MarshalExtJSON(d, true, false)
-		if err != nil {
-			return e, err
-		}
-		e.docs = append(e.docs, j)
+	for _, j := range entries {
 		h.Write(j)
 		h.Write([]byte("\n"))
 		e.info.Bytes += len(j)
 	}
-	e.info.Count = len(docs)
+	e.info.Count = len(entries)
 	e.info.SHA256 = hex.EncodeToString(h.Sum(nil))
-	return e, nil
+	return e
 }
 
 func newUUID4() (string, error) {
@@ -112,18 +106,33 @@ func operatorName() string {
 	return os.Getenv("USER")
 }
 
-// encodeAll encodes every collection and fills in the counts, sizes and
-// hashes of md.
+// encodeAll encodes every section and fills in the counts, sizes and
+// hashes of md: the collections as canonical Extended JSON, relationshipsTo
+// as plain JSON.
 func encodeAll(c *closure, md *metadata) (map[string]encoded, error) {
+	entries := map[string][][]byte{}
+	for _, coll := range collections {
+		for _, d := range c.docs[coll] {
+			j, err := bson.MarshalExtJSON(d, true, false)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", coll, err)
+			}
+			entries[coll] = append(entries[coll], j)
+		}
+	}
+	for _, r := range c.relationshipsTo {
+		j, err := json.Marshal(r)
+		if err != nil {
+			return nil, err
+		}
+		entries[relationshipsTo] = append(entries[relationshipsTo], j)
+	}
 	enc := map[string]encoded{}
 	md.Collections = map[string]collectionInfo{}
-	for _, coll := range collections {
-		e, err := encodeCollection(c.docs[coll])
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", coll, err)
-		}
-		enc[coll] = e
-		md.Collections[coll] = e.info
+	for _, sec := range sections {
+		e := encodeSection(entries[sec])
+		enc[sec] = e
+		md.Collections[sec] = e.info
 		md.Totals.Count += e.info.Count
 		md.Totals.Bytes += e.info.Bytes
 	}
@@ -151,7 +160,7 @@ func writeFile(path string, md *metadata, enc map[string]encoded) (err error) {
 		return err
 	}
 	fmt.Fprintf(w, "{\n  \"metadata\": %s,\n  \"extract\": {\n", mdj)
-	for i, coll := range collections {
+	for i, coll := range sections {
 		fmt.Fprintf(w, "    %q: [", coll)
 		for j, d := range enc[coll].docs {
 			if j > 0 {
@@ -164,7 +173,7 @@ func writeFile(path string, md *metadata, enc map[string]encoded) (err error) {
 			w.WriteString("\n    ")
 		}
 		w.WriteString("]")
-		if i < len(collections)-1 {
+		if i < len(sections)-1 {
 			w.WriteString(",")
 		}
 		w.WriteString("\n")
@@ -183,9 +192,10 @@ type fileContents struct {
 }
 
 // verifyFile reads the file back and checks that it is what was meant to be
-// written: the metadata's counts and hashes match the documents, every
-// document parses back into BSON, and every document --delete would remove
-// is in it. Only then may anything be deleted.
+// written: the metadata's counts and hashes match every section, every
+// document parses back into BSON, every document --delete would remove is
+// in it, and so is every relationship it would remove. Only then may
+// anything be deleted.
 func verifyFile(path string, c *closure, md *metadata) error {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -198,7 +208,7 @@ func verifyFile(path string, c *closure, md *metadata) error {
 	if fc.Metadata.ExtractID != md.ExtractID {
 		return fmt.Errorf("%s: extract ID %q, expected %q", path, fc.Metadata.ExtractID, md.ExtractID)
 	}
-	for _, coll := range collections {
+	for _, coll := range sections {
 		docs := fc.Extract[coll]
 		want := md.Collections[coll]
 		h := sha256.New()
@@ -224,6 +234,22 @@ func verifyFile(path string, c *closure, md *metadata) error {
 			if !got[rawKey(id)] {
 				return fmt.Errorf("%s: a %s document to be deleted is not in the file", path, coll)
 			}
+		}
+	}
+	var rels []relationshipTo
+	for _, j := range fc.Extract[relationshipsTo] {
+		var r relationshipTo
+		if err := json.Unmarshal(j, &r); err != nil {
+			return fmt.Errorf("%s: %s: %w", path, relationshipsTo, err)
+		}
+		rels = append(rels, r)
+	}
+	if len(rels) != len(c.relationshipsTo) {
+		return fmt.Errorf("%s: %s has %d entries, expected %d", path, relationshipsTo, len(rels), len(c.relationshipsTo))
+	}
+	for i := range rels {
+		if rels[i] != c.relationshipsTo[i] {
+			return fmt.Errorf("%s: %s[%d] differs from the database", path, relationshipsTo, i)
 		}
 	}
 	return nil

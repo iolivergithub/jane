@@ -217,8 +217,8 @@ func TestCollect(t *testing.T) {
 	check("shared", c.sharedSessions, []string{"S2"})
 	check("children", c.childSessions, []string{"S3"})
 	check("missing intents", c.missingIntents, []string{"I9"})
-	if want := []incomingRelationship{{"E2", "vm1", "hosted-on"}}; !reflect.DeepEqual(c.incoming, want) {
-		t.Errorf("incoming: got %v, want %v", c.incoming, want)
+	if want := []relationshipTo{{"E2", "vm1", "hosted-on", "E1"}}; !reflect.DeepEqual(c.relationshipsTo, want) {
+		t.Errorf("relationshipsTo: got %v, want %v", c.relationshipsTo, want)
 	}
 	removeCounts := map[string]int{}
 	for coll, ids := range c.remove {
@@ -280,10 +280,10 @@ func TestExtractOnly(t *testing.T) {
 	if len(md.ExtractID) != 36 || md.ExtractID[14] != '4' || md.Started == "" || md.Finished == "" {
 		t.Errorf("extract ID or times: %q %q %q", md.ExtractID, md.Started, md.Finished)
 	}
-	if md.Totals.Count != 16 || md.Collections["log"].Count != 4 {
+	if md.Totals.Count != 17 || md.Collections["log"].Count != 4 || md.Collections[relationshipsTo].Count != 1 {
 		t.Errorf("counts: %+v", md.Collections)
 	}
-	for _, coll := range collections {
+	for _, coll := range sections {
 		if len(fc.Extract[coll]) != md.Collections[coll].Count {
 			t.Errorf("%s: %d documents, metadata says %d", coll, len(fc.Extract[coll]), md.Collections[coll].Count)
 		}
@@ -317,26 +317,10 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
-func TestDeleteRefusedWithIncomingRelationships(t *testing.T) {
-	db := testDB(t)
-	before := testDBCounts(db)
-	path := filepath.Join(t.TempDir(), "e1.json")
-	err := extractWith(db, testSettings, cmdline{elementID: "E1", file: path, delete: true})
-	if err == nil || !strings.Contains(err.Error(), "--force") || !strings.Contains(err.Error(), "E2 (vm1) hosted-on E1") {
-		t.Fatalf("got %v", err)
-	}
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Error("a file was written")
-	}
-	if after := testDBCounts(db); !reflect.DeepEqual(before, after) {
-		t.Errorf("database changed: %v -> %v", before, after)
-	}
-}
-
-func TestDeleteForce(t *testing.T) {
+func TestDelete(t *testing.T) {
 	db := testDB(t)
 	path := filepath.Join(t.TempDir(), "e1.json")
-	if err := extractWith(db, testSettings, cmdline{elementID: "E1", file: path, delete: true, force: true}); err != nil {
+	if err := extractWith(db, testSettings, cmdline{elementID: "E1", file: path, delete: true}); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string][]string{
@@ -358,13 +342,20 @@ func TestDeleteForce(t *testing.T) {
 	if len(rels) != 1 || str(rels[0], "itemid") != "E9" {
 		t.Errorf("E2's relationships: %v", rels)
 	}
-	md := readBack(t, path).Metadata
-	if md.Operation != "extract+delete" || md.Delete == nil || !md.Delete.Force || md.Delete.RelationshipsRemoved != 1 ||
+	fc := readBack(t, path)
+	md := fc.Metadata
+	if md.Operation != "extract+delete" || md.Delete == nil || md.Delete.RelationshipsRemoved != 1 ||
 		md.Delete.Remove["log"] != 3 || md.Delete.Remove["sessions"] != 2 {
 		t.Errorf("metadata: %+v %+v", md, md.Delete)
 	}
-	if !reflect.DeepEqual(md.IncomingRelationships, []incomingRelationship{{"E2", "vm1", "hosted-on"}}) {
-		t.Errorf("incoming relationships: %v", md.IncomingRelationships)
+	var recorded []relationshipTo
+	for _, j := range fc.Extract[relationshipsTo] {
+		var r relationshipTo
+		json.Unmarshal(j, &r)
+		recorded = append(recorded, r)
+	}
+	if !reflect.DeepEqual(recorded, []relationshipTo{{"E2", "vm1", "hosted-on", "E1"}}) {
+		t.Errorf("relationshipsTo: %v", recorded)
 	}
 
 	// running again: the element is gone
@@ -396,7 +387,7 @@ func TestNeverOverwrites(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "e1.json")
 	os.WriteFile(path, []byte("keep"), 0o600)
 	before := testDBCounts(db)
-	if err := extractWith(db, testSettings, cmdline{elementID: "E1", file: path, delete: true, force: true}); err == nil {
+	if err := extractWith(db, testSettings, cmdline{elementID: "E1", file: path, delete: true}); err == nil {
 		t.Fatal("an existing file was accepted")
 	}
 	if b, _ := os.ReadFile(path); string(b) != "keep" {
@@ -444,15 +435,15 @@ func testDBCounts(db *fakeStore) map[string]int {
 }
 
 func TestParseArgs(t *testing.T) {
-	o, err := parseArgs([]string{"--delete", "E1", "--config=/x.yaml", "out.json", "--force", "--server", "http://j:8520"})
+	o, err := parseArgs([]string{"--delete", "E1", "--config=/x.yaml", "out.json", "--server", "http://j:8520"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := cmdline{elementID: "E1", file: "out.json", delete: true, force: true, config: "/x.yaml", server: "http://j:8520"}
+	want := cmdline{elementID: "E1", file: "out.json", delete: true, config: "/x.yaml", server: "http://j:8520"}
 	if o != want {
 		t.Errorf("got %+v", o)
 	}
-	for _, bad := range [][]string{{"E1"}, {"E1", "f", "g"}, {"--force", "E1", "f"}, {"--bogus", "E1", "f"}, {"E1", "f", "--config"}} {
+	for _, bad := range [][]string{{"E1"}, {"E1", "f", "g"}, {"--delete", "--force", "E1", "f"}, {"--bogus", "E1", "f"}, {"E1", "f", "--config"}} {
 		if _, err := parseArgs(bad); err == nil {
 			t.Errorf("%v accepted", bad)
 		}
@@ -484,27 +475,55 @@ func TestRedactConnection(t *testing.T) {
 	}
 }
 
-func TestCheckJaneStopped(t *testing.T) {
+func TestJaneRunning(t *testing.T) {
+	if _, err := os.Stat("/run/systemd/system"); err == nil {
+		t.Skip("systemd host: the result depends on whether jane runs here")
+	}
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	busy := l.Addr().String()
-	if err := checkJaneStopped(settings{listens: []string{busy}}, ""); err == nil {
-		t.Error("a listening port passed")
+	if why, _ := janeRunning(settings{listens: []string{busy}}, ""); !strings.Contains(why, busy) {
+		t.Errorf("a listening port: %q", why)
 	}
-	if err := checkJaneStopped(settings{}, "http://"+busy); err == nil {
-		t.Error("a listening --server passed")
+	if why, _ := janeRunning(settings{}, "http://"+busy); !strings.Contains(why, busy) {
+		t.Errorf("a listening --server: %q", why)
+	}
+	if why, _ := janeRunning(settings{}, ""); !strings.Contains(why, "cannot tell") {
+		t.Errorf("nothing to check: %q", why)
 	}
 	l.Close()
-	if err := checkJaneStopped(settings{}, ""); err == nil {
-		t.Error("no addresses to check passed")
+	if why, err := janeRunning(settings{listens: []string{busy}}, ""); why != "" || err != nil {
+		t.Errorf("a closed port: %q %v", why, err)
 	}
-	if _, err := os.Stat("/run/systemd/system"); err == nil {
-		t.Skip("systemd host: the result depends on whether jane runs here")
+}
+
+func TestConfirm(t *testing.T) {
+	for in, want := range map[string]bool{
+		"yes\n":        true,
+		"\n\n yes \n":  true, // empty lines ask again
+		"\r\nyes\r\n":  true,
+		"y\n":          false,
+		"Yes\n":        false,
+		"no\n":         false,
+		"yesplease\n":  false,
+		"":             false, // end of input
+		"\n":           false,
+		"maybe\nyes\n": false, // the first answer counts
+	} {
+		var out strings.Builder
+		if got := confirm(strings.NewReader(in), &out, "Jane is still running, continue? [yes/no] "); got != want {
+			t.Errorf("%q: got %v, want %v", in, got, want)
+		}
+		if !strings.HasPrefix(out.String(), "Jane is still running, continue? [yes/no] ") {
+			t.Errorf("%q: asked %q", in, out.String())
+		}
 	}
-	if err := checkJaneStopped(settings{listens: []string{busy}}, ""); err != nil {
-		t.Errorf("a closed port: %v", err)
+	var out strings.Builder
+	confirm(strings.NewReader("\n\nno\n"), &out, "Q? ")
+	if strings.Count(out.String(), "Q? ") != 3 {
+		t.Errorf("empty answers did not ask again: %q", out.String())
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const usage = `usage: jp_extract [-h] [--delete [--force]] [--config PATH]
+const usage = `usage: jp_extract [-h] [--delete] [--config PATH]
                   [--mongodb URL] [--database NAME] [--server URL]
                   ELEMENTID FILE
 
@@ -23,9 +23,10 @@ Jane element extractor
 
 Copies the element ELEMENTID out of Jane's database into FILE (JSON), with
 its expected values, claims, results, sessions, log entries and the intents
-it used. FILE has two sections: metadata (when, what, counts, sizes,
-SHA-256 hashes) and extract (the documents, as MongoDB canonical Extended
-JSON). FILE must not exist: jp_extract never overwrites a file.
+it used, and the relationships other elements have to it. FILE has two
+sections: metadata (when, what, counts, sizes, SHA-256 hashes) and extract
+(the documents, as MongoDB canonical Extended JSON, and relationshipsTo).
+FILE must not exist: jp_extract never overwrites a file.
 
 positional arguments:
   ELEMENTID      the element's itemid
@@ -36,14 +37,10 @@ options:
   --delete       after FILE is written and read back successfully, remove
                  the element, its expected values, claims, results, log
                  entries and the sessions holding only its claims and
-                 results from Jane's database. Intents are never removed;
-                 sessions shared with other elements stay. Jane must be
-                 stopped
-  --force        with --delete: also delete when other elements have a
-                 relationship pointing at this element; those relationship
-                 entries are removed from the other elements (they are
-                 listed in FILE's metadata). Without --force jp_extract
-                 refuses and writes nothing
+                 results from Jane's database, and remove the other
+                 elements' relationships to it (recorded in FILE under
+                 relationshipsTo). Intents are never removed; sessions
+                 shared with other elements stay. Jane should be stopped
   --config PATH  Jane's config.yaml, for the database connection and name
                  and the ports Jane listens on (default
                  /etc/opt/jane/config.yaml, if it exists)
@@ -51,7 +48,7 @@ options:
   --database NAME
                  database name; overrides database: name
   --server URL   Jane's REST API, e.g. http://jane:8520 (else JANE_SERVER);
-                 with --delete, jp_extract refuses if Jane answers there
+                 with --delete, checked for Jane running
 
 environment:
   JANE_MONGODB_USERNAME, JANE_MONGODB_PASSWORD, JANE_MONGODB_AUTHSOURCE
@@ -60,15 +57,19 @@ environment:
                  /etc/opt/jane/jane.env
   JANE_SERVER    as --server
 
-jp_extract writes nothing into Jane's log. With --delete it checks that
-Jane is stopped: nothing may listen on Jane's REST, Web UI or x3270 ports
-(from the configuration) or at --server, and on systemd "jane" must not be
-active.
+jp_extract writes nothing into Jane's log. With --delete it checks whether
+Jane is running: something listening on Jane's REST, Web UI or x3270 ports
+(from the configuration) or at --server, or systemd reporting "jane"
+active. If so, or if it cannot tell, it asks
+  Jane is still running, continue? [yes/no]
+and goes on only if yes is typed in full; an empty answer asks again,
+anything else stops with nothing written or deleted.
 
 exit status:
   0  success
-  1  error: element not found, database unreachable, FILE exists, Jane
-     running (--delete), a deletion that did not remove what was planned
+  1  error: element not found, database unreachable, FILE exists, not
+     yes to the question (--delete), a deletion that did not remove
+     what was planned
   2  bad command line
 `
 
@@ -87,7 +88,6 @@ type cmdline struct {
 	elementID string
 	file      string
 	delete    bool
-	force     bool
 	config    string
 	mongodb   string
 	database  string
@@ -142,8 +142,6 @@ func parseArgs(argv []string) (cmdline, error) {
 			return o, errHelp
 		case a == "--delete":
 			o.delete = true
-		case a == "--force":
-			o.force = true
 		case a == "--config" || strings.HasPrefix(a, "--config="):
 			o.config, err = value(&i, "--config")
 		case a == "--mongodb" || strings.HasPrefix(a, "--mongodb="):
@@ -167,9 +165,6 @@ func parseArgs(argv []string) (cmdline, error) {
 	o.elementID, o.file = pos[0], pos[1]
 	if o.elementID == "" {
 		return o, fmt.Errorf("ELEMENTID is empty")
-	}
-	if o.force && !o.delete {
-		return o, fmt.Errorf("--force only goes with --delete")
 	}
 	if o.server == "" {
 		o.server = os.Getenv("JANE_SERVER")
