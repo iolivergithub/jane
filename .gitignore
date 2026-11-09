@@ -9,6 +9,8 @@
 
 /provisioner/jp
 
+/extractor/jp_extract
+
 # Stray build outputs and old tool binaries
 /janeserver/utilities/janeserver
 

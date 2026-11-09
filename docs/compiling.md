@@ -1,6 +1,6 @@
 # Compiling
 
-janeserver, tarzan and the provisioner jp are separate Go modules in `janeserver/`, `tarzan/` and `provisioner/`; they share code through small library modules in `lib/`, each used as `github.com/iolivergithub/jane/lib/<name>` through a `replace` in the users' `go.mod` pointing at `../lib/<name>` (nothing to download or install separately):
+janeserver, tarzan, the provisioner jp and the extractor jp_extract are separate Go modules in `janeserver/`, `tarzan/`, `provisioner/` and `extractor/`; they share code through small library modules in `lib/`, each used as `github.com/iolivergithub/jane/lib/<name>` through a `replace` in the users' `go.mod` pointing at `../lib/<name>` (nothing to download or install separately):
 
 | Module | Used by | Contents |
 |---|---|---|
@@ -24,7 +24,7 @@ Each module's `go.mod` and `go.sum` are complete, so builds need no `go.work`. E
 Each module has one Makefile (#116). With no settings it builds for linux/amd64 next to the source, as before:
 
 ```bash
-cd janeserver      # or tarzan, or provisioner (builds jp)
+cd janeserver      # or tarzan, provisioner (builds jp) or extractor (builds jp_extract)
 make build
 ```
 
@@ -98,7 +98,7 @@ go build -ldflags="-X 'main.VERSION=1.5.6' -X 'main.BUILD=$(date)'" -o janeserve
 In each module:
 
 ```bash
-go vet -composites=false ./...      # janeserver; plain go vet ./... for tarzan and provisioner (make vet does the right one)
+go vet -composites=false ./...      # janeserver and extractor; plain go vet ./... for tarzan and provisioner (make vet does the right one)
 go test ./...
 ```
 
