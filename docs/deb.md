@@ -100,6 +100,7 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | `*.crt`, `standardintents.json`, `standardobjects.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
 | `/etc/opt/jane/provisioning.yaml.example`, `/usr/share/doc/tarzantrustagent/skeletons/*.yaml` | `root:root` | 644 |
+| `/usr/share/doc/janeattestationengine/*.md` (`addjaneuser.md`, `jp_extract.md`), `/usr/share/doc/janeattestationengine/skeletons/*.yaml` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
 | `/lib/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 

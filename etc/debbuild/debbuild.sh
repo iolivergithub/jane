@@ -138,7 +138,8 @@ for t in $JANE_TARGETS; do
     chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser $JANEBASE/opt/jane/jp_extract
     chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
     chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
-    chmod 644 $JANEBASE/lib/systemd/system/jane.service $JANEBASE/usr/share/doc/janeattestationengine/skeletons/*.yaml
+    chmod 644 $JANEBASE/lib/systemd/system/jane.service $JANEBASE/usr/share/doc/janeattestationengine/*.md \
+        $JANEBASE/usr/share/doc/janeattestationengine/skeletons/*.yaml
 
     control control_jane_base "$t" $JANEBASE/DEBIAN/control
     maintainer $JANEBASE jane
