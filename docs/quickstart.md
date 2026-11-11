@@ -55,12 +55,21 @@ sudo systemctl restart mosquitto
 
 ## 3. Jane and tarzan
 
-Release files are gzipped; unzip them first, then install both packages:
+Both can be installed via apt. Add the following line to /etc/apt/sources.list or in its own file in /etc/apt/sources.list.d as you wish
 
 ```bash
-gunzip jane_<version>_amd64.deb.gz tarzan_<version>_amd64.deb.gz
-sudo apt install ./jane_<version>_amd64.deb ./tarzan_<version>_amd64.deb
+deb [trusted=True] http://194.157.71.11:8000/ amd64/
 ```
+
+Installation then can be made with (these might require root or sudo):    
+
+```bash
+apt update
+apt install janeattestationengine tarzantrustagent
+```
+
+NB: you can also search for then, eg:  apt search jane if you are having trouble ensuring that apt update worked or need to confirm the above names.
+
 
 The jane package creates the `jane` system user, installs to `/opt/jane` (programs) and `/etc/opt/jane` (configuration), and enables Jane without starting it. The tarzan package starts tarzan straight away. [Installing with dpkg/apt](deb.md) describes exactly what is installed.
 
@@ -71,6 +80,11 @@ sudo systemctl start jane
 systemctl status jane          # should be "active (running)"
 ```
 
+```bash
+sudo systemctl start tarzan
+systemctl status tarzan          # should be "active (running)"
+```
+
 If it keeps restarting, `journalctl -u jane` shows why; usually MongoDB or Mosquitto is not running.
 
 ## 4. The Web UI and the standard intents
@@ -79,12 +93,14 @@ Open `http://<machine>:8540` in a browser (`http://127.0.0.1:8540` on the machin
 
 Go to **Intents** and press **Load standard intents**. Intents describe what to ask a trust agent for (a quote over certain PCRs, an event log, system information); jp refers to them by name.
 
+Go to **Opaque Objects** and press **Load standard objects**. This lists common and interesting values, often found in the PCRs.
+
 ## 5. Register this machine (jp create)
 
 Copy the example provisioning file and look through it. It is for a physical machine with UEFI and a TPM; for a VM, a board without UEFI or a machine without a TPM, copy `full-vm.yaml`, `tpm2-nouefi.yaml`, `sysonly.yaml` or `windows-tpm2-uefi.yaml` from `/usr/share/doc/tarzantrustagent/skeletons/` instead (see [jp: skeletons](jp.md#skeletons)):
 
 ```bash
-sudo cp /etc/opt/jane/provisioning.yaml.example /etc/opt/jane/provisioning.yaml
+sudo cp /usr/share/doc/tarzantrustagent/skeletons/ /etc/opt/jane/provisioning.yaml
 sudo nano /etc/opt/jane/provisioning.yaml
 ```
 
@@ -104,6 +120,12 @@ sudo /opt/jane/jp create --reprovisiontpm /etc/opt/jane/provisioning.yaml
 Without the flag both steps are skipped and the TPM is left as it is; use that if the TPM already has jp's keys. jp never asks questions, so every command here can also run unattended: only `--reprovisiontpm` (and `--recreate`) allow anything destructive. [jp, the provisioner](jp.md) explains each mode and flag.
 
 jp then collects information about the machine, registers it with Jane as an element, writes the element's ID to `/etc/opt/jane/janeelementid`, and records the expected values (the "known good" PCR values, firmware version, machine ID, UEFI variables) for each intent in the file.
+
+If for any reason create fails, but you do get an element in Jane, you can run the command below at any time:
+
+```bash
+sudo /opt/jane/jp update /etc/opt/jane/provisioning.yaml
+```
 
 ## 6. Attest (jp attest)
 
