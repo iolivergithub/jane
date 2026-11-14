@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/miekg/pkcs11 v1.1.1
+	github.com/miekg/pkcs11 v1.1.2
 	github.com/mitchellh/mapstructure v1.5.0
 )
 
