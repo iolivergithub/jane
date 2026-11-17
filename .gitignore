@@ -10,9 +10,9 @@
 /provisioner/jp
 
 /extractor/jp_extract
-/forensics/jane_forensics
-/forensics/jane_forensics.exe
-/forensics/jane_forensics_*.html
+/forensics/jane-forensics
+/forensics/jane-forensics.exe
+/forensics/jane-forensics_*.html
 
 # Stray build outputs and old tool binaries
 /janeserver/utilities/janeserver

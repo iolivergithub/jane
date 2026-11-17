@@ -1,4 +1,4 @@
-module jane_forensics
+module jane-forensics
 
 go 1.26.0
 

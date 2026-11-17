@@ -1,15 +1,15 @@
-# jane_forensics, element forensics
+# jane-forensics, element forensics
 
-`jane_forensics` reads one element's history from Jane's REST API and writes it as a single HTML page: a timeline of the element, its expected values, the intents it used, its claims, results, sessions and log entries, with every change marked. It answers questions such as *when did PCR 7 change?*, *when was Secure Boot turned off?*, *which `jp update` changed this expected value, and when did a rule first fail after it?*
+`jane-forensics` reads one element's history from Jane's REST API and writes it as a single HTML page: a timeline of the element, its expected values, the intents it used, its claims, results, sessions and log entries, with every change marked. It answers questions such as *when did PCR 7 change?*, *when was Secure Boot turned off?*, *which `jp update` changed this expected value, and when did a rule first fail after it?*
 
 ```bash
-jane_forensics [--from TIME] [--until TIME] [--server URL] [--apikeyfile PATH]
+jane-forensics [--from TIME] [--until TIME] [--server URL] [--apikeyfile PATH]
              [--out FILE] [--max N] [--nodocuments] ELEMENTID
 ```
 
-It is installed with Jane: `/opt/jane/jane_forensics` from the jane deb (amd64, arm64, s390x), `jane_forensics.exe` in the Windows Jane zip. It needs only the REST API, so it can be run anywhere Jane can be reached.
+It is installed with Jane: `/opt/jane/jane-forensics` from the jane deb (amd64, arm64, s390x), `jane-forensics.exe` in the Windows Jane zip. It needs only the REST API, so it can be run anywhere Jane can be reached.
 
-jane_forensics only reads (HTTP GET). It changes nothing in Jane and writes nothing into Jane's log. It never overwrites a file.
+jane-forensics only reads (HTTP GET). It changes nothing in Jane and writes nothing into Jane's log. It never overwrites a file.
 
 ## Examples
 
@@ -17,11 +17,11 @@ jane_forensics only reads (HTTP GET). It changes nothing in Jane and writes noth
 export JANE_SERVER=http://jane:8520
 export JANE_API_KEY=jane_...                 # if Jane's REST API needs a key
 
-jane_forensics 0b8e...                         # the element's whole history
-jane_forensics 0b8e... --from 7d               # the last seven days
-jane_forensics 0b8e... --from 2026-11-01 --until 2026-11-10
-jane_forensics 0b8e... --until 2026-11-10      # from 10 November until now
-jane_forensics 0b8e... --from 36h --out /tmp/incident-42.html
+jane-forensics 0b8e...                         # the element's whole history
+jane-forensics 0b8e... --from 7d               # the last seven days
+jane-forensics 0b8e... --from 2026-11-01 --until 2026-11-10
+jane-forensics 0b8e... --until 2026-11-10      # from 10 November until now
+jane-forensics 0b8e... --from 36h --out /tmp/incident-42.html
 ```
 
 ## Options
@@ -32,7 +32,7 @@ jane_forensics 0b8e... --from 36h --out /tmp/incident-42.html
 | `--from TIME`, `--until TIME` | the two ends of the time range. An end that is not given is **now**; the range runs from the earlier to the later of the two, whichever way round they are given. With neither, the report covers the element's whole history |
 | `--server URL` | Jane's REST API, e.g. `http://jane:8520`; else `JANE_SERVER` |
 | `--apikeyfile PATH` | read the REST API key from PATH; overrides `JANE_API_KEY`. Needed if Jane's REST API requires a key (`auth: rest: true`), see [Authentication](authentication.md) |
-| `--out FILE` | the page to write; default `jane_forensics_<ELEMENTID>_<UTC time>.html` in the current directory. `-` writes to standard output |
+| `--out FILE` | the page to write; default `jane-forensics_<ELEMENTID>_<UTC time>.html` in the current directory. `-` writes to standard output |
 | `--max N` | the most claims, results and log entries asked of Jane per list (default 100000). The report warns when a list may have been cut short |
 | `--nodocuments` | leave the documents themselves (claims, results, ...) out of the page, keeping the timeline and the differences: a much smaller page when claims hold large event logs |
 
@@ -64,11 +64,11 @@ Exit status: 0 success; 1 Jane unreachable or refusing, element not found, the o
 
 Log entries about intents are left out, as in [jp_extract](jp_extract.md): intents are shared with other elements.
 
-**Baselines.** So that the first claims and results in the range are compared with something, jane_forensics also reads, going back in time from the start of the range, the latest earlier claim for the element copy, for each intent and for each series that appears in the range, and likewise the latest earlier result for each result series and each expected value. It stops as soon as it has them. Baselines are used for the comparisons and included as documents, but are not shown as events.
+**Baselines.** So that the first claims and results in the range are compared with something, jane-forensics also reads, going back in time from the start of the range, the latest earlier claim for the element copy, for each intent and for each series that appears in the range, and likewise the latest earlier result for each result series and each expected value. It stops as soon as it has them. Baselines are used for the comparisons and included as documents, but are not shown as events.
 
 ## What is compared
 
-A claim holds copies of the element and the intent as they were when it was made, and a result a copy of the expected value it was checked against (see [Claims](claims.md) and [Results](results.md)). jane_forensics compares each copy with the one before it, value by value:
+A claim holds copies of the element and the intent as they were when it was made, and a result a copy of the expected value it was checked against (see [Claims](claims.md) and [Results](results.md)). jane-forensics compares each copy with the one before it, value by value:
 
 | Change | In | Compared with |
 |---|---|---|
@@ -110,7 +110,7 @@ Other claims (`tpm2/pcrs`, `sys/info`, `tpm2/getcert`, `tpm2/capabilities`, RATS
 
 PCRs are named by the element's naming scheme, UEFI variables and expected value keys by what they are and the rule that checks them. The first line of the summary is also shown under the event's title in the timeline. An event with nothing changed says so (*No changes since …*), and the first of its kind says there was nothing to compare with.
 
-jane_forensics, like Jane, makes no trust decisions: it shows what changed and when.
+jane-forensics, like Jane, makes no trust decisions: it shows what changed and when.
 
 ## The page
 
@@ -119,7 +119,7 @@ The page is one self-contained HTML file: no scripts, styles or fonts from elsew
 - **Timeline**: every event, newest first (the **Newest first** button reverses it), grouped by day. Each claim and result shows tags for what changed (`body: 3 changed`, `element: 2 changed`, `outcome: 1 changed`) or `first` where there was nothing earlier in the report to compare with. Click an event to see, first, the summary of what changed since the previous claim or result of the same kind, then its details, the differences (before and after, with the differing characters of equal-length values such as digests marked), links to related claims, results, sessions and expected values, and the documents themselves.
 - **Series**: each intent on each endpoint, with one box per claim (unchanged, changed, first, error), and each rule with one box per result (success, fail, other; outcome and expected value changes marked). Click a box to go to the event.
 - **Value history**: for the element, an intent, a claim series, a result series or an expected value, every path that changed and each change in order, starting from the value before the first change. This is where to look for *when did PCR 7 change, and to what?*
-- **About**: what was compared, and the report's details (Jane's address, range, counts, the version of jane_forensics).
+- **About**: what was compared, and the report's details (Jane's address, range, counts, the version of jane-forensics).
 
 The filters apply to every view:
 

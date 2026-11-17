@@ -1,8 +1,8 @@
-# jane_forensics — Jane element forensics (Go)
+# jane-forensics — Jane element forensics (Go)
 
-User documentation: [docs/jane_forensics.md](../docs/jane_forensics.md).
+User documentation: [docs/jane-forensics.md](../docs/jane-forensics.md).
 
-`jane_forensics ELEMENTID [--from TIME] [--until TIME]` reads an element and everything belonging to it (expected values, the intents it used, claims, results, sessions, log entries) through Jane's REST API, compares each claim's element, intent, endpoint and body (as it is, and decoded as Jane's rules read it), and each result's outcome and expected value, with the one before it, and writes the lot as one self-contained HTML page with a searchable, filterable timeline, series and value histories. It only ever sends GET requests.
+`jane-forensics ELEMENTID [--from TIME] [--until TIME]` reads an element and everything belonging to it (expected values, the intents it used, claims, results, sessions, log entries) through Jane's REST API, compares each claim's element, intent, endpoint and body (as it is, and decoded as Jane's rules read it), and each result's outcome and expected value, with the one before it, and writes the lot as one self-contained HTML page with a searchable, filterable timeline, series and value histories. It only ever sends GET requests.
 
 ## Code
 
@@ -21,7 +21,7 @@ User documentation: [docs/jane_forensics.md](../docs/jane_forensics.md).
 | `fakejane_test.go` | a fake Jane REST API and a story: an element whose PCR 7, SecureBoot variable, description, intent and expected value change over three days, with quotes (a reboot), IMA logs and sys/info |
 | `forensics_test.go`, `units_test.go`, `views_test.go` | tests; `views_test.go` decodes `lib/uefi/testdata`'s event log |
 
-Documents are handled as decoded JSON (`map[string]any`, numbers as `json.Number`), not as janeserver's structures, so fields jane_forensics does not know about are compared and shown too.
+Documents are handled as decoded JSON (`map[string]any`, numbers as `json.Number`), not as janeserver's structures, so fields jane-forensics does not know about are compared and shown too.
 
 ## Build and test
 

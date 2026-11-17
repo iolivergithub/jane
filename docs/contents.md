@@ -19,7 +19,7 @@ Jane is a remote attestation engine: it holds known-good values for machines (el
 - [Running Jane, tarzan and jp](running.md): every option, flag and environment variable; running by hand and on other systems.
 - [jp, the provisioner](jp.md): create, update and attest, the flags and when to use them, the provisioning file.
 - [jp_extract, the element extractor](jp_extract.md): copying an element with its expected values, claims, results, sessions and log entries into a file, and deleting it from Jane.
-- [jane_forensics, element forensics](jane_forensics.md): an element's history as an HTML timeline, showing when its PCRs, UEFI variables, expected values, intents or results changed.
+- [jane-forensics, element forensics](jane-forensics.md): an element's history as an HTML timeline, showing when its PCRs, UEFI variables, expected values, intents or results changed.
 - [Attestation profiles](attestationprofiles.md): profiles stored on elements, running them (REST, Web UI, `jp remoteattest`), following relationships, what a run records.
 - [The provisioning language](provisioning.md): every key of a provisioning file, rules and parameters, variables and their scope, attestation profiles and follow.
 - [Authentication](authentication.md): logins for the Web UI, REST API and x3270, and Jane's users.

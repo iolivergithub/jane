@@ -54,7 +54,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		listed:    map[string]int{},
 	}
 
-	fmt.Fprintf(w, "jane_forensics: element %s\n", eid)
+	fmt.Fprintf(w, "jane-forensics: element %s\n", eid)
 	el, err := cl.getDoc("/element/" + esc(eid))
 	var se *statusError
 	if errors.As(err, &se) {
@@ -82,7 +82,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.evs = append(c.evs, d)
 	}
-	fmt.Fprintf(w, "jane_forensics: %d expected values\n", len(c.evs))
+	fmt.Fprintf(w, "jane-forensics: %d expected values\n", len(c.evs))
 
 	if err := c.collectClaims(cl, eid, tr, max, w); err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.intents[id] = d
 	}
-	fmt.Fprintf(w, "jane_forensics: %d intents\n", len(c.intents))
+	fmt.Fprintf(w, "jane-forensics: %d intents\n", len(c.intents))
 
 	// sessions of the claims and results in the range
 	sessionIDs := map[string]bool{}
@@ -133,7 +133,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.sessions[id] = d
 	}
-	fmt.Fprintf(w, "jane_forensics: %d sessions\n", len(c.sessions))
+	fmt.Fprintf(w, "jane-forensics: %d sessions\n", len(c.sessions))
 
 	if err := c.collectLog(cl, eid, tr, max, now, w); err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (c *collection) collectClaims(cl *client, eid string, tr timeRange, max int
 	var inRange, base []*doc
 	for i, id := range ids {
 		if i > 0 && i%200 == 0 {
-			fmt.Fprintf(w, "jane_forensics: claims: read %d of %d\n", i, len(ids))
+			fmt.Fprintf(w, "jane-forensics: claims: read %d of %d\n", i, len(ids))
 		}
 		d, err := cl.getDoc("/claim/" + esc(id))
 		if err != nil {
@@ -206,7 +206,7 @@ func (c *collection) collectClaims(cl *client, eid string, tr timeRange, max int
 	}
 	c.claims = byTime(inRange, claimTime)
 	c.baseClaims = byTime(base, claimTime)
-	fmt.Fprintf(w, "jane_forensics: %d claims in the range, %d baseline claims before it (of %d listed)\n",
+	fmt.Fprintf(w, "jane-forensics: %d claims in the range, %d baseline claims before it (of %d listed)\n",
 		len(c.claims), len(c.baseClaims), len(ids))
 	return nil
 }
@@ -267,7 +267,7 @@ func (c *collection) collectResults(cl *client, eid string, tr timeRange, max in
 	var inRange, base []*doc
 	for i, id := range ids {
 		if i > 0 && i%200 == 0 {
-			fmt.Fprintf(w, "jane_forensics: results: read %d of %d\n", i, len(ids))
+			fmt.Fprintf(w, "jane-forensics: results: read %d of %d\n", i, len(ids))
 		}
 		d, err := cl.getDoc("/result/" + esc(id))
 		if err != nil {
@@ -305,7 +305,7 @@ func (c *collection) collectResults(cl *client, eid string, tr timeRange, max in
 	}
 	c.results = byTime(inRange, resultTime)
 	c.baseResults = byTime(base, resultTime)
-	fmt.Fprintf(w, "jane_forensics: %d results in the range, %d baseline results before it (of %d listed)\n",
+	fmt.Fprintf(w, "jane-forensics: %d results in the range, %d baseline results before it (of %d listed)\n",
 		len(c.results), len(c.baseResults), len(ids))
 	return nil
 }
@@ -352,7 +352,7 @@ func (c *collection) collectLog(cl *client, eid string, tr timeRange, max int64,
 		}
 	}
 	c.logs = byTime(kept, func(d *doc) int64 { return d.num("timestamp") })
-	fmt.Fprintf(w, "jane_forensics: %d log entries about the element (of %d read)\n", len(c.logs), len(entries))
+	fmt.Fprintf(w, "jane-forensics: %d log entries about the element (of %d read)\n", len(c.logs), len(entries))
 	return nil
 }
 

@@ -10,8 +10,8 @@ Jane is the remote attestation engine of a trusted or confidential computing env
 | `tarzan/` | tarzan, the reference trust agent |
 | `provisioner/` | jp, which registers an element with Jane, provisions its TPM and attests it |
 | `extractor/` | jp_extract, which copies an element and everything belonging to it out of Jane's database into a JSON file and, optionally, deletes it from Jane |
-| `forensics/` | jane_forensics, which reads an element's history through the REST API and writes it as a searchable HTML timeline marking what changed and when |
-| `lib/` | small Go library modules shared by the programs, so they cannot drift apart: `janeapi` (element and profile types, API key and profile name formats; janeserver, jp, jane_forensics), `uefi` (UEFI rule variables and measured state; janeserver, jp, jane_forensics), `machineid` and `tpmopen` (jp, tarzan), `localnames` (`.local` names by multicast DNS; janeserver, jp) |
+| `forensics/` | jane-forensics, which reads an element's history through the REST API and writes it as a searchable HTML timeline marking what changed and when |
+| `lib/` | small Go library modules shared by the programs, so they cannot drift apart: `janeapi` (element and profile types, API key and profile name formats; janeserver, jp, jane-forensics), `uefi` (UEFI rule variables and measured state; janeserver, jp, jane-forensics), `machineid` and `tpmopen` (jp, tarzan), `localnames` (`.local` names by multicast DNS; janeserver, jp) |
 | `etc/` | packaging (`etc/debbuild`), standard intents, `addjaneuser`, scripts |
 | `docs/` | the documentation |
 

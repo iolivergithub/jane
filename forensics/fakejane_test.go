@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// fakeJane answers the GET endpoints jane_forensics uses, from documents held
+// fakeJane answers the GET endpoints jane-forensics uses, from documents held
 // in memory, as janeserver does (lists newest first, ?max, 500 for an item
 // that is not there).
 type fakeJane struct {
@@ -317,9 +317,9 @@ func runStory(t *testing.T, f *fakeJane, tr timeRange, now time.Time) (*collecti
 	if err != nil {
 		t.Fatalf("collect: %v", err)
 	}
-	r := buildReport(c, tr, srv.URL, "jane_forensics test", now, true)
+	r := buildReport(c, tr, srv.URL, "jane-forensics test", now, true)
 	if f.methods["GET"] == 0 || len(f.methods) != 1 {
-		t.Fatalf("jane_forensics must only GET, made %v", f.methods)
+		t.Fatalf("jane-forensics must only GET, made %v", f.methods)
 	}
 	return c, r
 }

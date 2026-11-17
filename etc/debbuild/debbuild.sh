@@ -5,7 +5,7 @@
 # /tmp/janedebbuild, gzipped:
 #
 #   jane_<version>_<arch>.deb       amd64, arm64, s390x (janeserver with
-#                                   addjaneuser, jp_extract and jane_forensics)
+#                                   addjaneuser, jp_extract and jane-forensics)
 #   tarzan_<version>_<arch>.deb     amd64, arm64, s390x, ppc64el, riscv64,
 #                                   armel-armv5, armhf-armv6, armhf-armv7
 #
@@ -39,7 +39,7 @@ echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
 echo "${GREEN} -- we are building version number:${RED} ${VERSIONNUMBER} ${NC}"
 echo "${GREEN} -- for pkg control version:${RED} ${VERSIONNUMBERCONTROL} ${NC}"
-echo "${GREEN} -- jane, jp_extract and jane_forensics for:${RED} ${JANE_TARGETS} ${NC}"
+echo "${GREEN} -- jane, jp_extract and jane-forensics for:${RED} ${JANE_TARGETS} ${NC}"
 echo "${GREEN} -- tarzan and jp for:${RED} ${TARZAN_TARGETS} ${NC}"
 
 # debarch <target>: the Debian architecture of a target (armhf-armv6 -> armhf)
@@ -119,8 +119,8 @@ for t in $JANE_TARGETS; do
     cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
     cp $REPO/extractor/$(distdir "$t")/jp_extract $JANEBASE/opt/jane/jp_extract
     cp $REPO/docs/jp_extract.md $JANEBASE/usr/share/doc/janeattestationengine/jp_extract.md
-    cp $REPO/forensics/$(distdir "$t")/jane_forensics $JANEBASE/opt/jane/jane_forensics
-    cp $REPO/docs/jane_forensics.md $JANEBASE/usr/share/doc/janeattestationengine/jane_forensics.md
+    cp $REPO/forensics/$(distdir "$t")/jane-forensics $JANEBASE/opt/jane/jane-forensics
+    cp $REPO/docs/jane-forensics.md $JANEBASE/usr/share/doc/janeattestationengine/jane-forensics.md
     # the example provisioning files (jp skeletons, #125), as in every distribution
     cp $REPO/provisioner/skeleton/*.yaml $JANEBASE/usr/share/doc/janeattestationengine/skeletons/
 
@@ -138,7 +138,7 @@ for t in $JANE_TARGETS; do
     # even between unpacking and postinst (which then sets the jane group).
     chmod 751 $JANEBASE/etc/opt/jane
     chmod 750 $JANEBASE/var/log/jane
-    chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser $JANEBASE/opt/jane/jp_extract $JANEBASE/opt/jane/jane_forensics
+    chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser $JANEBASE/opt/jane/jp_extract $JANEBASE/opt/jane/jane-forensics
     chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
     chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
     chmod 644 $JANEBASE/lib/systemd/system/jane.service $JANEBASE/usr/share/doc/janeattestationengine/*.md \
@@ -197,8 +197,8 @@ cp ../addjaneuser/addjaneuser $WINJANE/
 cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
 cp $REPO/extractor/dist/windows-amd64/jp_extract.exe $WINJANE/
 cp $REPO/docs/jp_extract.md $WINJANE/jp_extract.md
-cp $REPO/forensics/dist/windows-amd64/jane_forensics.exe $WINJANE/
-cp $REPO/docs/jane_forensics.md $WINJANE/jane_forensics.md
+cp $REPO/forensics/dist/windows-amd64/jane-forensics.exe $WINJANE/
+cp $REPO/docs/jane-forensics.md $WINJANE/jane-forensics.md
 cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
 cp ../standardintents/standardintents.json ../standardobjects/standardobjects.json $WINJANE/
 cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt

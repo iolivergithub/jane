@@ -1,12 +1,12 @@
-// Command jane_forensics reads one element's history from Jane's REST API and
+// Command jane-forensics reads one element's history from Jane's REST API and
 // writes it as a single, self-contained HTML timeline: the element, its
 // expected values, the intents it used, its claims, results, sessions and log
 // entries, with the differences between successive snapshots marked.
 //
-//	jane_forensics [options] ELEMENTID [--from TIME] [--until TIME]
+//	jane-forensics [options] ELEMENTID [--from TIME] [--until TIME]
 //
 // It only reads (HTTP GET): nothing in Jane is changed, and nothing is
-// written into Jane's log by jane_forensics itself.
+// written into Jane's log by jane-forensics itself.
 package main
 
 import (
@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const usage = `usage: jane_forensics [-h] [--from TIME] [--until TIME] [--server URL]
+const usage = `usage: jane-forensics [-h] [--from TIME] [--until TIME] [--server URL]
                       [--apikeyfile PATH] [--out FILE] [--max N]
                       [--nodocuments] ELEMENTID
 
@@ -65,7 +65,7 @@ options:
                  overrides JANE_API_KEY. Needed if Jane's REST API requires
                  a key (auth: rest: true)
   --out FILE     the HTML file to write (default
-                 jane_forensics_<ELEMENTID>_<UTC time>.html); - writes to
+                 jane-forensics_<ELEMENTID>_<UTC time>.html); - writes to
                  standard output. An existing file is never overwritten
   --max N        the most claims, results and log entries asked of Jane
                  per list (default 100000); the report warns if a list
@@ -115,7 +115,7 @@ func main() {
 }
 
 func run(argv []string) int {
-	fmt.Fprintf(os.Stderr, "Jane Element Forensics (jane_forensics version %s, build %s)\n", VERSION, BUILD)
+	fmt.Fprintf(os.Stderr, "Jane Element Forensics (jane-forensics version %s, build %s)\n", VERSION, BUILD)
 
 	o, err := parseArgs(argv, os.Getenv)
 	if err == errHelp {
@@ -123,17 +123,17 @@ func run(argv []string) int {
 		return exitOK
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n%s", err, usage)
+		fmt.Fprintf(os.Stderr, "jane-forensics: %v\n%s", err, usage)
 		return exitUsage
 	}
 	now := time.Now()
 	tr, err := parseRange(o.from, o.until, now)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n%s", err, usage)
+		fmt.Fprintf(os.Stderr, "jane-forensics: %v\n%s", err, usage)
 		return exitUsage
 	}
 	if err := forensicsCommand(o, tr, now); err != nil {
-		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n", err)
+		fmt.Fprintf(os.Stderr, "jane-forensics: %v\n", err)
 		return exitError
 	}
 	return exitOK

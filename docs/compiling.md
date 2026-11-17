@@ -1,11 +1,11 @@
 # Compiling
 
-janeserver, tarzan, the provisioner jp, the extractor jp_extract and the forensics tool jane_forensics are separate Go modules in `janeserver/`, `tarzan/`, `provisioner/`, `extractor/` and `forensics/`; they share code through small library modules in `lib/`, each used as `github.com/iolivergithub/jane/lib/<name>` through a `replace` in the users' `go.mod` pointing at `../lib/<name>` (nothing to download or install separately):
+janeserver, tarzan, the provisioner jp, the extractor jp_extract and the forensics tool jane-forensics are separate Go modules in `janeserver/`, `tarzan/`, `provisioner/`, `extractor/` and `forensics/`; they share code through small library modules in `lib/`, each used as `github.com/iolivergithub/jane/lib/<name>` through a `replace` in the users' `go.mod` pointing at `../lib/<name>` (nothing to download or install separately):
 
 | Module | Used by | Contents |
 |---|---|---|
-| `lib/janeapi` | janeserver, jp, jane_forensics | the element and attestation profile types jp writes and Jane stores; profile name and API key formats |
-| `lib/uefi` | janeserver, jp, jane_forensics | the variables the `UEFI_` rules check and how their values are written; the measured UEFI state the `uefi_log` rules check |
+| `lib/janeapi` | janeserver, jp, jane-forensics | the element and attestation profile types jp writes and Jane stores; profile name and API key formats |
+| `lib/uefi` | janeserver, jp, jane-forensics | the variables the `UEFI_` rules check and how their values are written; the measured UEFI state the `uefi_log` rules check |
 | `lib/machineid` | jp, tarzan | the host's machine ID |
 | `lib/tpmopen` | jp, tarzan | opening a TPM from a device string |
 | `lib/localnames` | janeserver, jp | multicast DNS for `.local` names (#127, see [Running](running.md#host-names-ending-in-local)) |
@@ -24,7 +24,7 @@ Each module's `go.mod` and `go.sum` are complete, so builds need no `go.work`. E
 Each module has one Makefile (#116). With no settings it builds for linux/amd64 next to the source, as before:
 
 ```bash
-cd janeserver      # or tarzan, provisioner (builds jp), extractor (builds jp_extract) or forensics (builds jane_forensics)
+cd janeserver      # or tarzan, provisioner (builds jp), extractor (builds jp_extract) or forensics (builds jane-forensics)
 make build
 ```
 
@@ -74,9 +74,9 @@ The targets that are built and packaged (decisions in the 1.5.6 plan: build only
 make binary OS=windows      # in janeserver, extractor, forensics, tarzan or provisioner
 ```
 
-janeserver, jp_extract, jane_forensics, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
+janeserver, jp_extract, jane-forensics, tarzan and jp build for Windows amd64 (#122). They are shipped as zip files, not packages, with the same programs and configuration files as the packages and a short `WINDOWS.txt`; there is no installer or service wrapper. On Windows tarzan opens the TPM through TPM Base Services; what Windows lets through is best effort (see [Running](running.md#tarzan)).
 
-- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `jp_extract.exe` and `jp_extract.md`, `jane_forensics.exe` and `jane_forensics.md`, `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`, `skeletons\` (the [jp skeletons](jp.md#skeletons)).
+- `jane_<version>_windows-amd64.zip`: `janeserver.exe`, `addjaneuser` (Python, needs `argon2-cffi` and `pymongo`), `jp_extract.exe` and `jp_extract.md`, `jane-forensics.exe` and `jane-forensics.md`, `config.yaml`, `jane.env`, `REPLACE_ME.crt`/`.key`, `standardintents.json`, `standardobjects.json`, `skeletons\` (the [jp skeletons](jp.md#skeletons)).
 - `tarzan_<version>_windows-amd64.zip`: `tarzan.exe`, `jp.exe`, `provisioning.yaml.example`, `skeletons\` (the [jp skeletons](jp.md#skeletons)), `tarzan.env`.
 
 ## Version and build strings

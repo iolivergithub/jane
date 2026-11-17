@@ -29,23 +29,23 @@ func forensicsCommand(o cmdline, tr timeRange, now time.Time) error {
 	}
 	out := o.out
 	if out == "" {
-		out = fmt.Sprintf("jane_forensics_%s_%s.html", safeName(o.elementID), now.UTC().Format("20060102T150405Z"))
+		out = fmt.Sprintf("jane-forensics_%s_%s.html", safeName(o.elementID), now.UTC().Format("20060102T150405Z"))
 	}
 	if out != "-" {
 		if _, err := os.Stat(out); err == nil {
-			return fmt.Errorf("%s exists: jane_forensics never overwrites a file", out)
+			return fmt.Errorf("%s exists: jane-forensics never overwrites a file", out)
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 	}
 
 	cl := newClient(o.server, key)
-	fmt.Fprintf(os.Stderr, "jane_forensics: Jane at %s, range %s\n", cl.baseURL, tr)
+	fmt.Fprintf(os.Stderr, "jane-forensics: Jane at %s, range %s\n", cl.baseURL, tr)
 	c, err := collect(cl, o.elementID, tr, o.max, now, os.Stderr)
 	if err != nil {
 		return err
 	}
-	tool := fmt.Sprintf("jane_forensics %s (build %s)", VERSION, BUILD)
+	tool := fmt.Sprintf("jane-forensics %s (build %s)", VERSION, BUILD)
 	r := buildReport(c, tr, cl.baseURL, tool, now, !o.noDocuments)
 	r.Counts["requests"] = cl.calls
 
@@ -68,9 +68,9 @@ func forensicsCommand(o cmdline, tr timeRange, now time.Time) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "jane_forensics: wrote %s (%d events, %d bytes)\n", out, len(r.Events), len(page))
+	fmt.Fprintf(os.Stderr, "jane-forensics: wrote %s (%d events, %d bytes)\n", out, len(r.Events), len(page))
 	for _, w := range r.Warnings {
-		fmt.Fprintln(os.Stderr, "jane_forensics: warning:", w)
+		fmt.Fprintln(os.Stderr, "jane-forensics: warning:", w)
 	}
 	return nil
 }

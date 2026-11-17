@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jane forensics</title>
 <!--
-  Written by jane_forensics (forensics/ in the Jane repository). Self-contained:
+  Written by jane-forensics (forensics/ in the Jane repository). Self-contained:
   no external scripts, styles, fonts or requests. The data is the R object
   below; everything else is computed in the browser.
 -->
@@ -760,7 +760,7 @@ function renderAbout() {
   sec.dataset.done = "1";
   sec.append(
     el("h3", { text: "What this report shows" }),
-    el("p", null, "Every claim holds copies of the element and the intent as they were when it was made, and every result a copy of the expected value it used. jane_forensics compares each copy with the one before it:"),
+    el("p", null, "Every claim holds copies of the element and the intent as they were when it was made, and every result a copy of the expected value it used. jane-forensics compares each copy with the one before it:"),
     el("ul", null,
       el("li", null, el("b", { text: "element: " }), "the element copy, against the previous claim (any intent)"),
       el("li", null, el("b", { text: "intent: " }), "the intent copy, against the previous claim of the same intent"),
@@ -899,7 +899,7 @@ function downloadCSV() {
     rows.push([new Date(e.t).toISOString(), e.ns, e.type, e.kind, e.title, e.intent, e.intentid, e.endpoint, e.rule, e.resultname, e.session, e.itemid, ch, e.detail]);
   }
   const blob = new Blob([rows.map((r) => r.map(q).join(",")).join("\r\n") + "\r\n"], { type: "text/csv" });
-  const a = el("a", { href: URL.createObjectURL(blob), download: `jane_forensics_${R.elementid}.csv` });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `jane-forensics_${R.elementid}.csv` });
   document.body.append(a); a.click(); a.remove();
 }
 
