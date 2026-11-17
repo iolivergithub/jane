@@ -1,12 +1,12 @@
-// Command jp_forensics reads one element's history from Jane's REST API and
+// Command jane_forensics reads one element's history from Jane's REST API and
 // writes it as a single, self-contained HTML timeline: the element, its
 // expected values, the intents it used, its claims, results, sessions and log
 // entries, with the differences between successive snapshots marked.
 //
-//	jp_forensics [options] ELEMENTID [--from TIME] [--until TIME]
+//	jane_forensics [options] ELEMENTID [--from TIME] [--until TIME]
 //
 // It only reads (HTTP GET): nothing in Jane is changed, and nothing is
-// written into Jane's log by jp_forensics itself.
+// written into Jane's log by jane_forensics itself.
 package main
 
 import (
@@ -17,9 +17,9 @@ import (
 	"time"
 )
 
-const usage = `usage: jp_forensics [-h] [--from TIME] [--until TIME] [--server URL]
-                    [--apikeyfile PATH] [--out FILE] [--max N]
-                    [--nodocuments] ELEMENTID
+const usage = `usage: jane_forensics [-h] [--from TIME] [--until TIME] [--server URL]
+                      [--apikeyfile PATH] [--out FILE] [--max N]
+                      [--nodocuments] ELEMENTID
 
 Jane element forensics
 
@@ -32,10 +32,17 @@ in any browser, offline). Every claim is compared with the one before it:
     (e.g. which PCRs or UEFI variables changed, and when)
   - its endpoint, with the previous claim of the same intent and endpoint
 and every result with the one before it for the same intent, endpoint and
-rule (the outcome and the expected value copy it holds). The element,
-intents and expected values as they are now are compared with their last
-copies. The page can be searched and filtered, and shows each intent's
-claims as a series and the history of every value that changed.
+rule (the outcome, the rule's message and the expected value copy it holds).
+Claim bodies are also decoded as Jane's rules read them: TPM quotes (attested
+digest, firmware, reset count), UEFI event logs (measured Secure Boot state,
+PK, KEK, db, dbx, authorities, events), UEFI variables, IMA logs (files).
+Values that change on every call (nonce, clock, signature) are marked
+volatile. The element, intents and expected values as they are now are
+compared with their last copies. Expanding an event in the page shows a
+summary in words of what changed since the previous claim or result of the
+same kind. Everything, documents included, can be searched and filtered;
+the page also shows each intent's claims as a series and the history of
+every value that changed.
 
 positional arguments:
   ELEMENTID      the element's itemid
@@ -58,7 +65,7 @@ options:
                  overrides JANE_API_KEY. Needed if Jane's REST API requires
                  a key (auth: rest: true)
   --out FILE     the HTML file to write (default
-                 jp_forensics_<ELEMENTID>_<UTC time>.html); - writes to
+                 jane_forensics_<ELEMENTID>_<UTC time>.html); - writes to
                  standard output. An existing file is never overwritten
   --max N        the most claims, results and log entries asked of Jane
                  per list (default 100000); the report warns if a list
@@ -108,7 +115,7 @@ func main() {
 }
 
 func run(argv []string) int {
-	fmt.Fprintf(os.Stderr, "Jane Element Forensics (jp_forensics version %s, build %s)\n", VERSION, BUILD)
+	fmt.Fprintf(os.Stderr, "Jane Element Forensics (jane_forensics version %s, build %s)\n", VERSION, BUILD)
 
 	o, err := parseArgs(argv, os.Getenv)
 	if err == errHelp {
@@ -116,17 +123,17 @@ func run(argv []string) int {
 		return exitOK
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "jp_forensics: %v\n%s", err, usage)
+		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n%s", err, usage)
 		return exitUsage
 	}
 	now := time.Now()
 	tr, err := parseRange(o.from, o.until, now)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "jp_forensics: %v\n%s", err, usage)
+		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n%s", err, usage)
 		return exitUsage
 	}
 	if err := forensicsCommand(o, tr, now); err != nil {
-		fmt.Fprintf(os.Stderr, "jp_forensics: %v\n", err)
+		fmt.Fprintf(os.Stderr, "jane_forensics: %v\n", err)
 		return exitError
 	}
 	return exitOK

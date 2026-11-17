@@ -1,9 +1,23 @@
-module jp_forensics
+module jane_forensics
 
 go 1.26.0
 
+require github.com/google/go-eventlog v0.0.2
+
+require (
+	github.com/google/go-tpm v0.9.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
+)
+
 // Library modules in this repository (lib/), used through replace so they
 // are never downloaded
-require github.com/iolivergithub/jane/lib/janeapi v0.0.0 // API key format, shared with Jane and jp
+require (
+	github.com/iolivergithub/jane/lib/janeapi v0.0.0 // API key format, shared with Jane and jp
+	github.com/iolivergithub/jane/lib/uefi v0.0.0 // UEFI variables and measured state, as the rules read them
+)
 
-replace github.com/iolivergithub/jane/lib/janeapi => ../lib/janeapi
+replace (
+	github.com/iolivergithub/jane/lib/janeapi => ../lib/janeapi
+	github.com/iolivergithub/jane/lib/uefi => ../lib/uefi
+)

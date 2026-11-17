@@ -1,9 +1,9 @@
-# Builds jp_forensics for one target. CGO is off, so any target builds on any host.
+# Builds jane_forensics for one target. CGO is off, so any target builds on any host.
 #
 #   make                              linux/amd64, next to the source
 #   make ARCH=arm64                   another architecture
 #   make ARCH=arm GOARM=5             32-bit ARM: GOARM 5 (no FPU), 6 or 7
-#   make OS=windows                   Windows amd64 (jp_forensics.exe)
+#   make OS=windows                   Windows amd64 (jane_forensics.exe)
 #   make VERSION=1.5.6 OUT=dist/x     version string and output directory
 #
 # PIE and stripping are used only on targets that support them; see the
@@ -17,7 +17,7 @@ GOARM   ?=
 VERSION ?=
 OUT     ?= .
 
-BINARY_NAME = jp_forensics
+BINARY_NAME = jane_forensics
 EXE := $(if $(filter windows,$(OS)),.exe,)
 BUILD_DATE := $(shell date)
 

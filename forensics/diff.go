@@ -29,6 +29,7 @@ type Diff struct {
 	Op   string `json:"o"`
 	Old  *Value `json:"a,omitempty"`
 	New  *Value `json:"b,omitempty"`
+	V    bool   `json:"v,omitempty"` // volatile: changes on every call by design (nonce, clock, signature)
 }
 
 // diffValues compares two JSON values leaf by leaf.

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -23,13 +24,25 @@ type Event struct {
 	IntentID   string      `json:"intentid,omitempty"`
 	Endpoint   string      `json:"endpoint,omitempty"`
 	Rule       string      `json:"rule,omitempty"`
-	EV         string      `json:"ev,omitempty"` // results: the expected value's itemid
+	RuleDesc   string      `json:"ruledesc,omitempty"`
+	Function   string      `json:"function,omitempty"` // claims: the intent's function, e.g. tpm2/quote
+	DecodedDoc string      `json:"decodeddoc,omitempty"`
+	Prev       *Prev       `json:"prev,omitempty"` // the previous claim or result of the same kind
+	EV         string      `json:"ev,omitempty"`   // results: the expected value's itemid
 	Series     string      `json:"series,omitempty"`
 	Result     *int64      `json:"result,omitempty"`
 	ResultName string      `json:"resultname,omitempty"`
 	Session    string      `json:"session,omitempty"`
 	Refs       []Ref       `json:"refs,omitempty"`
 	Changes    []ChangeSet `json:"changes,omitempty"`
+}
+
+// Prev is the item an event is compared with: the previous claim of the same
+// intent on the same endpoint, or the previous result of the same rule.
+type Prev struct {
+	ID    string `json:"id"` // event ID or document key
+	T     int64  `json:"t"`
+	Label string `json:"label"`
 }
 
 // Ref links an event to another event or document.
@@ -40,13 +53,14 @@ type Ref struct {
 
 // ChangeSet is what changed in one part of an event against the one before.
 type ChangeSet struct {
-	What       string `json:"what"` // element intent body endpoint expectedvalue outcome
-	Label      string `json:"label"`
-	Against    string `json:"against,omitempty"` // itemid compared with
-	AgainstDoc string `json:"againstdoc,omitempty"`
-	AgainstT   int64  `json:"againstt,omitempty"`
-	First      bool   `json:"first,omitempty"` // nothing earlier to compare with
-	Diffs      []Diff `json:"diffs,omitempty"`
+	What       string        `json:"what"` // element intent body endpoint expectedvalue outcome
+	Label      string        `json:"label"`
+	Against    string        `json:"against,omitempty"` // itemid compared with
+	AgainstDoc string        `json:"againstdoc,omitempty"`
+	AgainstT   int64         `json:"againstt,omitempty"`
+	First      bool          `json:"first,omitempty"` // nothing earlier to compare with
+	Diffs      []Diff        `json:"diffs,omitempty"`
+	Summary    []SummaryLine `json:"summary,omitempty"`
 }
 
 // Series is one intent on one endpoint (claims), or that and a rule (results).
@@ -103,6 +117,7 @@ type builder struct {
 	withDocs  bool
 	events    map[string]bool
 	intentNms map[string]string
+	views     map[*doc]cachedView
 }
 
 func buildReport(c *collection, tr timeRange, server, tool string, now time.Time, withDocs bool) *Report {
@@ -120,7 +135,7 @@ func buildReport(c *collection, tr timeRange, server, tool string, now time.Time
 	if !tr.All {
 		r.FromMS, r.UntilMS = tr.From.UnixMilli(), tr.Until.UnixMilli()
 	}
-	b := &builder{c: c, r: r, withDocs: withDocs, events: map[string]bool{}, intentNms: map[string]string{}}
+	b := &builder{c: c, r: r, withDocs: withDocs, events: map[string]bool{}, intentNms: map[string]string{}, views: map[*doc]cachedView{}}
 	for id, d := range c.intents {
 		b.intentNms[id] = d.str("name")
 	}
@@ -159,11 +174,8 @@ func buildReport(c *collection, tr timeRange, server, tool string, now time.Time
 	r.Counts["events"] = len(r.Events)
 	changed := 0
 	for _, e := range r.Events {
-		for _, cs := range e.Changes {
-			if len(cs.Diffs) > 0 {
-				changed++
-				break
-			}
+		if hasChange(e) {
+			changed++
 		}
 	}
 	r.Counts["eventswithchanges"] = changed
@@ -182,6 +194,9 @@ func (b *builder) addDoc(key string, d *doc) string {
 }
 
 func (b *builder) add(e Event) {
+	if e.Type != "claim" {
+		b.finish(e.Changes, sumCtx{})
+	}
 	b.events[e.ID] = true
 	b.r.Events = append(b.r.Events, e)
 }
@@ -232,7 +247,12 @@ func (b *builder) claims(tr timeRange, now time.Time) {
 			Series:   key,
 			Session:  d.str("header.session.itemid"),
 		}
+		e.Function = d.str("header.intent.function")
 		e.Title = fmt.Sprintf("Claim: %s on %s", e.Intent, e.Endpoint)
+		if prev := lastSeries[key]; prev != nil {
+			e.Prev = &Prev{ID: "claim:" + prev.str("itemid"), T: ms(claimTime(prev)),
+				Label: fmt.Sprintf("claim of %s on %s", e.Intent, e.Endpoint)}
+		}
 		if bt := d.str("bodytype"); bt != "" {
 			e.Detail = "body type " + bt
 		}
@@ -243,6 +263,24 @@ func (b *builder) claims(tr timeRange, now time.Time) {
 		e.Changes = appendChange(e.Changes, "intent", "Intent copy (vs previous claim of this intent)", "claim", lastIntent[pid], d, "header.intent", true)
 		e.Changes = appendChange(e.Changes, "endpoint", "Endpoint (vs previous claim in this series)", "claim", lastSeries[key], d, "header.endpoint", false)
 		e.Changes = appendChange(e.Changes, "body", "Claim body (vs previous claim in this series)", "claim", lastSeries[key], d, "body", true)
+		view, title := b.view(d)
+		if view != nil {
+			if b.withDocs {
+				e.DecodedDoc = "decoded:claim:" + id
+				b.r.Documents[e.DecodedDoc] = prettyValue(view)
+			}
+			if prev := lastSeries[key]; prev != nil {
+				pv, _ := b.view(prev)
+				if diffs := diffValues(pv, view); len(diffs) > 0 {
+					e.Changes = append(e.Changes, ChangeSet{What: "decoded", Label: title + " (vs previous claim in this series)",
+						Against: prev.str("itemid"), AgainstDoc: "claim:" + prev.str("itemid"), AgainstT: ms(claimTime(prev)), Diffs: diffs})
+				}
+			}
+		}
+		b.finish(e.Changes, sumCtx{function: e.Function, pcrScheme: d.str("header.element.tpm2.pcrnaming"), names: b.c.pcrNames, decoded: view != nil})
+		if bt := d.str("bodytype"); bt == "*ERROR" {
+			e.Detail = join2("claim failed", e.Detail)
+		}
 		if !seenSeries[key] {
 			seenSeries[key] = true
 			b.r.Series = append(b.r.Series, Series{Key: key, Type: "claim", Intent: e.Intent, IntentID: pid, Endpoint: e.Endpoint})
@@ -350,11 +388,20 @@ func (b *builder) results(tr timeRange, now time.Time) {
 			Detail:     d.str("message"),
 		}
 		e.Title = fmt.Sprintf("Result: %s — %s", e.Rule, e.ResultName)
+		e.RuleDesc = b.c.rules[e.Rule]
+		if prev := lastSeries[key]; prev != nil {
+			e.Prev = &Prev{ID: "result:" + prev.str("itemid"), T: ms(resultTime(prev)),
+				Label: fmt.Sprintf("result of %s for %s on %s", e.Rule, e.Intent, epn)}
+		}
 		if prev := lastSeries[key]; prev != nil {
 			if pc := prev.num("result"); pc != code {
-				e.Changes = append(e.Changes, ChangeSet{What: "outcome", Label: "Outcome (vs previous result of this rule, intent and endpoint)",
+				cs := ChangeSet{What: "outcome", Label: "Outcome (vs previous result of this rule, intent and endpoint)",
 					Against: prev.str("itemid"), AgainstDoc: "result:" + prev.str("itemid"), AgainstT: ms(resultTime(prev)),
-					Diffs: []Diff{{Path: "result", Op: "changed", Old: makeValue(resultName(pc)), New: makeValue(resultName(code))}}})
+					Diffs: []Diff{{Path: "result", Op: "changed", Old: makeValue(resultName(pc)), New: makeValue(resultName(code))}}}
+				if m := d.str("message"); m != "" {
+					cs.Diffs = append(cs.Diffs, Diff{Path: "message", Op: "changed", Old: makeValue(prev.str("message")), New: makeValue(m)})
+				}
+				e.Changes = append(e.Changes, cs)
 			}
 		} else {
 			e.Changes = append(e.Changes, ChangeSet{What: "outcome", Label: "Outcome (vs previous result of this rule, intent and endpoint)", First: true})
@@ -564,11 +611,26 @@ func (b *builder) links() {
 			}
 		case "result":
 			d := findDoc(b.c.results, e.ItemID)
-			if cid := d.str("claimid"); cid != "" {
+			cid := d.str("claimid")
+			if cid != "" {
 				e.Refs = append(e.Refs, Ref{Label: "claim " + cid, ID: target("claim", cid)})
 			}
 			if ev := d.str("expectedvalue.itemid"); ev != "" {
 				e.Refs = append(e.Refs, Ref{Label: "expected value " + ev, ID: target("ev", ev)})
+			}
+			// claims named in the rule's parameters (pcrscid, uefilogcid, quotecid, previouscid, ...)
+			if ps, ok := d.get("parameters").(map[string]any); ok {
+				for _, k := range sortedKeys(ps) {
+					v, _ := ps[k].(string)
+					if v == "" || v == cid {
+						continue
+					}
+					if t := target("claim", v); t != "" {
+						e.Refs = append(e.Refs, Ref{Label: k + " → claim " + v, ID: t})
+					} else if _, known := b.c.claimByID[v]; known {
+						e.Refs = append(e.Refs, Ref{Label: k + " → claim " + v})
+					}
+				}
 			}
 			if e.Session != "" {
 				e.Refs = append(e.Refs, Ref{Label: "session " + e.Session, ID: target("session", e.Session)})
@@ -614,4 +676,54 @@ func join2(a, b string) string {
 		return b
 	}
 	return a + "; " + b
+}
+
+// view is a claim's decoded view and its title, decoded once per claim.
+func (b *builder) view(d *doc) (map[string]any, string) {
+	if v, ok := b.views[d]; ok {
+		return v.view, v.title
+	}
+	body, _ := d.get("body").(map[string]any)
+	v, title := decodedView(d.str("header.intent.function"), body)
+	b.views[d] = cachedView{v, title}
+	return v, title
+}
+
+type cachedView struct {
+	view  map[string]any
+	title string
+}
+
+// finish marks the volatile differences of claim bodies and writes each
+// change set's summary.
+func (b *builder) finish(cs []ChangeSet, ctx sumCtx) {
+	for i := range cs {
+		if cs[i].What == "body" {
+			for j := range cs[i].Diffs {
+				cs[i].Diffs[j].V = isVolatile(ctx.function, cs[i].Diffs[j].Path)
+			}
+		}
+		cs[i].Summary = summarize(cs[i].What, cs[i].Diffs, ctx)
+	}
+}
+
+// prettyValue writes a decoded view as indented JSON.
+func prettyValue(v any) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return fmt.Sprint(v)
+	}
+	return string(b)
+}
+
+// hasChange reports whether an event has a difference that is not volatile.
+func hasChange(e Event) bool {
+	for _, cs := range e.Changes {
+		for _, d := range cs.Diffs {
+			if !d.V {
+				return true
+			}
+		}
+	}
+	return false
 }

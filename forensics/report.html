@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Jane forensics</title>
 <!--
-  Written by jp_forensics (forensics/ in the Jane repository). Self-contained:
+  Written by jane_forensics (forensics/ in the Jane repository). Self-contained:
   no external scripts, styles, fonts or requests. The data is the R object
   below; everything else is computed in the browser.
 -->
@@ -124,6 +124,16 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 .hist .step { margin: 4px 0; }
 .empty { color: var(--muted); padding: 20px 0; }
 .hidden { display: none !important; }
+.summary { margin: 8px 0 10px; padding: 8px 12px; border-radius: 6px; background: var(--chg-soft); border: 1px solid var(--line); }
+.summary.none { background: var(--ok-soft); }
+.summary.first { background: var(--accent-soft); }
+.summary h4 { margin: 0 0 4px; font-size: 13px; }
+.summary ul { margin: 2px 0 0 0; padding: 0; list-style: none; }
+.summary li { margin: 2px 0; overflow-wrap: anywhere; }
+.summary .what { display: inline-block; min-width: 104px; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.title .preview { display: block; color: var(--chg); font-size: 12.5px; margin-top: 1px; }
+tr.vol td { opacity: .6; }
+.vtag { font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; font-family: system-ui, sans-serif; }
 .hint { color: var(--muted); font-size: 12px; }
 </style>
 </head>
@@ -136,7 +146,8 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 <div id="warnings"></div>
 
 <div class="toolbar">
-  <input type="search" id="q" placeholder="Search titles, ids, paths, values…" title="Case-insensitive; space-separated words must all match; &quot;quoted phrase&quot; matches exactly">
+  <input type="search" id="q" placeholder="Search anything…" title="Case-insensitive; space-separated words must all match; &quot;quoted phrase&quot; matches exactly. Searches titles, item IDs, names, change summaries, changed paths and values and, with 'in documents', every claim, result, session, log entry, expected value and decoded view in full">
+  <label class="inline" title="Also search the whole of each document (claims, results, ...) and its decoded view, not only what changed"><input type="checkbox" id="f-docs" checked> in documents</label>
   <div class="chips" id="types"></div>
   <div class="group">
     <select id="f-intent" title="Intent"><option value="">All intents</option></select>
@@ -148,6 +159,7 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
   </div>
   <div class="group">
     <label class="inline"><input type="checkbox" id="f-changes"> Only changes</label>
+    <label class="inline" title="Values that differ on every call by design (a quote's nonce, clock and signature): hide them, so that they do not count as changes"><input type="checkbox" id="f-volatile" checked> Hide volatile</label>
     <label class="inline" title="Also show first-in-series claims and results, where there was nothing to compare with"><input type="checkbox" id="f-first" checked> incl. first</label>
     <input type="text" id="ignore" placeholder="Ignore paths (regex)" title="Differences whose path matches this regular expression are ignored, e.g. ^body\.quote|recordhistory|nonce. Paths are prefixed with the part: body:, element:, intent:, endpoint:, expectedvalue:, outcome:">
   </div>
@@ -179,7 +191,7 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 
 <script>
 "use strict";
-const R = /*JP_FORENSICS_REPORT*/null;
+const R = /*JANE_FORENSICS_REPORT*/null;
 
 // ------------------------------------------------------------ basics
 const $ = (id) => document.getElementById(id);
@@ -235,7 +247,7 @@ function subjectOf(e, cs) {
   switch (cs.what) {
     case "element": return "element";
     case "intent": return "intent:" + e.intentid;
-    case "body": case "endpoint": return "series:" + e.series;
+    case "body": case "endpoint": case "decoded": return "series:" + e.series;
     case "expectedvalue": return "ev:" + (e.type === "ev" ? e.itemid : e.ev);
     case "outcome": return "rseries:" + e.series;
   }
@@ -262,19 +274,25 @@ for (const e of EV) {
 
 // search text, built once per event
 for (const e of EV) {
-  const bits = [e.title, e.detail, e.itemid, e.intent, e.intentid, e.endpoint, e.rule, e.resultname, e.session, e.ev, e.ns, TYPE_LABEL[e.type], e.kind];
+  const bits = [e.title, e.detail, e.itemid, e.intent, e.intentid, e.endpoint, e.rule, e.ruledesc, e.function, e.resultname, e.session, e.ev, e.ns, TYPE_LABEL[e.type], e.kind];
   for (const cs of e.changes || []) {
     bits.push(cs.label, cs.against);
+    for (const l of cs.summary || []) bits.push(l.t);
     for (const d of cs.diffs || []) bits.push(cs.what + ":" + d.p, d.a && d.a.t, d.b && d.b.t);
   }
   for (const r of e.refs || []) bits.push(r.label);
   e._s = bits.filter(Boolean).join("\n").toLowerCase();
 }
+// the whole documents of an event, lower-cased, made on first use
+function docText(e) {
+  if (e._d == null) e._d = ((R.documents[e.doc] || "") + "\n" + (R.documents[e.decodeddoc] || "")).toLowerCase();
+  return e._d;
+}
 
 // ------------------------------------------------------------ state
 const state = {
   tab: "timeline", q: "", types: new Set(TYPES.map((t) => t[0])), intent: "", endpoint: "", rule: "", outcome: "",
-  changesOnly: false, inclFirst: true, ignore: null, ignoreText: "", from: null, until: null, tz: "utc", newest: false,
+  changesOnly: false, inclFirst: true, hideVolatile: true, searchDocs: true, ignore: null, ignoreText: "", from: null, until: null, tz: "utc", newest: false,
   open: new Set(), pinned: new Set(), limit: PAGE, histSubject: "", histPath: "",
 };
 
@@ -287,9 +305,16 @@ function terms(q) {
 // diffs of a change set that are not ignored
 function shown(cs) {
   if (!cs.diffs) return [];
-  if (!state.ignore) return cs.diffs;
-  return cs.diffs.filter((d) => !state.ignore.test(cs.what + ":" + d.p));
+  return cs.diffs.filter((d) => !(state.hideVolatile && d.v) && !(state.ignore && state.ignore.test(cs.what + ":" + d.p)));
 }
+function shownLines(cs) {
+  return (cs.summary || []).filter((l) => {
+    if (state.hideVolatile && l.v) return false;
+    if (state.ignore && l.p && l.p.length && l.p.every((p) => state.ignore.test(cs.what + ":" + p))) return false;
+    return true;
+  });
+}
+function volatileCount(cs) { return (cs.diffs || []).filter((d) => d.v).length; }
 function changeInfo(e) {
   let changed = false, first = false;
   for (const cs of e.changes || []) {
@@ -319,7 +344,7 @@ function matches(e) {
     const ci = changeInfo(e);
     if (!(ci.changed || (state.inclFirst && ci.first))) return false;
   }
-  if (state.q) for (const t of terms(state.q)) if (!e._s.includes(t)) return false;
+  if (state.q) for (const t of terms(state.q)) if (!e._s.includes(t) && !(state.searchDocs && docText(e).includes(t))) return false;
   return true;
 }
 
@@ -373,7 +398,7 @@ function eventTags(e) {
     if (cs.first) { tags.push(el("span", { class: "tag first", title: cs.label + ": nothing earlier to compare with", text: cs.what + ": first" })); continue; }
     const n = shown(cs).length, all = (cs.diffs || []).length;
     if (n) tags.push(el("span", { class: "tag chg", title: cs.label, text: `${cs.what}: ${n} changed` }));
-    else if (all) tags.push(el("span", { class: "tag ign", title: `${cs.label}: ${all} differences, all ignored`, text: `${cs.what}: ${all} ignored` }));
+    else if (all && all > volatileCount(cs)) tags.push(el("span", { class: "tag ign", title: `${cs.label}: ${all} differences, all ignored or volatile`, text: `${cs.what}: ${all} hidden` }));
   }
   return tags;
 }
@@ -383,11 +408,51 @@ function eventNode(e) {
   const row = el("div", { class: "row", onclick: () => toggle(e, box) },
     el("span", { class: "time", title: fmtFull(e.t) + "  (" + e.ns + " ns)", text: fmtTime(e.t) }),
     el("span", { class: "badge", text: TYPE_LABEL[e.type] + (e.kind && e.kind !== e.type ? " · " + e.kind : "") }),
-    el("span", { class: "title" }, hl(e.title), e.detail ? el("span", { class: "detail" }, hl(e.detail)) : null),
+    el("span", { class: "title" }, hl(e.title), e.detail ? el("span", { class: "detail" }, hl(e.detail)) : null, previewLine(e)),
     el("span", { class: "tags" }, eventTags(e)));
   box.append(row);
   if (state.open.has(e.id)) box.append(detailNode(e));
   return box;
+}
+
+const ORDER = ["outcome", "decoded", "body", "endpoint", "expectedvalue", "element", "intent"];
+
+// the first line of the summary, shown under the title of a changed event
+function previewLine(e) {
+  let first = null, n = 0;
+  for (const w of ORDER) for (const cs of (e.changes || []).filter((c) => c.what === w && !c.first)) {
+    const ls = shownLines(cs);
+    if (ls.length && !first) first = ls[0];
+    n += ls.length;
+  }
+  return first ? el("span", { class: "preview" }, hl(first.t), n > 1 ? ` (+${n - 1} more)` : "") : null;
+}
+
+// the summary at the top of an expanded event: what changed since the
+// previous claim or result of the same kind, in words
+function summaryNode(e) {
+  const sets = [...(e.changes || [])].sort((a, b) => ORDER.indexOf(a.what) - ORDER.indexOf(b.what));
+  const items = [];
+  let hidden = 0;
+  for (const cs of sets) {
+    if (cs.first) continue;
+    const ls = shownLines(cs);
+    hidden += (cs.summary || []).length - ls.length;
+    for (const l of ls) items.push(el("li", null, el("span", { class: "what", title: cs.label, text: cs.what }), hl(l.t)));
+  }
+  const prev = e.prev;
+  const target = prev && (byId.has(prev.id) || R.documents[prev.id] != null) ? prev.id : "";
+  const since = prev ? el("span", null, " since the previous ", prev.label, " (", linkTo(fmtFull(prev.t), target), byId.has(prev.id) ? "" : ", before the range", ")") : null;
+  if (items.length) {
+    const box = el("div", { class: "summary" }, el("h4", null, "Changes", since || " (against the copies named below)"), el("ul", null, items));
+    if (hidden) box.append(el("div", { class: "hint", text: `${hidden} more ${hidden === 1 ? "line" : "lines"} hidden (volatile or ignored values).` }));
+    return box;
+  }
+  if (prev) return el("div", { class: "summary none" }, el("h4", null, "No changes", since), hidden ? el("div", { class: "hint", text: `${hidden} hidden (volatile or ignored values).` }) : null);
+  if (sets.some((c) => c.first) && (e.type === "claim" || e.type === "result")) {
+    return el("div", { class: "summary first" }, el("h4", { text: `The first ${e.type === "claim" ? `claim of ${e.intent} on ${e.endpoint}` : `result of ${e.rule} for ${e.intent} on ${e.endpoint}`} in this report: nothing earlier to compare with.` }));
+  }
+  return null;
 }
 
 function toggle(e, box) {
@@ -423,13 +488,17 @@ function linkTo(label, id, title) {
 
 function detailNode(e) {
   const body = el("div", { class: "body" });
+  const sum = summaryNode(e);
+  if (sum) body.append(sum);
   const meta = el("table", { class: "meta" });
   const add = (k, v, mono = true) => { if (v) meta.append(el("tr", null, el("td", { text: k }), el("td", { class: mono ? "mono" : "" }, hl(String(v))))); };
   add("Time", fmtFull(e.t) + "  (" + e.ns + " ns)");
   add("Item ID", e.itemid);
   add("Intent", e.intent && e.intentid && e.intent !== e.intentid ? `${e.intent} (${e.intentid})` : e.intent);
   add("Endpoint", e.endpoint);
+  add("Function", e.function);
   add("Rule", e.rule);
+  add("Rule checks", e.ruledesc, false);
   add("Expected value", e.ev);
   add("Result", e.resultname);
   add("Session", e.session);
@@ -444,6 +513,7 @@ function detailNode(e) {
 
   const btns = el("div", { class: "btns" });
   if (e.doc && R.documents[e.doc] != null) btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); toggleDoc(body, e.doc, "Document"); }, text: "Document" }));
+  if (e.decodeddoc && R.documents[e.decodeddoc] != null) btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); toggleDoc(body, e.decodeddoc, "Decoded"); }, title: "The claim body decoded as Jane's rules read it", text: "Decoded" }));
   for (const cs of e.changes || []) {
     if (cs.againstdoc && R.documents[cs.againstdoc] != null && cs.againstdoc !== e.doc) {
       btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); toggleDoc(body, cs.againstdoc, "Compared with"); }, text: "Compared: " + cs.what }));
@@ -469,17 +539,18 @@ function changeSetNode(e, cs) {
   box.append(h);
   const ds = shown(cs);
   const ignored = (cs.diffs || []).length - ds.length;
-  if (!ds.length) { box.append(el("div", { class: "hint", text: `${ignored} differences, all ignored.` })); return box; }
+  if (!ds.length) { box.append(el("div", { class: "hint", text: `${ignored} differences, all volatile or ignored.` })); return box; }
   const t = el("table", { class: "diff" }, el("colgroup", null, el("col", { class: "p" }), el("col", { class: "o" }), el("col"), el("col")),
     el("tr", null, el("th", { text: "Path" }), el("th", { text: "" }), el("th", { text: "Before" }), el("th", { text: "After" })));
   for (const d of ds) {
-    t.append(el("tr", null,
-      el("td", null, el("span", { class: "link", title: "Value history of this path", onclick: (ev) => { ev.stopPropagation(); openHistory(subjectOf(e, cs), cs.what + ":" + d.p); } }, hl(d.p))),
+    t.append(el("tr", { class: d.v ? "vol" : null },
+      el("td", null, el("span", { class: "link", title: "Value history of this path", onclick: (ev) => { ev.stopPropagation(); openHistory(subjectOf(e, cs), cs.what + ":" + d.p); } }, hl(d.p)),
+        d.v ? el("span", { class: "vtag", title: "changes on every call by design", text: "volatile" }) : null),
       el("td", { class: "op-" + d.o, text: d.o }),
       el("td", null, valueNode(d.a, d.b)), el("td", null, valueNode(d.b, d.a))));
   }
   box.append(t);
-  if (ignored) box.append(el("div", { class: "hint", text: `${ignored} more ignored (Ignore paths).` }));
+  if (ignored) box.append(el("div", { class: "hint", text: `${ignored} more hidden (volatile, or Ignore paths).` }));
   return box;
 }
 
@@ -537,7 +608,7 @@ function renderSeries() {
     el("div", { class: "legend" }, "One box per claim, oldest first:",
       el("span", { class: "strip" }, el("i", { class: "first" })), "first",
       el("span", { class: "strip" }, el("i", { class: "same" })), "body unchanged",
-      el("span", { class: "strip" }, el("i", { class: "chg" })), "body or endpoint changed",
+      el("span", { class: "strip" }, el("i", { class: "chg" })), "changed (body, decoded or endpoint)",
       el("span", { class: "strip" }, el("i", { class: "bad" })), "claim error"));
   const ct = el("table", { class: "grid" }, el("tr", null, ["Intent", "Endpoint", "Claims", "Changed", "Last change", "Claims over time"].map((h) => el("th", { text: h }))));
   let any = false;
@@ -548,7 +619,7 @@ function renderSeries() {
     let nchg = 0, last = 0;
     const strip = el("div", { class: "strip" });
     for (const e of evs) {
-      const cs = (e.changes || []).filter((c) => c.what === "body" || c.what === "endpoint");
+      const cs = (e.changes || []).filter((c) => c.what === "body" || c.what === "endpoint" || c.what === "decoded");
       const first = cs.some((c) => c.first && c.what === "body");
       const chg = cs.some((c) => !c.first && shown(c).length);
       const err = /error/i.test(e.detail || "");
@@ -689,15 +760,16 @@ function renderAbout() {
   sec.dataset.done = "1";
   sec.append(
     el("h3", { text: "What this report shows" }),
-    el("p", null, "Every claim holds copies of the element and the intent as they were when it was made, and every result a copy of the expected value it used. jp_forensics compares each copy with the one before it:"),
+    el("p", null, "Every claim holds copies of the element and the intent as they were when it was made, and every result a copy of the expected value it used. jane_forensics compares each copy with the one before it:"),
     el("ul", null,
       el("li", null, el("b", { text: "element: " }), "the element copy, against the previous claim (any intent)"),
       el("li", null, el("b", { text: "intent: " }), "the intent copy, against the previous claim of the same intent"),
       el("li", null, el("b", { text: "body: " }), "the claim body (PCR values, UEFI variables, event logs, …), against the previous claim of the same intent on the same endpoint"),
+      el("li", null, el("b", { text: "decoded: " }), "the claim body decoded as Jane's rules read it, against the previous claim in the same series: a TPM quote's attested PCR digest, firmware version and reset and restart counts (without the nonce, clock and signature); a UEFI event log's measured Secure Boot state, PK, KEK, db, dbx, boot authorities and every event by PCR; UEFI variables as the UEFI_ rules write them; an IMA log's boot aggregate and files"),
       el("li", null, el("b", { text: "endpoint: " }), "the endpoint the claim went to, against the previous claim in the same series"),
       el("li", null, el("b", { text: "outcome: " }), "a result's value, against the previous result of the same rule on the same intent and endpoint"),
       el("li", null, el("b", { text: "expectedvalue: " }), "the expected value copy in a result, against the previous result with the same expected value")),
-    el("p", null, "Claims and results just before the range are read as baselines, so the first ones in the range are compared too; baselines are not shown as events. “Now” events compare the element, intents and expected values in Jane as the report was made with their last copies. Arrays of objects with a distinct name (UEFI variables, for instance) are compared by name, not position. Values over 1024 bytes are shortened, with their length and SHA-256."),
+    el("p", null, "Claims and results just before the range are read as baselines, so the first ones in the range are compared too; baselines are not shown as events. Values that differ on every call by design (a quote's nonce, clock and signature) are marked volatile and hidden while “Hide volatile” is on. Expanding an event shows, first, a summary in words of what changed since the previous claim or result of the same kind. “Now” events compare the element, intents and expected values in Jane as the report was made with their last copies. Arrays of objects with a distinct name (UEFI variables, for instance) are compared by name, not position. Values over 1024 bytes are shortened, with their length and SHA-256."),
     el("p", null, "Jane makes no trust decisions and neither does this report: it shows what changed and when."),
     el("h3", { text: "Report" }),
     el("table", { class: "meta" }, ...[
@@ -729,7 +801,7 @@ function fillSelect(sel, values) {
 function syncControls() {
   $("q").value = state.q;
   $("f-intent").value = state.intent; $("f-endpoint").value = state.endpoint; $("f-rule").value = state.rule; $("f-outcome").value = state.outcome;
-  $("f-changes").checked = state.changesOnly; $("f-first").checked = state.inclFirst;
+  $("f-changes").checked = state.changesOnly; $("f-first").checked = state.inclFirst; $("f-volatile").checked = state.hideVolatile;
   $("ignore").value = state.ignoreText;
   $("f-from").value = state.from != null ? toInput(state.from) : "";
   $("f-until").value = state.until != null ? toInput(state.until) : "";
@@ -785,6 +857,9 @@ function setup() {
   $("f-outcome").addEventListener("change", (ev) => { state.outcome = ev.target.value; changed(); });
   $("f-changes").addEventListener("change", (ev) => { state.changesOnly = ev.target.checked; changed(); });
   $("f-first").addEventListener("change", (ev) => { state.inclFirst = ev.target.checked; changed(); });
+  $("f-volatile").addEventListener("change", (ev) => { state.hideVolatile = ev.target.checked; changed(); });
+  $("f-docs").addEventListener("change", (ev) => { state.searchDocs = ev.target.checked; changed(); });
+  if (!Object.keys(R.documents).length) { $("f-docs").checked = false; $("f-docs").disabled = true; state.searchDocs = false; $("f-docs").parentElement.title = "This report was made with --nodocuments"; }
   let it;
   $("ignore").addEventListener("input", () => {
     clearTimeout(it);
@@ -804,7 +879,7 @@ function setup() {
   $("collapse").addEventListener("click", () => { state.open.clear(); render(); });
   $("reset").addEventListener("click", () => {
     Object.assign(state, { q: "", types: new Set(TYPES.map((t) => t[0])), intent: "", endpoint: "", rule: "", outcome: "",
-      changesOnly: false, inclFirst: true, ignore: null, ignoreText: "", from: null, until: null });
+      changesOnly: false, inclFirst: true, hideVolatile: true, ignore: null, ignoreText: "", from: null, until: null });
     $("ignore").classList.remove("bad");
     syncControls(); changed();
   });
@@ -824,7 +899,7 @@ function downloadCSV() {
     rows.push([new Date(e.t).toISOString(), e.ns, e.type, e.kind, e.title, e.intent, e.intentid, e.endpoint, e.rule, e.resultname, e.session, e.itemid, ch, e.detail]);
   }
   const blob = new Blob([rows.map((r) => r.map(q).join(",")).join("\r\n") + "\r\n"], { type: "text/csv" });
-  const a = el("a", { href: URL.createObjectURL(blob), download: `jp_forensics_${R.elementid}.csv` });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `jane_forensics_${R.elementid}.csv` });
   document.body.append(a); a.click(); a.remove();
 }
 

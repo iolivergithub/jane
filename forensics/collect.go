@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +26,9 @@ type collection struct {
 
 	listed   map[string]int // how many itemids Jane listed: claims, results, log
 	warnings []string
+
+	pcrNames *pcrNames         // Jane's register naming schemes, for naming PCRs
+	rules    map[string]string // Jane's rules: name -> description
 }
 
 func (c *collection) warn(format string, a ...any) {
@@ -50,7 +54,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		listed:    map[string]int{},
 	}
 
-	fmt.Fprintf(w, "jp_forensics: element %s\n", eid)
+	fmt.Fprintf(w, "jane_forensics: element %s\n", eid)
 	el, err := cl.getDoc("/element/" + esc(eid))
 	var se *statusError
 	if errors.As(err, &se) {
@@ -63,6 +67,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		return nil, fmt.Errorf("element %s not found (Jane answered with itemid %q)", eid, el.str("itemid"))
 	}
 	c.element = el
+	c.readNames(cl)
 
 	// expected values, as they are now
 	evIDs, err := cl.getList("/expectedValues/element/"+esc(eid), "expectedValues")
@@ -77,7 +82,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.evs = append(c.evs, d)
 	}
-	fmt.Fprintf(w, "jp_forensics: %d expected values\n", len(c.evs))
+	fmt.Fprintf(w, "jane_forensics: %d expected values\n", len(c.evs))
 
 	if err := c.collectClaims(cl, eid, tr, max, w); err != nil {
 		return nil, err
@@ -106,7 +111,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.intents[id] = d
 	}
-	fmt.Fprintf(w, "jp_forensics: %d intents\n", len(c.intents))
+	fmt.Fprintf(w, "jane_forensics: %d intents\n", len(c.intents))
 
 	// sessions of the claims and results in the range
 	sessionIDs := map[string]bool{}
@@ -128,7 +133,7 @@ func collect(cl *client, eid string, tr timeRange, max int64, now time.Time, w i
 		}
 		c.sessions[id] = d
 	}
-	fmt.Fprintf(w, "jp_forensics: %d sessions\n", len(c.sessions))
+	fmt.Fprintf(w, "jane_forensics: %d sessions\n", len(c.sessions))
 
 	if err := c.collectLog(cl, eid, tr, max, now, w); err != nil {
 		return nil, err
@@ -163,7 +168,7 @@ func (c *collection) collectClaims(cl *client, eid string, tr timeRange, max int
 	var inRange, base []*doc
 	for i, id := range ids {
 		if i > 0 && i%200 == 0 {
-			fmt.Fprintf(w, "jp_forensics: claims: read %d of %d\n", i, len(ids))
+			fmt.Fprintf(w, "jane_forensics: claims: read %d of %d\n", i, len(ids))
 		}
 		d, err := cl.getDoc("/claim/" + esc(id))
 		if err != nil {
@@ -201,7 +206,7 @@ func (c *collection) collectClaims(cl *client, eid string, tr timeRange, max int
 	}
 	c.claims = byTime(inRange, claimTime)
 	c.baseClaims = byTime(base, claimTime)
-	fmt.Fprintf(w, "jp_forensics: %d claims in the range, %d baseline claims before it (of %d listed)\n",
+	fmt.Fprintf(w, "jane_forensics: %d claims in the range, %d baseline claims before it (of %d listed)\n",
 		len(c.claims), len(c.baseClaims), len(ids))
 	return nil
 }
@@ -262,7 +267,7 @@ func (c *collection) collectResults(cl *client, eid string, tr timeRange, max in
 	var inRange, base []*doc
 	for i, id := range ids {
 		if i > 0 && i%200 == 0 {
-			fmt.Fprintf(w, "jp_forensics: results: read %d of %d\n", i, len(ids))
+			fmt.Fprintf(w, "jane_forensics: results: read %d of %d\n", i, len(ids))
 		}
 		d, err := cl.getDoc("/result/" + esc(id))
 		if err != nil {
@@ -300,7 +305,7 @@ func (c *collection) collectResults(cl *client, eid string, tr timeRange, max in
 	}
 	c.results = byTime(inRange, resultTime)
 	c.baseResults = byTime(base, resultTime)
-	fmt.Fprintf(w, "jp_forensics: %d results in the range, %d baseline results before it (of %d listed)\n",
+	fmt.Fprintf(w, "jane_forensics: %d results in the range, %d baseline results before it (of %d listed)\n",
 		len(c.results), len(c.baseResults), len(ids))
 	return nil
 }
@@ -347,7 +352,7 @@ func (c *collection) collectLog(cl *client, eid string, tr timeRange, max int64,
 		}
 	}
 	c.logs = byTime(kept, func(d *doc) int64 { return d.num("timestamp") })
-	fmt.Fprintf(w, "jp_forensics: %d log entries about the element (of %d read)\n", len(c.logs), len(entries))
+	fmt.Fprintf(w, "jane_forensics: %d log entries about the element (of %d read)\n", len(c.logs), len(entries))
 	return nil
 }
 
@@ -370,4 +375,49 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// readNames reads Jane's register naming schemes and rule descriptions, to
+// name PCRs and rules in the report. Without them the report has numbers
+// and rule names only.
+func (c *collection) readNames(cl *client) {
+	var pn struct {
+		Default string `json:"default"`
+		Schemes []struct {
+			Key       string `json:"key"`
+			Registers []struct {
+				Register string `json:"register"`
+				Short    string `json:"short"`
+			} `json:"registers"`
+		} `json:"schemes"`
+	}
+	if b, err := cl.get("/pcrnames"); err != nil {
+		c.warn("register names could not be read (PCRs are shown by number only): %v", err)
+	} else if err := json.Unmarshal(b, &pn); err != nil {
+		c.warn("register names: %v", err)
+	} else {
+		c.pcrNames = &pcrNames{def: pn.Default, schemes: map[string]map[string]string{}}
+		for _, s := range pn.Schemes {
+			m := map[string]string{}
+			for _, r := range s.Registers {
+				m[r.Register] = r.Short
+			}
+			c.pcrNames.schemes[s.Key] = m
+		}
+	}
+
+	var rs struct {
+		Rules []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		} `json:"rules"`
+	}
+	c.rules = map[string]string{}
+	if b, err := cl.get("/rules"); err != nil {
+		c.warn("rules could not be read (no rule descriptions): %v", err)
+	} else if err := json.Unmarshal(b, &rs); err == nil {
+		for _, r := range rs.Rules {
+			c.rules[r.Name] = r.Description
+		}
+	}
 }
