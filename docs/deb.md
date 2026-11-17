@@ -62,6 +62,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/opt/jane/janeserver` | the attestation engine |
 | `/opt/jane/addjaneuser` | adds Jane users or resets passwords (see [Running](running.md#addjaneuser)) |
 | `/opt/jane/jp_extract` | copies an element and everything belonging to it into a JSON file and, with `--delete`, removes it from Jane (see [jp_extract](jp_extract.md)) |
+| `/opt/jane/jp_forensics` | reads an element's history through the REST API and writes it as an HTML timeline marking what changed and when (see [jp_forensics](jp_forensics.md)) |
 | `/etc/opt/jane/config.yaml` | configuration: every option, optional ones commented out, all logins off |
 | `/etc/opt/jane/jane.env` | environment for janeserver (MongoDB and MQTT accounts), all commented out |
 | `/etc/opt/jane/REPLACE_ME.key`, `.crt` | placeholder TLS key and certificate, only used when you switch to HTTPS; replace them (see [Hardening](hardening.md#3-your-own-tls-key-and-certificate)) |
@@ -71,6 +72,7 @@ The packaged configuration runs as it is: HTTP, no logins, MongoDB and Mosquitto
 | `/var/log/jane/` | Jane's log file |
 | `/usr/share/doc/janeattestationengine/addjaneuser.md` | how to use `addjaneuser` |
 | `/usr/share/doc/janeattestationengine/jp_extract.md` | how to use `jp_extract` |
+| `/usr/share/doc/janeattestationengine/jp_forensics.md` | how to use `jp_forensics` |
 | `/usr/share/doc/janeattestationengine/skeletons/` | the jp [skeletons](jp.md#skeletons) (example provisioning files), the same as in the tarzan package, for preparing provisioning files on the Jane host (not conffiles) |
 
 **tarzan** (package `tarzantrustagent`)
@@ -93,14 +95,14 @@ Every install and upgrade of jane sets these, so wrong owners left from earlier 
 | Path | Owner | Mode |
 |---|---|---|
 | `/opt/jane` (directory) | `root:root` | 755 |
-| `/opt/jane/janeserver`, `addjaneuser`, `jp_extract`, `tarzan`, `jp` | `root:root` | 755 |
+| `/opt/jane/janeserver`, `addjaneuser`, `jp_extract`, `jp_forensics`, `tarzan`, `jp` | `root:root` | 755 |
 | `/etc/opt/jane` (directory) | `root:jane` | 751 |
 | directories inside `/etc/opt/jane` | `root:jane` | 750 |
 | `config.yaml`, `jane.env`, `*.key`, `*.pem` in `/etc/opt/jane` and its subdirectories (not `jp.key`) | `root:jane` | 640 |
 | `*.crt`, `standardintents.json`, `standardobjects.json` in `/etc/opt/jane` and its subdirectories | `root:jane` | 644 |
 | `/etc/opt/jane/tarzan.env` | `root:root` | 600 |
 | `/etc/opt/jane/provisioning.yaml.example`, `/usr/share/doc/tarzantrustagent/skeletons/*.yaml` | `root:root` | 644 |
-| `/usr/share/doc/janeattestationengine/*.md` (`addjaneuser.md`, `jp_extract.md`), `/usr/share/doc/janeattestationengine/skeletons/*.yaml` | `root:root` | 644 |
+| `/usr/share/doc/janeattestationengine/*.md` (`addjaneuser.md`, `jp_extract.md`, `jp_forensics.md`), `/usr/share/doc/janeattestationengine/skeletons/*.yaml` | `root:root` | 644 |
 | `/var/log/jane` (directory) and its files | `jane:jane` | 750 / 640 |
 | `/lib/systemd/system/jane.service`, `tarzan.service` | `root:root` | 644 |
 

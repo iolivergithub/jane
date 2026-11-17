@@ -5,7 +5,7 @@
 # /tmp/janedebbuild, gzipped:
 #
 #   jane_<version>_<arch>.deb       amd64, arm64, s390x (janeserver with
-#                                   addjaneuser and jp_extract)
+#                                   addjaneuser, jp_extract and jp_forensics)
 #   tarzan_<version>_<arch>.deb     amd64, arm64, s390x, ppc64el, riscv64,
 #                                   armel-armv5, armhf-armv6, armhf-armv7
 #
@@ -39,7 +39,7 @@ echo "${GREEN}This file must be run in the ./jane/etc/debbuild directory${NC}"
 echo "${GREEN} -- you are currently here:${RED} ${DEBBUILDDIR} ${NC}"
 echo "${GREEN} -- we are building version number:${RED} ${VERSIONNUMBER} ${NC}"
 echo "${GREEN} -- for pkg control version:${RED} ${VERSIONNUMBERCONTROL} ${NC}"
-echo "${GREEN} -- jane and jp_extract for:${RED} ${JANE_TARGETS} ${NC}"
+echo "${GREEN} -- jane, jp_extract and jp_forensics for:${RED} ${JANE_TARGETS} ${NC}"
 echo "${GREEN} -- tarzan and jp for:${RED} ${TARZAN_TARGETS} ${NC}"
 
 # debarch <target>: the Debian architecture of a target (armhf-armv6 -> armhf)
@@ -95,10 +95,10 @@ maintainer() {
 echo "${BLUE}Removing previous builds${NC}"
 rm -rf ${TMPBASE}
 mkdir -p ${TMPBASE}
-for c in janeserver extractor tarzan provisioner; do rm -rf "$REPO/$c/dist"; done
+for c in janeserver extractor forensics tarzan provisioner; do rm -rf "$REPO/$c/dist"; done
 
 # module housekeeping once per component, not per target
-for c in janeserver extractor tarzan provisioner; do
+for c in janeserver extractor forensics tarzan provisioner; do
     echo "${BLUE}Checking modules and formatting of $c${NC}"
     make -C "$REPO/$c" libs fmt
 done
@@ -107,6 +107,7 @@ done
 for t in $JANE_TARGETS; do
     build janeserver "$t"
     build extractor "$t"
+    build forensics "$t"
     JANEBASE=$TMPBASE/jane-$t
     BIN=$REPO/janeserver/$(distdir "$t")
 
@@ -118,6 +119,8 @@ for t in $JANE_TARGETS; do
     cp ../addjaneuser/README.md $JANEBASE/usr/share/doc/janeattestationengine/addjaneuser.md
     cp $REPO/extractor/$(distdir "$t")/jp_extract $JANEBASE/opt/jane/jp_extract
     cp $REPO/docs/jp_extract.md $JANEBASE/usr/share/doc/janeattestationengine/jp_extract.md
+    cp $REPO/forensics/$(distdir "$t")/jp_forensics $JANEBASE/opt/jane/jp_forensics
+    cp $REPO/docs/jp_forensics.md $JANEBASE/usr/share/doc/janeattestationengine/jp_forensics.md
     # the example provisioning files (jp skeletons, #125), as in every distribution
     cp $REPO/provisioner/skeleton/*.yaml $JANEBASE/usr/share/doc/janeattestationengine/skeletons/
 
@@ -135,7 +138,7 @@ for t in $JANE_TARGETS; do
     # even between unpacking and postinst (which then sets the jane group).
     chmod 751 $JANEBASE/etc/opt/jane
     chmod 750 $JANEBASE/var/log/jane
-    chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser $JANEBASE/opt/jane/jp_extract
+    chmod 755 $JANEBASE/opt/jane/janeserver $JANEBASE/opt/jane/addjaneuser $JANEBASE/opt/jane/jp_extract $JANEBASE/opt/jane/jp_forensics
     chmod 640 $JANEBASE/etc/opt/jane/config.yaml $JANEBASE/etc/opt/jane/REPLACE_ME.key $JANEBASE/etc/opt/jane/jane.env
     chmod 644 $JANEBASE/etc/opt/jane/REPLACE_ME.crt $JANEBASE/etc/opt/jane/standardintents.json $JANEBASE/etc/opt/jane/standardobjects.json
     chmod 644 $JANEBASE/lib/systemd/system/jane.service $JANEBASE/usr/share/doc/janeattestationengine/*.md \
@@ -182,7 +185,7 @@ done
 
 # ---------------------------------------------------------------- Windows amd64 zips (#122)
 # Same programs and configuration files as the packages; no installer.
-for c in janeserver extractor tarzan provisioner; do
+for c in janeserver extractor forensics tarzan provisioner; do
     echo "${BLUE}Compiling $c for Windows amd64${NC}"
     make -C "$REPO/$c" binary OS=windows ARCH=amd64 VERSION="$VERSIONNUMBER" OUT=dist/windows-amd64
 done
@@ -194,6 +197,8 @@ cp ../addjaneuser/addjaneuser $WINJANE/
 cp ../addjaneuser/README.md $WINJANE/addjaneuser.md
 cp $REPO/extractor/dist/windows-amd64/jp_extract.exe $WINJANE/
 cp $REPO/docs/jp_extract.md $WINJANE/jp_extract.md
+cp $REPO/forensics/dist/windows-amd64/jp_forensics.exe $WINJANE/
+cp $REPO/docs/jp_forensics.md $WINJANE/jp_forensics.md
 cp config.yaml jane.env REPLACE_ME.crt REPLACE_ME.key $WINJANE/
 cp ../standardintents/standardintents.json ../standardobjects/standardobjects.json $WINJANE/
 cp windows/jane-WINDOWS.txt $WINJANE/WINDOWS.txt

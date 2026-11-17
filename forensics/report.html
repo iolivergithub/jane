@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jane forensics</title>
+<!--
+  Written by jp_forensics (forensics/ in the Jane repository). Self-contained:
+  no external scripts, styles, fonts or requests. The data is the R object
+  below; everything else is computed in the browser.
+-->
+<style>
+:root {
+  --bg: #fbfbfa; --panel: #ffffff; --ink: #1d2328; --muted: #5d6870; --line: #dde2e6;
+  --accent: #1f6feb; --accent-soft: #e7f0ff;
+  --ok: #1a7f37; --ok-soft: #e6f4ea; --bad: #c62828; --bad-soft: #fdecea;
+  --warn: #9a6700; --warn-soft: #fff4d6; --chg: #b35900; --chg-soft: #fff0e0;
+  --add: #1a7f37; --rem: #c62828; --mark: #ffe08a;
+  --t-element: #6f42c1; --t-intent: #0b7285; --t-ev: #5c940d; --t-claim: #1f6feb;
+  --t-result: #a61e4d; --t-session: #5f3dc4; --t-log: #495057;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111417; --panel: #181c20; --ink: #e3e7ea; --muted: #97a3ab; --line: #2b3238;
+    --accent: #6ea8ff; --accent-soft: #1b2a40;
+    --ok: #57c776; --ok-soft: #15301f; --bad: #ff7b72; --bad-soft: #3a1a1a;
+    --warn: #e3b341; --warn-soft: #33290f; --chg: #ffa657; --chg-soft: #3a2614;
+    --add: #57c776; --rem: #ff7b72; --mark: #6b5400;
+    --t-element: #b392f0; --t-intent: #66d9e8; --t-ev: #a9e34b; --t-claim: #6ea8ff;
+    --t-result: #f783ac; --t-session: #b197fc; --t-log: #adb5bd;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 18px 24px 8px; }
+h1 { font-size: 20px; margin: 0 0 4px; font-weight: 650; }
+h1 .id { font: 13px var(--mono); color: var(--muted); font-weight: 400; margin-left: 8px; }
+.sub { color: var(--muted); font-size: 13px; }
+.sub span + span::before { content: " · "; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 24px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; min-width: 92px; }
+.stat b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.stat small { color: var(--muted); }
+.warnings { margin: 6px 24px; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--line); }
+.warnings ul { margin: 4px 0 0 18px; padding: 0; }
+.toolbar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 8px 24px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.toolbar input[type=search], .toolbar input[type=text] { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }
+#q { width: 260px; } #ignore { width: 220px; font-family: var(--mono); font-size: 12px; }
+#ignore.bad { border-color: var(--bad); }
+select, button, input[type=datetime-local] { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; }
+button { cursor: pointer; } button:hover { border-color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; user-select: none; font-size: 12.5px; }
+.chip input { margin: 0; }
+.chip .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip.off { opacity: .5; }
+label.inline { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }
+.group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.group > span.lbl { color: var(--muted); font-size: 12px; }
+nav.tabs { display: flex; gap: 2px; padding: 10px 24px 0; border-bottom: 1px solid var(--line); }
+nav.tabs button { border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; background: none; padding: 6px 14px; color: var(--muted); }
+nav.tabs button.on { background: var(--panel); border-color: var(--line); color: var(--ink); margin-bottom: -1px; font-weight: 600; }
+main { padding: 12px 24px 60px; }
+.count { color: var(--muted); font-size: 13px; margin: 2px 0 10px; }
+.day { margin: 18px 0 6px; font-weight: 650; color: var(--muted); font-size: 13px; letter-spacing: .02em; }
+.ev { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--tc, var(--line)); border-radius: 6px; margin: 4px 0; }
+.ev.flash { outline: 2px solid var(--accent); }
+.ev > .row { display: grid; grid-template-columns: 112px 176px 1fr auto; gap: 10px; align-items: baseline; padding: 6px 10px; cursor: pointer; }
+.ev > .row:hover { background: var(--accent-soft); }
+.time { font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
+.badge { overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--tc); white-space: nowrap; }
+.title { overflow-wrap: anywhere; }
+.title .detail { color: var(--muted); font-size: 12.5px; margin-left: 6px; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.tag { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.tag.chg { background: var(--chg-soft); color: var(--chg); }
+.tag.first { background: var(--accent-soft); color: var(--accent); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.ign { border-color: var(--line); color: var(--muted); }
+.body { padding: 4px 14px 12px; border-top: 1px dashed var(--line); }
+table.meta { border-collapse: collapse; font-size: 13px; margin: 6px 0; }
+table.meta td { padding: 1px 12px 1px 0; vertical-align: top; }
+table.meta td:first-child { color: var(--muted); white-space: nowrap; }
+.mono { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.cs { margin: 10px 0; }
+.cs h4 { margin: 0 0 4px; font-size: 13px; }
+.cs h4 .against { font-weight: 400; color: var(--muted); }
+table.diff { border-collapse: collapse; width: 100%; font-size: 12.5px; table-layout: fixed; }
+table.diff th { text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 3px 6px; }
+table.diff td { border-bottom: 1px solid var(--line); padding: 3px 6px; vertical-align: top; font-family: var(--mono); overflow-wrap: anywhere; }
+table.diff col.p { width: 30%; } table.diff col.o { width: 72px; }
+td.op-added { color: var(--add); } td.op-removed { color: var(--rem); } td.op-changed { color: var(--chg); }
+.val { max-height: 9em; overflow: auto; white-space: pre-wrap; }
+.trunc { color: var(--muted); font-style: italic; }
+mark { background: var(--mark); color: inherit; padding: 0; }
+a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
+a:hover, .link:hover { text-decoration: underline; }
+.refs { margin: 6px 0; font-size: 13px; }
+.refs .link { margin-right: 10px; }
+pre.doc { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; max-height: 480px; overflow: auto; font: 12px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.btns { display: flex; gap: 6px; margin: 8px 0 2px; flex-wrap: wrap; }
+.btns button { font-size: 12px; padding: 2px 8px; }
+.more { margin: 14px 0; }
+table.grid { border-collapse: collapse; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; }
+table.grid th { text-align: left; font-weight: 600; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.grid td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.grid tr:last-child td { border-bottom: none; }
+.strip { display: flex; flex-wrap: wrap; gap: 2px; max-width: 640px; }
+.strip i { width: 10px; height: 14px; border-radius: 2px; background: var(--line); cursor: pointer; display: inline-block; }
+.strip i.same { background: var(--ok-soft); border: 1px solid var(--ok); }
+.strip i.chg { background: var(--chg); }
+.strip i.first { background: var(--accent); }
+.strip i.ok { background: var(--ok); }
+.strip i.bad { background: var(--bad); }
+.strip i.other { background: var(--warn); }
+.strip i.flip { outline: 2px solid var(--ink); outline-offset: -1px; }
+.legend { color: var(--muted); font-size: 12px; margin: 6px 0 12px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.legend .strip { display: inline-flex; }
+h3 { font-size: 15px; margin: 18px 0 8px; }
+.hist { margin: 4px 0 8px 12px; border-left: 2px solid var(--line); padding-left: 10px; }
+.hist .step { margin: 4px 0; }
+.empty { color: var(--muted); padding: 20px 0; }
+.hidden { display: none !important; }
+.hint { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="h-title">Jane forensics</h1>
+  <div class="sub" id="h-sub"></div>
+</header>
+<div class="stats" id="stats"></div>
+<div id="warnings"></div>
+
+<div class="toolbar">
+  <input type="search" id="q" placeholder="Search titles, ids, paths, values…" title="Case-insensitive; space-separated words must all match; &quot;quoted phrase&quot; matches exactly">
+  <div class="chips" id="types"></div>
+  <div class="group">
+    <select id="f-intent" title="Intent"><option value="">All intents</option></select>
+    <select id="f-endpoint" title="Endpoint"><option value="">All endpoints</option></select>
+    <select id="f-rule" title="Rule"><option value="">All rules</option></select>
+    <select id="f-outcome" title="Result outcome">
+      <option value="">Any outcome</option><option value="ok">Success</option><option value="notok">Not success</option><option value="fail">Fail (9001)</option><option value="error">Errors (9010–9999)</option>
+    </select>
+  </div>
+  <div class="group">
+    <label class="inline"><input type="checkbox" id="f-changes"> Only changes</label>
+    <label class="inline" title="Also show first-in-series claims and results, where there was nothing to compare with"><input type="checkbox" id="f-first" checked> incl. first</label>
+    <input type="text" id="ignore" placeholder="Ignore paths (regex)" title="Differences whose path matches this regular expression are ignored, e.g. ^body\.quote|recordhistory|nonce. Paths are prefixed with the part: body:, element:, intent:, endpoint:, expectedvalue:, outcome:">
+  </div>
+  <div class="group">
+    <span class="lbl">From</span><input type="datetime-local" id="f-from" step="1">
+    <span class="lbl">until</span><input type="datetime-local" id="f-until" step="1">
+    <select id="tz" title="Time zone for display and the From/until fields"><option value="utc">UTC</option><option value="local">Local time</option></select>
+    <button id="sort" title="Order">Oldest first</button>
+  </div>
+  <div class="group">
+    <button id="expand">Expand all</button><button id="collapse">Collapse all</button>
+    <button id="csv" title="Download the events shown as CSV">CSV</button>
+    <button id="reset">Reset</button>
+  </div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="timeline" class="on">Timeline</button>
+  <button data-tab="series">Series</button>
+  <button data-tab="history">Value history</button>
+  <button data-tab="about">About</button>
+</nav>
+<main>
+  <section id="tab-timeline"></section>
+  <section id="tab-series" class="hidden"></section>
+  <section id="tab-history" class="hidden"></section>
+  <section id="tab-about" class="hidden"></section>
+</main>
+
+<script>
+"use strict";
+const R = /*JP_FORENSICS_REPORT*/null;
+
+// ------------------------------------------------------------ basics
+const $ = (id) => document.getElementById(id);
+const TYPES = [
+  ["element", "Element"], ["intent", "Intent"], ["ev", "Expected value"], ["claim", "Claim"],
+  ["result", "Result"], ["session", "Session"], ["log", "Log"],
+];
+const TYPE_LABEL = Object.fromEntries(TYPES);
+const PAGE = 1500;
+
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style") e.style.cssText = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) e.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return e;
+}
+const pad = (n, w = 2) => String(n).padStart(w, "0");
+function parts(ms) {
+  const d = new Date(ms), u = state.tz === "utc";
+  return {
+    y: u ? d.getUTCFullYear() : d.getFullYear(), mo: (u ? d.getUTCMonth() : d.getMonth()) + 1,
+    d: u ? d.getUTCDate() : d.getDate(), h: u ? d.getUTCHours() : d.getHours(),
+    mi: u ? d.getUTCMinutes() : d.getMinutes(), s: u ? d.getUTCSeconds() : d.getSeconds(), ms: d.getUTCMilliseconds(),
+  };
+}
+const fmtDay = (ms) => { const p = parts(ms); return `${p.y}-${pad(p.mo)}-${pad(p.d)}`; };
+const fmtTime = (ms) => { const p = parts(ms); return `${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}.${pad(p.ms, 3)}`; };
+const fmtFull = (ms) => ms ? `${fmtDay(ms)} ${fmtTime(ms)}${state.tz === "utc" ? "Z" : ""}` : "";
+function toInput(ms) { const p = parts(ms); return `${p.y}-${pad(p.mo)}-${pad(p.d)}T${pad(p.h)}:${pad(p.mi)}:${pad(p.s)}`; }
+function fromInput(v) {
+  if (!v) return null;
+  const m = v.match(/^(\d+)-(\d+)-(\d+)T(\d+):(\d+)(?::(\d+))?/);
+  if (!m) return null;
+  const a = m.slice(1).map((x) => +(x || 0));
+  return state.tz === "utc" ? Date.UTC(a[0], a[1] - 1, a[2], a[3], a[4], a[5]) : new Date(a[0], a[1] - 1, a[2], a[3], a[4], a[5]).getTime();
+}
+
+// ------------------------------------------------------------ data
+const EV = R.events;
+const byId = new Map(EV.map((e) => [e.id, e]));
+const seriesByKey = new Map(R.series.map((s) => [s.key, s]));
+EV.forEach((e, i) => { e._i = i; });
+
+// the subject a change set belongs to, for the value history
+function subjectOf(e, cs) {
+  switch (cs.what) {
+    case "element": return "element";
+    case "intent": return "intent:" + e.intentid;
+    case "body": case "endpoint": return "series:" + e.series;
+    case "expectedvalue": return "ev:" + (e.type === "ev" ? e.itemid : e.ev);
+    case "outcome": return "rseries:" + e.series;
+  }
+  return cs.what;
+}
+const subjects = new Map(); // key -> {key, label, group, steps: []}
+function subject(key, label, group) {
+  if (!subjects.has(key)) subjects.set(key, { key, label, group, steps: [] });
+  return subjects.get(key);
+}
+for (const e of EV) {
+  for (const cs of e.changes || []) {
+    const key = subjectOf(e, cs);
+    let s;
+    if (key === "element") s = subject(key, "Element " + (R.elementname || R.elementid), "Element");
+    else if (key.startsWith("intent:")) s = subject(key, "Intent " + (e.intent || e.intentid), "Intents");
+    else if (key.startsWith("series:")) s = subject(key, `${e.intent} on ${e.endpoint}`, "Claims: intent on endpoint");
+    else if (key.startsWith("ev:")) s = subject(key, `Expected value for ${e.intent} on ${e.endpoint} (${key.slice(3)})`, "Expected values");
+    else if (key.startsWith("rseries:")) s = subject(key, `${e.rule}: ${e.intent} on ${e.endpoint}`, "Results: rule, intent, endpoint");
+    else s = subject(key, key, "Other");
+    s.steps.push({ e, cs });
+  }
+}
+
+// search text, built once per event
+for (const e of EV) {
+  const bits = [e.title, e.detail, e.itemid, e.intent, e.intentid, e.endpoint, e.rule, e.resultname, e.session, e.ev, e.ns, TYPE_LABEL[e.type], e.kind];
+  for (const cs of e.changes || []) {
+    bits.push(cs.label, cs.against);
+    for (const d of cs.diffs || []) bits.push(cs.what + ":" + d.p, d.a && d.a.t, d.b && d.b.t);
+  }
+  for (const r of e.refs || []) bits.push(r.label);
+  e._s = bits.filter(Boolean).join("\n").toLowerCase();
+}
+
+// ------------------------------------------------------------ state
+const state = {
+  tab: "timeline", q: "", types: new Set(TYPES.map((t) => t[0])), intent: "", endpoint: "", rule: "", outcome: "",
+  changesOnly: false, inclFirst: true, ignore: null, ignoreText: "", from: null, until: null, tz: "utc", newest: false,
+  open: new Set(), pinned: new Set(), limit: PAGE, histSubject: "", histPath: "",
+};
+
+function terms(q) {
+  const out = [];
+  q.replace(/"([^"]+)"|(\S+)/g, (_, a, b) => { out.push((a || b).toLowerCase()); });
+  return out;
+}
+
+// diffs of a change set that are not ignored
+function shown(cs) {
+  if (!cs.diffs) return [];
+  if (!state.ignore) return cs.diffs;
+  return cs.diffs.filter((d) => !state.ignore.test(cs.what + ":" + d.p));
+}
+function changeInfo(e) {
+  let changed = false, first = false;
+  for (const cs of e.changes || []) {
+    if (cs.first) first = true;
+    else if (shown(cs).length) changed = true;
+  }
+  return { changed, first };
+}
+
+function matches(e) {
+  if (state.pinned.has(e.id)) return true;
+  if (!state.types.has(e.type)) return false;
+  if (state.intent && e.intentid !== state.intent) return false;
+  if (state.endpoint && e.endpoint !== state.endpoint) return false;
+  if (state.rule && e.rule !== state.rule) return false;
+  if (state.outcome) {
+    if (e.type !== "result") return false;
+    const r = e.result;
+    if (state.outcome === "ok" && r !== 0) return false;
+    if (state.outcome === "notok" && r === 0) return false;
+    if (state.outcome === "fail" && r !== 9001) return false;
+    if (state.outcome === "error" && !(r >= 9010)) return false;
+  }
+  if (state.from != null && e.t < state.from) return false;
+  if (state.until != null && e.t > state.until) return false;
+  if (state.changesOnly) {
+    const ci = changeInfo(e);
+    if (!(ci.changed || (state.inclFirst && ci.first))) return false;
+  }
+  if (state.q) for (const t of terms(state.q)) if (!e._s.includes(t)) return false;
+  return true;
+}
+
+// ------------------------------------------------------------ highlighting
+function hl(text) {
+  const frag = document.createDocumentFragment();
+  const ts = state.q ? terms(state.q).filter((t) => t.length > 0) : [];
+  if (!ts.length || !text) { frag.append(text || ""); return frag; }
+  const lower = text.toLowerCase();
+  let i = 0;
+  while (i < text.length) {
+    let best = -1, len = 0;
+    for (const t of ts) { const j = lower.indexOf(t, i); if (j >= 0 && (best < 0 || j < best)) { best = j; len = t.length; } }
+    if (best < 0) { frag.append(text.slice(i)); break; }
+    frag.append(text.slice(i, best), el("mark", { text: text.slice(best, best + len) }));
+    i = best + len;
+  }
+  return frag;
+}
+
+// a value, with the characters that differ from the other side marked when
+// both are the same length (hex digests, for instance)
+function valueNode(v, other) {
+  if (!v) return el("span", { class: "trunc", text: "—" });
+  const box = el("div", { class: "val" });
+  if (other && !v.x && !other.x && v.t.length === other.t.length && v.t.length <= 1024 && v.t !== other.t && !state.q) {
+    let run = "", diff = false;
+    const flush = () => { if (run) box.append(diff ? el("mark", { text: run }) : run); run = ""; };
+    for (let i = 0; i < v.t.length; i++) {
+      const d = v.t[i] !== other.t[i];
+      if (d !== diff) { flush(); diff = d; }
+      run += v.t[i];
+    }
+    flush();
+  } else {
+    box.append(hl(v.t));
+  }
+  if (v.x) box.append(el("div", { class: "trunc", text: `… shortened: ${v.n} bytes in all, SHA-256 ${v.h}` }));
+  return box;
+}
+
+// ------------------------------------------------------------ timeline
+function typeColor(t) { return `var(--t-${t})`; }
+
+function eventTags(e) {
+  const tags = [];
+  if (e.type === "result" && e.result != null) {
+    tags.push(el("span", { class: "tag " + (e.result === 0 ? "ok" : e.result === 9001 ? "bad" : "warn"), text: e.resultname }));
+  }
+  for (const cs of e.changes || []) {
+    if (cs.first) { tags.push(el("span", { class: "tag first", title: cs.label + ": nothing earlier to compare with", text: cs.what + ": first" })); continue; }
+    const n = shown(cs).length, all = (cs.diffs || []).length;
+    if (n) tags.push(el("span", { class: "tag chg", title: cs.label, text: `${cs.what}: ${n} changed` }));
+    else if (all) tags.push(el("span", { class: "tag ign", title: `${cs.label}: ${all} differences, all ignored`, text: `${cs.what}: ${all} ignored` }));
+  }
+  return tags;
+}
+
+function eventNode(e) {
+  const box = el("div", { class: "ev", id: "e-" + e.id, style: `--tc:${typeColor(e.type)}` });
+  const row = el("div", { class: "row", onclick: () => toggle(e, box) },
+    el("span", { class: "time", title: fmtFull(e.t) + "  (" + e.ns + " ns)", text: fmtTime(e.t) }),
+    el("span", { class: "badge", text: TYPE_LABEL[e.type] + (e.kind && e.kind !== e.type ? " · " + e.kind : "") }),
+    el("span", { class: "title" }, hl(e.title), e.detail ? el("span", { class: "detail" }, hl(e.detail)) : null),
+    el("span", { class: "tags" }, eventTags(e)));
+  box.append(row);
+  if (state.open.has(e.id)) box.append(detailNode(e));
+  return box;
+}
+
+function toggle(e, box) {
+  if (state.open.has(e.id)) { state.open.delete(e.id); box.querySelector(".body")?.remove(); }
+  else { state.open.add(e.id); box.append(detailNode(e)); }
+}
+
+function jump(id) {
+  if (!id) return;
+  if (!byId.has(id)) { showDoc(id); return; }
+  state.pinned.add(id);
+  state.open.add(id);
+  setTab("timeline");
+  const e = byId.get(id);
+  // make sure it is within the rendered page
+  const list = visible();
+  const idx = list.indexOf(e);
+  if (idx >= state.limit) state.limit = idx + 50;
+  renderTimeline();
+  const node = $("e-" + id);
+  if (node) {
+    node.scrollIntoView({ block: "center" });
+    node.classList.add("flash");
+    setTimeout(() => node.classList.remove("flash"), 1600);
+  }
+  try { history.replaceState(null, "", "#" + encodeURIComponent(id)); } catch (err) { /* some browsers refuse on file:// */ }
+}
+
+function linkTo(label, id, title) {
+  if (!id) return el("span", { class: "mono", title: "not in this report", text: label });
+  return el("span", { class: "link", title: title || (byId.has(id) ? "go to the event" : "show the document"), onclick: (ev) => { ev.stopPropagation(); jump(id); } }, label);
+}
+
+function detailNode(e) {
+  const body = el("div", { class: "body" });
+  const meta = el("table", { class: "meta" });
+  const add = (k, v, mono = true) => { if (v) meta.append(el("tr", null, el("td", { text: k }), el("td", { class: mono ? "mono" : "" }, hl(String(v))))); };
+  add("Time", fmtFull(e.t) + "  (" + e.ns + " ns)");
+  add("Item ID", e.itemid);
+  add("Intent", e.intent && e.intentid && e.intent !== e.intentid ? `${e.intent} (${e.intentid})` : e.intent);
+  add("Endpoint", e.endpoint);
+  add("Rule", e.rule);
+  add("Expected value", e.ev);
+  add("Result", e.resultname);
+  add("Session", e.session);
+  add("Detail", e.detail, false);
+  body.append(meta);
+
+  if (e.refs && e.refs.length) {
+    body.append(el("div", { class: "refs" }, el("b", { text: "Related: " }), e.refs.map((r) => linkTo(r.label, r.id))));
+  }
+
+  for (const cs of e.changes || []) body.append(changeSetNode(e, cs));
+
+  const btns = el("div", { class: "btns" });
+  if (e.doc && R.documents[e.doc] != null) btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); toggleDoc(body, e.doc, "Document"); }, text: "Document" }));
+  for (const cs of e.changes || []) {
+    if (cs.againstdoc && R.documents[cs.againstdoc] != null && cs.againstdoc !== e.doc) {
+      btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); toggleDoc(body, cs.againstdoc, "Compared with"); }, text: "Compared: " + cs.what }));
+    }
+  }
+  btns.append(el("button", { onclick: (ev) => { ev.stopPropagation(); navigator.clipboard?.writeText(location.href.split("#")[0] + "#" + encodeURIComponent(e.id)); }, title: "Copy a link to this event", text: "Copy link" }));
+  body.append(btns);
+  return body;
+}
+
+function changeSetNode(e, cs) {
+  const box = el("div", { class: "cs" });
+  const h = el("h4", null, cs.label);
+  if (cs.first) {
+    box.append(h, el("div", { class: "hint", text: "First in this report: nothing earlier to compare with." }));
+    return box;
+  }
+  if (cs.against) {
+    const target = byId.has("claim:" + cs.against) ? "claim:" + cs.against : byId.has("result:" + cs.against) ? "result:" + cs.against : (R.documents[cs.againstdoc] != null ? cs.againstdoc : "");
+    h.append(el("span", { class: "against" }, "  against ", linkTo(cs.against, target), cs.againstt ? " of " + fmtFull(cs.againstt) : "",
+      target && !byId.has(target) ? " (baseline, before the range)" : ""));
+  }
+  box.append(h);
+  const ds = shown(cs);
+  const ignored = (cs.diffs || []).length - ds.length;
+  if (!ds.length) { box.append(el("div", { class: "hint", text: `${ignored} differences, all ignored.` })); return box; }
+  const t = el("table", { class: "diff" }, el("colgroup", null, el("col", { class: "p" }), el("col", { class: "o" }), el("col"), el("col")),
+    el("tr", null, el("th", { text: "Path" }), el("th", { text: "" }), el("th", { text: "Before" }), el("th", { text: "After" })));
+  for (const d of ds) {
+    t.append(el("tr", null,
+      el("td", null, el("span", { class: "link", title: "Value history of this path", onclick: (ev) => { ev.stopPropagation(); openHistory(subjectOf(e, cs), cs.what + ":" + d.p); } }, hl(d.p))),
+      el("td", { class: "op-" + d.o, text: d.o }),
+      el("td", null, valueNode(d.a, d.b)), el("td", null, valueNode(d.b, d.a))));
+  }
+  box.append(t);
+  if (ignored) box.append(el("div", { class: "hint", text: `${ignored} more ignored (Ignore paths).` }));
+  return box;
+}
+
+function toggleDoc(body, key, label) {
+  const id = "doc-" + key;
+  const old = body.querySelector(`pre[data-doc="${CSS.escape(key)}"]`);
+  if (old) { old.previousSibling?.remove(); old.remove(); return; }
+  body.append(el("div", { class: "hint", text: `${label}: ${key}` }), el("pre", { class: "doc", "data-doc": key, id }, hl(R.documents[key])));
+}
+
+function showDoc(key) {
+  if (R.documents[key] == null) return;
+  setTab("about");
+  const sec = $("tab-about");
+  sec.prepend(el("h3", { text: key }), el("pre", { class: "doc" }, R.documents[key]));
+  sec.scrollIntoView();
+}
+
+function visible() {
+  const list = EV.filter(matches);
+  if (state.newest) list.reverse();
+  return list;
+}
+
+function renderTimeline() {
+  const sec = $("tab-timeline");
+  sec.replaceChildren();
+  const list = visible();
+  const changed = list.filter((e) => changeInfo(e).changed).length;
+  sec.append(el("div", { class: "count", text: `${list.length} of ${EV.length} events shown · ${changed} with changes` }));
+  if (!list.length) { sec.append(el("div", { class: "empty", text: "Nothing matches the filters." })); return; }
+  const frag = document.createDocumentFragment();
+  let day = "";
+  for (const e of list.slice(0, state.limit)) {
+    const d = fmtDay(e.t);
+    if (d !== day) { day = d; frag.append(el("div", { class: "day", text: d + (state.tz === "utc" ? " (UTC)" : "") })); }
+    frag.append(eventNode(e));
+  }
+  sec.append(frag);
+  if (list.length > state.limit) {
+    sec.append(el("div", { class: "more" }, el("button", { onclick: () => { state.limit += PAGE; renderTimeline(); }, text: `Show ${Math.min(PAGE, list.length - state.limit)} more (${list.length - state.limit} not shown)` })));
+  }
+}
+
+// ------------------------------------------------------------ series
+function renderSeries() {
+  const sec = $("tab-series");
+  sec.replaceChildren();
+  const ts = terms(state.q);
+  const keep = (s) => (!state.intent || s.intentid === state.intent) && (!state.endpoint || s.endpoint === state.endpoint) &&
+    (!state.rule || s.rule === state.rule) && ts.every((t) => `${s.intent} ${s.intentid} ${s.endpoint} ${s.rule || ""}`.toLowerCase().includes(t));
+  const inTime = (e) => (state.from == null || e.t >= state.from) && (state.until == null || e.t <= state.until);
+
+  sec.append(el("h3", { text: "Claims: each intent on each endpoint" }),
+    el("div", { class: "legend" }, "One box per claim, oldest first:",
+      el("span", { class: "strip" }, el("i", { class: "first" })), "first",
+      el("span", { class: "strip" }, el("i", { class: "same" })), "body unchanged",
+      el("span", { class: "strip" }, el("i", { class: "chg" })), "body or endpoint changed",
+      el("span", { class: "strip" }, el("i", { class: "bad" })), "claim error"));
+  const ct = el("table", { class: "grid" }, el("tr", null, ["Intent", "Endpoint", "Claims", "Changed", "Last change", "Claims over time"].map((h) => el("th", { text: h }))));
+  let any = false;
+  for (const s of R.series.filter((s) => s.type === "claim" && keep(s))) {
+    const evs = EV.filter((e) => e.type === "claim" && e.series === s.key && inTime(e));
+    if (!evs.length) continue;
+    any = true;
+    let nchg = 0, last = 0;
+    const strip = el("div", { class: "strip" });
+    for (const e of evs) {
+      const cs = (e.changes || []).filter((c) => c.what === "body" || c.what === "endpoint");
+      const first = cs.some((c) => c.first && c.what === "body");
+      const chg = cs.some((c) => !c.first && shown(c).length);
+      const err = /error/i.test(e.detail || "");
+      if (chg) { nchg++; last = e.t; }
+      strip.append(el("i", { class: err ? "bad" : chg ? "chg" : first ? "first" : "same", title: `${fmtFull(e.t)}  ${chg ? "changed" : first ? "first" : "unchanged"}`, onclick: () => jump(e.id) }));
+    }
+    ct.append(el("tr", null,
+      el("td", null, el("span", { class: "link", onclick: () => { state.intent = s.intentid; syncControls(); setTab("timeline"); }, title: "Show this intent in the timeline" }, s.intent),
+        el("div", { class: "mono hint", text: s.intentid })),
+      el("td", { text: s.endpoint }), el("td", { text: evs.length }),
+      el("td", null, nchg ? el("span", { class: "link", onclick: () => openHistory("series:" + s.key, ""), title: "Value history" }, String(nchg)) : "0"),
+      el("td", { class: "mono", text: last ? fmtFull(last) : "—" }), el("td", null, strip)));
+  }
+  sec.append(any ? ct : el("div", { class: "empty", text: "No claim series match." }));
+
+  sec.append(el("h3", { text: "Results: each rule on each intent and endpoint" }),
+    el("div", { class: "legend" }, "One box per result, oldest first:",
+      el("span", { class: "strip" }, el("i", { class: "ok" })), "success",
+      el("span", { class: "strip" }, el("i", { class: "bad" })), "fail",
+      el("span", { class: "strip" }, el("i", { class: "other" })), "other",
+      el("span", { class: "strip" }, el("i", { class: "ok flip" })), "outcome changed",
+      el("span", { class: "strip" }, el("i", { class: "chg" })), "expected value changed"));
+  const rt = el("table", { class: "grid" }, el("tr", null, ["Rule", "Intent", "Endpoint", "Results", "Success", "Outcome changes", "Results over time"].map((h) => el("th", { text: h }))));
+  any = false;
+  for (const s of R.series.filter((s) => s.type === "result" && keep(s))) {
+    const evs = EV.filter((e) => e.type === "result" && e.series === s.key && inTime(e));
+    if (!evs.length) continue;
+    any = true;
+    let ok = 0, flips = 0;
+    const strip = el("div", { class: "strip" });
+    for (const e of evs) {
+      if (e.result === 0) ok++;
+      const flip = (e.changes || []).some((c) => c.what === "outcome" && !c.first && shown(c).length);
+      const evchg = (e.changes || []).some((c) => c.what === "expectedvalue" && !c.first && shown(c).length);
+      if (flip) flips++;
+      const cls = evchg ? "chg" : e.result === 0 ? "ok" : e.result === 9001 ? "bad" : "other";
+      strip.append(el("i", { class: cls + (flip ? " flip" : ""), title: `${fmtFull(e.t)}  ${e.resultname}${flip ? "  (outcome changed)" : ""}${evchg ? "  (expected value changed)" : ""}`, onclick: () => jump(e.id) }));
+    }
+    rt.append(el("tr", null, el("td", { text: s.rule }), el("td", { text: s.intent }), el("td", { text: s.endpoint }),
+      el("td", { text: evs.length }), el("td", { text: `${ok} (${Math.round(100 * ok / evs.length)}%)` }),
+      el("td", null, flips ? el("span", { class: "link", onclick: () => openHistory("rseries:" + s.key, ""), title: "Value history" }, String(flips)) : "0"),
+      el("td", null, strip)));
+  }
+  sec.append(any ? rt : el("div", { class: "empty", text: "No result series match." }));
+}
+
+// ------------------------------------------------------------ value history
+function openHistory(subjectKey, path) {
+  state.histSubject = subjectKey;
+  state.histPath = path;
+  setTab("history");
+}
+
+function renderHistory() {
+  const sec = $("tab-history");
+  sec.replaceChildren();
+  const groups = new Map();
+  for (const s of subjects.values()) {
+    if (!s.steps.some((st) => !st.cs.first && (st.cs.diffs || []).length)) continue;
+    if (!groups.has(s.group)) groups.set(s.group, []);
+    groups.get(s.group).push(s);
+  }
+  if (!groups.size) { sec.append(el("div", { class: "empty", text: "Nothing changed in the range of this report." })); return; }
+  const sel = el("select", { onchange: () => { state.histSubject = sel.value; state.histPath = ""; renderHistory(); } });
+  for (const [g, ss] of groups) {
+    const og = el("optgroup", { label: g });
+    for (const s of ss.sort((a, b) => a.label.localeCompare(b.label))) og.append(el("option", { value: s.key, text: s.label }));
+    sel.append(og);
+  }
+  if (!subjects.has(state.histSubject) || ![...groups.values()].flat().some((s) => s.key === state.histSubject)) state.histSubject = sel.querySelector("option").value;
+  sel.value = state.histSubject;
+  const pathFilter = el("input", { type: "search", placeholder: "Filter paths…", value: state.histPath, oninput: () => { state.histPath = pathFilter.value; draw(); } });
+  sec.append(el("div", { class: "group", style: "margin:6px 0 12px" }, el("span", { class: "lbl", text: "Subject" }), sel, pathFilter,
+    el("span", { class: "hint", text: "Each path that changed, with every change in order. Ignore paths, search, time and the intent/endpoint/rule filters apply." })));
+  const out = el("div");
+  sec.append(out);
+
+  function draw() {
+    out.replaceChildren();
+    const s = subjects.get(state.histSubject);
+    const paths = new Map();
+    for (const { e, cs } of s.steps) {
+      if (cs.first) continue;
+      if (state.from != null && e.t < state.from) continue;
+      if (state.until != null && e.t > state.until) continue;
+      if (state.intent && e.intentid !== state.intent) continue;
+      if (state.endpoint && e.endpoint !== state.endpoint) continue;
+      if (state.rule && e.rule !== state.rule) continue;
+      for (const d of shown(cs)) {
+        const key = cs.what + ":" + d.p;
+        if (!paths.has(key)) paths.set(key, []);
+        paths.get(key).push({ e, cs, d });
+      }
+    }
+    const ts = terms(state.q);
+    const pf = state.histPath.toLowerCase();
+    let keys = [...paths.keys()].filter((k) => !pf || k.toLowerCase().includes(pf));
+    if (ts.length) keys = keys.filter((k) => ts.every((t) => k.toLowerCase().includes(t) || paths.get(k).some(({ d }) => ((d.a && d.a.t) || "").toLowerCase().includes(t) || ((d.b && d.b.t) || "").toLowerCase().includes(t))));
+    keys.sort(natural);
+    if (!keys.length) { out.append(el("div", { class: "empty", text: "No changed paths match." })); return; }
+    const t = el("table", { class: "grid" }, el("tr", null, ["Path", "Changes", "First change", "Last change", ""].map((h) => el("th", { text: h }))));
+    for (const k of keys) {
+      const steps = paths.get(k);
+      const detail = el("tr", { class: "hidden" }, el("td", { colspan: 5 }, historySteps(steps)));
+      const open = keys.length === 1 || (pf && k.toLowerCase() === pf);
+      if (open) detail.classList.remove("hidden");
+      t.append(el("tr", null,
+        el("td", { class: "mono" }, el("span", { class: "link", onclick: () => detail.classList.toggle("hidden") }, hl(k))),
+        el("td", { text: steps.length }),
+        el("td", { class: "mono" }, linkTo(fmtFull(steps[0].e.t), steps[0].e.id)),
+        el("td", { class: "mono" }, linkTo(fmtFull(steps[steps.length - 1].e.t), steps[steps.length - 1].e.id)),
+        el("td", null, el("button", { onclick: () => detail.classList.toggle("hidden"), text: "Steps" }))), detail);
+    }
+    out.append(el("div", { class: "count", text: `${keys.length} paths changed` }), t);
+  }
+  draw();
+}
+
+function historySteps(steps) {
+  const box = el("div", { class: "hist" });
+  const s0 = steps[0];
+  box.append(el("div", { class: "step" }, el("span", { class: "time", text: s0.cs.againstt ? fmtFull(s0.cs.againstt) : "before" }), "  ",
+    el("span", { class: "hint", text: "value at " + (s0.cs.against || "the earlier item") + ": " }), valueNode(s0.d.a, null)));
+  for (const { e, d } of steps) {
+    box.append(el("div", { class: "step" }, el("span", { class: "time" }, linkTo(fmtFull(e.t), e.id)), "  ",
+      el("span", { class: "op-" + d.o, text: d.o }), "  ", el("span", { class: "hint", text: e.title }),
+      valueNode(d.b, d.a)));
+  }
+  return box;
+}
+
+function natural(a, b) { return a.localeCompare(b, undefined, { numeric: true }); }
+
+// ------------------------------------------------------------ about
+function renderAbout() {
+  const sec = $("tab-about");
+  if (sec.dataset.done) return;
+  sec.dataset.done = "1";
+  sec.append(
+    el("h3", { text: "What this report shows" }),
+    el("p", null, "Every claim holds copies of the element and the intent as they were when it was made, and every result a copy of the expected value it used. jp_forensics compares each copy with the one before it:"),
+    el("ul", null,
+      el("li", null, el("b", { text: "element: " }), "the element copy, against the previous claim (any intent)"),
+      el("li", null, el("b", { text: "intent: " }), "the intent copy, against the previous claim of the same intent"),
+      el("li", null, el("b", { text: "body: " }), "the claim body (PCR values, UEFI variables, event logs, …), against the previous claim of the same intent on the same endpoint"),
+      el("li", null, el("b", { text: "endpoint: " }), "the endpoint the claim went to, against the previous claim in the same series"),
+      el("li", null, el("b", { text: "outcome: " }), "a result's value, against the previous result of the same rule on the same intent and endpoint"),
+      el("li", null, el("b", { text: "expectedvalue: " }), "the expected value copy in a result, against the previous result with the same expected value")),
+    el("p", null, "Claims and results just before the range are read as baselines, so the first ones in the range are compared too; baselines are not shown as events. “Now” events compare the element, intents and expected values in Jane as the report was made with their last copies. Arrays of objects with a distinct name (UEFI variables, for instance) are compared by name, not position. Values over 1024 bytes are shortened, with their length and SHA-256."),
+    el("p", null, "Jane makes no trust decisions and neither does this report: it shows what changed and when."),
+    el("h3", { text: "Report" }),
+    el("table", { class: "meta" }, ...[
+      ["Element", `${R.elementname} (${R.elementid})`], ["Jane", R.server], ["Range", R.range], ["Generated", R.generated], ["Tool", R.tool],
+      ["Documents included", Object.keys(R.documents).length ? `${Object.keys(R.documents).length}` : "no (--nodocuments)"],
+      ...Object.entries(R.counts).map(([k, v]) => [k, String(v)]),
+    ].map(([k, v]) => el("tr", null, el("td", { text: k }), el("td", { class: "mono", text: v })))));
+}
+
+// ------------------------------------------------------------ controls
+function setTab(t) {
+  state.tab = t;
+  for (const b of $("tabs").querySelectorAll("button")) b.classList.toggle("on", b.dataset.tab === t);
+  for (const s of ["timeline", "series", "history", "about"]) $("tab-" + s).classList.toggle("hidden", s !== t);
+  render();
+}
+
+function render() {
+  if (state.tab === "timeline") renderTimeline();
+  else if (state.tab === "series") renderSeries();
+  else if (state.tab === "history") renderHistory();
+  else renderAbout();
+}
+
+function fillSelect(sel, values) {
+  for (const [v, label] of values) sel.append(el("option", { value: v, text: label }));
+}
+
+function syncControls() {
+  $("q").value = state.q;
+  $("f-intent").value = state.intent; $("f-endpoint").value = state.endpoint; $("f-rule").value = state.rule; $("f-outcome").value = state.outcome;
+  $("f-changes").checked = state.changesOnly; $("f-first").checked = state.inclFirst;
+  $("ignore").value = state.ignoreText;
+  $("f-from").value = state.from != null ? toInput(state.from) : "";
+  $("f-until").value = state.until != null ? toInput(state.until) : "";
+  $("tz").value = state.tz;
+  $("sort").textContent = state.newest ? "Newest first" : "Oldest first";
+  for (const c of $("types").querySelectorAll(".chip")) {
+    const on = state.types.has(c.dataset.type);
+    c.classList.toggle("off", !on); c.querySelector("input").checked = on;
+  }
+}
+
+function changed() { state.limit = PAGE; state.pinned.clear(); render(); }
+
+function setup() {
+  document.title = `Jane forensics: ${R.elementname || R.elementid}`;
+  $("h-title").replaceChildren("Jane forensics: " + (R.elementname || "(no name)"), el("span", { class: "id", text: R.elementid }));
+  $("h-sub").replaceChildren(...[["Jane", R.server], ["Range", R.range], ["Generated", R.generated + " (UTC)"], ["", R.tool]]
+    .map(([k, v]) => el("span", null, k ? k + ": " : "", v)));
+  const c = R.counts;
+  const stats = [["events", "events"], ["eventswithchanges", "with changes"], ["claims", "claims"], ["results", "results"],
+    ["sessions", "sessions"], ["log", "log entries"], ["expectedvalues", "expected values"], ["intents", "intents"]];
+  $("stats").replaceChildren(...stats.map(([k, l]) => el("div", { class: "stat" }, el("b", { text: c[k] ?? 0 }), el("small", { text: l }))));
+  if (R.warnings && R.warnings.length) {
+    $("warnings").replaceChildren(el("div", { class: "warnings" }, el("b", { text: "Warnings" }), el("ul", null, R.warnings.map((w) => el("li", { text: w })))));
+  }
+
+  const counts = {};
+  for (const e of EV) counts[e.type] = (counts[e.type] || 0) + 1;
+  for (const [t, label] of TYPES) {
+    const cb = el("input", { type: "checkbox", checked: true });
+    const chip = el("label", { class: "chip", "data-type": t, style: `border-color:${typeColor(t)}` }, cb, label, el("span", { class: "n", text: counts[t] || 0 }));
+    cb.addEventListener("change", () => { cb.checked ? state.types.add(t) : state.types.delete(t); chip.classList.toggle("off", !cb.checked); changed(); });
+    chip.addEventListener("dblclick", (ev) => { ev.preventDefault(); state.types = new Set([t]); syncControls(); changed(); });
+    chip.title = "Double-click to show only " + label;
+    $("types").append(chip);
+  }
+
+  const intents = new Map(), endpoints = new Set(), rules = new Set();
+  for (const e of EV) {
+    if (e.intentid) intents.set(e.intentid, e.intent || e.intentid);
+    if (e.endpoint) endpoints.add(e.endpoint);
+    if (e.rule) rules.add(e.rule);
+  }
+  fillSelect($("f-intent"), [...intents].sort((a, b) => natural(a[1], b[1])));
+  fillSelect($("f-endpoint"), [...endpoints].sort(natural).map((v) => [v, v]));
+  fillSelect($("f-rule"), [...rules].sort(natural).map((v) => [v, v]));
+
+  let qt;
+  $("q").addEventListener("input", () => { clearTimeout(qt); qt = setTimeout(() => { state.q = $("q").value.trim(); changed(); }, 180); });
+  $("f-intent").addEventListener("change", (ev) => { state.intent = ev.target.value; changed(); });
+  $("f-endpoint").addEventListener("change", (ev) => { state.endpoint = ev.target.value; changed(); });
+  $("f-rule").addEventListener("change", (ev) => { state.rule = ev.target.value; changed(); });
+  $("f-outcome").addEventListener("change", (ev) => { state.outcome = ev.target.value; changed(); });
+  $("f-changes").addEventListener("change", (ev) => { state.changesOnly = ev.target.checked; changed(); });
+  $("f-first").addEventListener("change", (ev) => { state.inclFirst = ev.target.checked; changed(); });
+  let it;
+  $("ignore").addEventListener("input", () => {
+    clearTimeout(it);
+    it = setTimeout(() => {
+      const v = $("ignore").value.trim();
+      state.ignoreText = v;
+      try { state.ignore = v ? new RegExp(v, "i") : null; $("ignore").classList.remove("bad"); }
+      catch (err) { state.ignore = null; $("ignore").classList.add("bad"); }
+      changed();
+    }, 250);
+  });
+  $("f-from").addEventListener("change", (ev) => { state.from = fromInput(ev.target.value); changed(); });
+  $("f-until").addEventListener("change", (ev) => { state.until = fromInput(ev.target.value); changed(); });
+  $("tz").addEventListener("change", (ev) => { state.tz = ev.target.value; syncControls(); render(); });
+  $("sort").addEventListener("click", () => { state.newest = !state.newest; syncControls(); render(); });
+  $("expand").addEventListener("click", () => { for (const e of visible().slice(0, state.limit)) state.open.add(e.id); setTab("timeline"); });
+  $("collapse").addEventListener("click", () => { state.open.clear(); render(); });
+  $("reset").addEventListener("click", () => {
+    Object.assign(state, { q: "", types: new Set(TYPES.map((t) => t[0])), intent: "", endpoint: "", rule: "", outcome: "",
+      changesOnly: false, inclFirst: true, ignore: null, ignoreText: "", from: null, until: null });
+    $("ignore").classList.remove("bad");
+    syncControls(); changed();
+  });
+  $("csv").addEventListener("click", downloadCSV);
+  for (const b of $("tabs").querySelectorAll("button")) b.addEventListener("click", () => setTab(b.dataset.tab));
+
+  syncControls();
+  render();
+  if (location.hash.length > 1) jump(decodeURIComponent(location.hash.slice(1)));
+}
+
+function downloadCSV() {
+  const q = (v) => { const s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const rows = [["time_utc", "timestamp_ns", "type", "kind", "title", "intent", "intentid", "endpoint", "rule", "result", "session", "itemid", "changes", "detail"]];
+  for (const e of visible()) {
+    const ch = (e.changes || []).map((cs) => cs.first ? `${cs.what}:first` : shown(cs).length ? `${cs.what}:${shown(cs).length}` : "").filter(Boolean).join(" ");
+    rows.push([new Date(e.t).toISOString(), e.ns, e.type, e.kind, e.title, e.intent, e.intentid, e.endpoint, e.rule, e.resultname, e.session, e.itemid, ch, e.detail]);
+  }
+  const blob = new Blob([rows.map((r) => r.map(q).join(",")).join("\r\n") + "\r\n"], { type: "text/csv" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `jp_forensics_${R.elementid}.csv` });
+  document.body.append(a); a.click(); a.remove();
+}
+
+if (R) setup();
+else document.body.replaceChildren(el("p", { text: "No report data in this page." }));
+</script>
+</body>
+</html>

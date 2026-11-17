@@ -9,6 +9,7 @@ updates:
       - "/janeserver"
       - "/tarzan"
       - "/provisioner"
+      - "/forensics"
       - "/lib/janeapi"
       - "/lib/localnames"
       - "/lib/machineid"
