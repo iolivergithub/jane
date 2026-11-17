@@ -119,6 +119,8 @@ One expected value, of jp's type `uefieventlog`, with an entry per rule:
 | `sys_machineID_Agent` | `sys/info` | `machineid` | the machine ID reported by tarzan equals the expected value |
 | `sys_machineID_CrossRef` | `sys/info` | | the machine ID reported by tarzan equals the element's `host.machineid` |
 
+On a machine without a machine ID, tarzan reports an empty `machineid` and jp records no `sysmachineid` expected value, so `sys_machineID_Agent` fails for want of one, while `sys_machineID_CrossRef` compares two empty values and passes.
+
 ## RATSD
 
 | Rule | Claim | Checks |

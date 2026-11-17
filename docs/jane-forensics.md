@@ -1,6 +1,6 @@
 # jane-forensics, element forensics
 
-`jane-forensics` reads one element's history from Jane's REST API and writes it as a single HTML page: a timeline of the element, its expected values, the intents it used, its claims, results, sessions and log entries, with every change marked. It answers questions such as *when did PCR 7 change?*, *when was Secure Boot turned off?*, *which `jp update` changed this expected value, and when did a rule first fail after it?*
+Since 1.6.2, `jane-forensics` reads one element's history from Jane's REST API and writes it as a single HTML page: a timeline of the element, its expected values, the intents it used, its claims, results, sessions and log entries, with every change marked. It answers questions such as *when did PCR 7 change?*, *when was Secure Boot turned off?*, *which `jp update` changed this expected value, and when did a rule first fail after it?*
 
 ```bash
 jane-forensics [--from TIME] [--until TIME] [--server URL] [--apikeyfile PATH]

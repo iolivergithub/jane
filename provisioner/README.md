@@ -181,9 +181,12 @@ without any tampering.
 ## Expected value types
 
 An `evs` entry's `type` says how its claim becomes an expected value for the
-element, intent and endpoint (created by `create`, replaced by `update`):
+element, intent and endpoint (created by `create`, replaced by `update`).
+An error claim stops `create`/`update` with the error Jane recorded, except
+for `uefieventlog` and `tpm2ekcert`, which then record nothing:
 
 - `sysmachineid`: the claim's `machineid`, for the `sys_machineID_` rules.
+  An empty `machineid` (the machine has none) is skipped with a warning.
 - `tpm2quote`: the quote's PCR digest and firmware version, for the `tpm2_`
   rules.
 - `tpm2ekcert`: `issuerurl`, where the EK certificate's issuer certificates

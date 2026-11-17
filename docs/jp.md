@@ -123,6 +123,10 @@ There is no `-u`/`--unsafe` any more (see [Changes in 1.5.4](#changes-in-154)).
 
 A cloned VM that kept its source's `/etc/machine-id` is refused by `create`, because Jane already has an element with that machine ID: give the clone a new machine ID first.
 
+A machine without a machine ID (neither `/etc/machine-id` nor `/var/lib/dbus/machine-id`, as on some distributions without systemd) can still be provisioned (since 1.6.2): `create` and `update` print a warning and carry on, the element gets an empty `host.machineid`, `create` checks Jane by element name only, and the `sysmachineid` expected value is skipped with a warning. To give it one, run `systemd-machine-id-setup`, or `dbus-uuidgen --ensure` without systemd, then `jp update`.
+
+If an intent's claim is an error claim during `create` or `update` (Jane could not get an answer from tarzan), jp stops with the error Jane recorded, e.g. `intent std::intent::sys::info: claim C1 is an error claim: the trust agent did not answer: ... connection refused`. Check that tarzan is running with the API the intent needs (`-sys` for `sys/info`), that the endpoint address in the provisioning file is reachable from Jane's machine, and that no firewall blocks the port (8530; firewalld on Red Hat and its derivatives blocks it by default). Before 1.6.2 this was reported as `claim body has no machineid` (#144). `uefieventlog` and `tpm2ekcert` entries record nothing on an error claim and the run carries on, as for a machine without an event log or an EK certificate.
+
 Examples:
 
 ```bash

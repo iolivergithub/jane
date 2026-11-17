@@ -25,7 +25,7 @@ The keys in `evs` are defined by the rules that read them. jp records them when 
 | jp type | Keys in evs | Read by |
 | --- | --- | --- |
 | `tpm2quote` | `attestedValue` (the quote's PCR digest), `firmwareVersion` | `tpm2_attestedValue`, `tpm2_firmware` |
-| `sysmachineid` | `machineid` | `sys_machineID_Agent` |
+| `sysmachineid` | `machineid` (not recorded if the machine has none) | `sys_machineID_Agent` |
 | `tpm2ekcert` | `issuerurl` (where the EK certificate's issuer certificates are: `https`, `http` or `file` URL) | `tpm2_ekCertIssuer` |
 | `uefiefivars` | one key per UEFI variable (`SecureBoot`, `PK`, `db`, `dbx`, ...): hex, or `sha256:<hex>` for large values | the `UEFI_*` rules |
 | `uefieventlog` (1.6) | the state measured in the UEFI event log: `secureboot`, `pk`, `kek`, `db`, `dbx`, `authorities`, `dmaprotection`, `firmwareversion` | the `uefi_log*` rules, see [Rules](rules.md#the-measured-state-in-the-event-log-16) |

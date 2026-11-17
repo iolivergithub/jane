@@ -88,7 +88,7 @@ The following fields are part of the *host* entry; jp fills them in (`collecthos
 | os | String | The operating system of the host machine |
 | arch | String | The CPU architecture of the host machine |
 | hostname | String | The hostname |
-| machineid | String | A unique identifier of a machine, typically /etc/machine-id as found in Debian and Ubuntu distributions |
+| machineid | String | A unique identifier of the machine's OS installation, recorded by jp: `/etc/machine-id` (any systemd distribution: Debian, Ubuntu, Red Hat, Arch, ...), else `/var/lib/dbus/machine-id`; on the BSDs and macOS also `/etc/hostid` or the kernel's host UUID; on Windows the `MachineGuid`. Empty if the machine has none (since 1.6.2 that is a warning, not an error) |
 
 
 ### SSHKEY

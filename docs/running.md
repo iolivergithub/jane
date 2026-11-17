@@ -186,6 +186,10 @@ Flags may be written with one or two dashes (`-tpm2` or `--tpm2`).
 sudo ./tarzan -sys -tpm2 -uefi -ima
 ```
 
+Jane must be able to reach tarzan's port (8530 by default). Where a firewall is on by default, open it, e.g. on Red Hat and its derivatives `sudo firewall-cmd --permanent --add-port=8530/tcp && sudo firewall-cmd --reload`, or `sudo ufw allow 8530/tcp` with ufw. Otherwise every claim is an error claim and `jp create` stops at the first intent.
+
+On distributions without the deb (Red Hat, Arch, ...) there is no systemd unit; `etc/debbuild` has the deb's `tarzan.service`, which can be copied to `/etc/systemd/system/`.
+
 **Deb install (systemd):** the packaged unit starts `-sys -tpm2 -uefi -ima` and reads `/etc/opt/jane/tarzan.env`; see [Installing with dpkg/apt](deb.md).
 
 **OpenBSD (rc.d):** save as `/etc/rc.d/tarzan` and enable with `rcctl enable tarzan`. On the BSDs and macOS tarzan cannot read UEFI variables (`uefi/efivars` answers "not supported"); the other APIs work as on Linux.
