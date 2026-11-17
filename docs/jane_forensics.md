@@ -116,7 +116,7 @@ jane_forensics, like Jane, makes no trust decisions: it shows what changed and w
 
 The page is one self-contained HTML file: no scripts, styles or fonts from elsewhere, and it makes no requests, so it can be opened offline, archived or attached to an incident report. It has:
 
-- **Timeline**: every event in time order, grouped by day. Each claim and result shows tags for what changed (`body: 3 changed`, `element: 2 changed`, `outcome: 1 changed`) or `first` where there was nothing earlier in the report to compare with. Click an event to see, first, the summary of what changed since the previous claim or result of the same kind, then its details, the differences (before and after, with the differing characters of equal-length values such as digests marked), links to related claims, results, sessions and expected values, and the documents themselves.
+- **Timeline**: every event, newest first (the **Newest first** button reverses it), grouped by day. Each claim and result shows tags for what changed (`body: 3 changed`, `element: 2 changed`, `outcome: 1 changed`) or `first` where there was nothing earlier in the report to compare with. Click an event to see, first, the summary of what changed since the previous claim or result of the same kind, then its details, the differences (before and after, with the differing characters of equal-length values such as digests marked), links to related claims, results, sessions and expected values, and the documents themselves.
 - **Series**: each intent on each endpoint, with one box per claim (unchanged, changed, first, error), and each rule with one box per result (success, fail, other; outcome and expected value changes marked). Click a box to go to the event.
 - **Value history**: for the element, an intent, a claim series, a result series or an expected value, every path that changed and each change in order, starting from the value before the first change. This is where to look for *when did PCR 7 change, and to what?*
 - **About**: what was compared, and the report's details (Jane's address, range, counts, the version of jane_forensics).
@@ -132,7 +132,7 @@ The filters apply to every view:
 | Hide volatile | hide values that differ on every call by design (on by default) |
 | Ignore paths | a regular expression matched against each difference's part and path, such as `body:quote`, `element:recordhistory.lastupdated`; `nonce\|signature` hides those wherever they are |
 | From, until | narrows the time shown, within the report's range |
-| UTC / Local time, Oldest / Newest first | display only |
+| UTC / Local time, Newest / Oldest first | display only; the timeline starts newest first |
 
 **CSV** downloads the events shown. **Copy link** on an event gives a link that opens the page at that event.
 

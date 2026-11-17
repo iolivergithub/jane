@@ -167,7 +167,7 @@ tr.vol td { opacity: .6; }
     <span class="lbl">From</span><input type="datetime-local" id="f-from" step="1">
     <span class="lbl">until</span><input type="datetime-local" id="f-until" step="1">
     <select id="tz" title="Time zone for display and the From/until fields"><option value="utc">UTC</option><option value="local">Local time</option></select>
-    <button id="sort" title="Order">Oldest first</button>
+    <button id="sort" title="Order of the timeline; click to reverse">Newest first</button>
   </div>
   <div class="group">
     <button id="expand">Expand all</button><button id="collapse">Collapse all</button>
@@ -292,7 +292,7 @@ function docText(e) {
 // ------------------------------------------------------------ state
 const state = {
   tab: "timeline", q: "", types: new Set(TYPES.map((t) => t[0])), intent: "", endpoint: "", rule: "", outcome: "",
-  changesOnly: false, inclFirst: true, hideVolatile: true, searchDocs: true, ignore: null, ignoreText: "", from: null, until: null, tz: "utc", newest: false,
+  changesOnly: false, inclFirst: true, hideVolatile: true, searchDocs: true, ignore: null, ignoreText: "", from: null, until: null, tz: "utc", newest: true,
   open: new Set(), pinned: new Set(), limit: PAGE, histSubject: "", histPath: "",
 };
 
