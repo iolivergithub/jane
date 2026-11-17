@@ -52,7 +52,7 @@ owner hierarchy has one, set `JANE_TPM_OWNER_PASSWORD` (jp only).
 |---|---|---|
 | TPM | `tpm2.device`, default `/dev/tpmrm0` then `/dev/tpm0` | TPM Base Services |
 | Element ID file | `/etc/opt/jane/janeelementid` | `%ProgramData%\jane\janeelementid` |
-| Machine ID | `/etc/machine-id`, `/var/lib/dbus/machine-id`, `/etc/hostid`; on BSD/macOS then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
+| Machine ID | `/etc/machine-id`, then `/var/lib/dbus/machine-id`; on BSD/macOS also `/etc/hostid`, then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
 | Key files | `$TMPDIR` or `/tmp` | `%TEMP%` |
 
 The element ID file is written read-only (`-r--r--r--`) by `create`, and is

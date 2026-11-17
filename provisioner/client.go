@@ -207,8 +207,30 @@ func (c *Client) Attest(eid, pid, epn, sid string) (string, error) {
 
 // Claim is the part of a janeserver claim the provisioner reads.
 type Claim struct {
-	ItemID string          `json:"itemid"`
-	Body   json.RawMessage `json:"body"`
+	ItemID   string          `json:"itemid"`
+	BodyType string          `json:"bodytype"`
+	Body     json.RawMessage `json:"body"`
+}
+
+// claimError is Jane's body type for a claim recording that the trust agent
+// could not be reached or answered with an error; the body's "error" says why.
+const claimError = "*ERROR"
+
+// Err returns the error recorded in an error claim, or nil.
+func (cl *Claim) Err() error {
+	if cl.BodyType != claimError {
+		return nil
+	}
+	var b struct {
+		Error string `json:"error"`
+	}
+	json.Unmarshal(cl.Body, &b)
+	if b.Error == "" {
+		b.Error = "no reason given"
+	}
+	return fmt.Errorf("claim %s is an error claim: the trust agent did not answer: %s"+
+		" (is tarzan running and reachable from Jane at the endpoint's address,"+
+		" with the API needed for this intent enabled, e.g. -sys for sys/info?)", cl.ItemID, b.Error)
 }
 
 func (c *Client) GetClaim(cid string) (*Claim, error) {

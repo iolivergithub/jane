@@ -35,6 +35,7 @@ type fakeJane struct {
 	elements      []fakeElement // elements already in Jane, for create's checks
 	elementLookup int           // if non-zero, element lookups answer this status
 	claimBody     string        // if set, the body of every claim
+	claimType     string        // if set, the bodytype of every claim (e.g. "*ERROR")
 
 	ruleResults map[string]int  // rule -> result code; default 0 (Success)
 	ruleErrors  map[string]bool // rule -> answer 500 without a result, as for an unknown rule
@@ -120,7 +121,7 @@ func (f *fakeJane) handler(t *testing.T) http.HandlerFunc {
 				"quote":{"attested":{"pcrdigest":"deadbeef"},"firmwareVersion":9007199254740993},
 				"efivars":` + fakeEfivars + `,"count":6}`
 			}
-			io.WriteString(w, `{"itemid":"C1","body":`+body+`}`)
+			io.WriteString(w, `{"itemid":"C1","bodytype":"`+f.claimType+`","body":`+body+`}`)
 		case r.Method == "POST" && r.URL.Path == "/verify":
 			var v struct{ Rule string }
 			json.Unmarshal([]byte(f.raw["POST /verify"][len(f.raw["POST /verify"])-1]), &v)

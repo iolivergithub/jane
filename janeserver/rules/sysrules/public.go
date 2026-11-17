@@ -9,8 +9,8 @@ import (
 func Registration() []structures.Rule {
 
 	ruleS := structures.Rule{"sys_taRunningSafely", "Checks that the TA is NOT in unsafe mode of operation", Callrulesafe, false}
-	ruleMTA := structures.Rule{"sys_machineID_Agent", "Checks that the Machine ID in /etc/machineid has not been changed - obtained from trust agent", CallrulemachineIDTA, true}
-	ruleMCR := structures.Rule{"sys_machineID_CrossRef", "Checks that the Machine ID in /etc/machineid has not been changed - cross-referenced from Element description", CallrulemachineIDCR, false}
+	ruleMTA := structures.Rule{"sys_machineID_Agent", "Checks that the machine ID (e.g. /etc/machine-id) has not been changed - obtained from trust agent", CallrulemachineIDTA, true}
+	ruleMCR := structures.Rule{"sys_machineID_CrossRef", "Checks that the machine ID (e.g. /etc/machine-id) has not been changed - cross-referenced from Element description", CallrulemachineIDCR, false}
 
 	return []structures.Rule{ruleS, ruleMTA, ruleMCR}
 }
@@ -33,7 +33,7 @@ func CallrulemachineIDTA(claim structures.Claim, rule string, ev structures.Expe
 
 	// NB: there's a lot of trimming of strings going on here, this is because we want to drop any newline etc
 	// characters, just in case.  Tarzan however does now strip these, but done here as an addition precaution
-	// because reading /etc/machineid as tarzan does introduce these characters, even though they are not
+	// because reading /etc/machine-id as tarzan does introduce these characters, even though they are not
 	// present in the original file.
 
 	machineid, ok := claim.Body["machineid"]

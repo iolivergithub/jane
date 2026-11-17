@@ -258,6 +258,14 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 	name := pv.P.Element.Name + "---" + pid
 	desc := pv.P.Element.Name + "---" + typ + " at " + pv.timeNow() + " UTC"
 
+	// An error claim (the trust agent did not answer) stops the types that
+	// need a value, saying why, rather than as a claim without that value.
+	// uefieventlog and tpm2ekcert record nothing instead, as for a machine
+	// without an event log or EK certificate.
+	if err := c.Err(); err != nil && typ != "uefieventlog" && typ != "tpm2ekcert" {
+		return err
+	}
+
 	var evs map[string]any
 	switch typ {
 	case "sysmachineid":
@@ -267,6 +275,10 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 		}
 		if missing(b.MachineID) {
 			return errors.New("claim body has no machineid")
+		}
+		if string(b.MachineID) == `""` {
+			return errors.New("the trust agent found no machine ID on the element" +
+				" (see the Machine ID row in jp's README for where it looks)")
 		}
 		evs = map[string]any{"machineid": b.MachineID}
 
