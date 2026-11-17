@@ -40,10 +40,8 @@ func Sysinfo(c echo.Context) error {
 	fmt.Println("sysinfo called")
 
 	// the same machine ID as jp records on the element; "" if there is none
-	mid, err := machineid.Get()
-	if err != nil {
-		fmt.Println("WARNING: no machine ID:", err)
-	} else {
+	mid, _ := machineid.Get()
+	if mid != "" {
 		fmt.Printf("Machine id: %v %v\n", len(mid), mid)
 	}
 

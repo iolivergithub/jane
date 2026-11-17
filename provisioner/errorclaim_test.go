@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -27,14 +28,22 @@ func TestProcessEVsErrorClaimSaysWhy(t *testing.T) {
 	}
 }
 
+// No machine ID is not an error: jp warns and records no expected value.
 func TestProcessEVsEmptyMachineID(t *testing.T) {
 	h := newHarness(t, "create")
+	var out bytes.Buffer
+	h.pv.Out = &out
 	h.jane.claimBody = `{"machineid":""}`
 	h.pv.P.EVS = []EVEntry{{IntentID: "std::intent::sys::info", Spec: EVSpec{Protocol: "tarzan", Type: "sysmachineid"}}}
 	h.pv.P.ProvisionWorklist = []string{"processelement", "processevs"}
-	_, err := h.pv.ProcessWorklist()
-	if err == nil || !strings.Contains(err.Error(), "found no machine ID") {
-		t.Fatalf("err = %v, want one saying no machine ID was found", err)
+	if _, err := h.pv.ProcessWorklist(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out.String(), "found no machine ID") {
+		t.Errorf("no warning in output:\n%s", out.String())
+	}
+	if n := h.jane.count("POST /expectedValue") + h.jane.count("PUT /expectedValue"); n != 0 {
+		t.Errorf("%d expected values written without a machine ID", n)
 	}
 }
 

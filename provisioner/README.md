@@ -55,6 +55,10 @@ owner hierarchy has one, set `JANE_TPM_OWNER_PASSWORD` (jp only).
 | Machine ID | `/etc/machine-id`, then `/var/lib/dbus/machine-id`; on BSD/macOS also `/etc/hostid`, then `kern.hostuuid` / `kern.uuid` | registry `MachineGuid` |
 | Key files | `$TMPDIR` or `/tmp` | `%TEMP%` |
 
+Without a machine ID jp warns and carries on: the element gets none, the
+`sysmachineid` expected value is skipped, and `create` checks Jane by
+element name only.
+
 The element ID file is written read-only (`-r--r--r--`) by `create`, and is
 not rewritten by `update` unless the ID changed (only `create --recreate`
 replaces it). Before 1.5.3 it was `/etc/janeelementid`; jp 1.5.3 to 1.5.5

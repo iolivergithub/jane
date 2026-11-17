@@ -277,8 +277,9 @@ func (pv *Provisioner) processExpectedValueType(ev EVEntry, eid string, c *Claim
 			return errors.New("claim body has no machineid")
 		}
 		if string(b.MachineID) == `""` {
-			return errors.New("the trust agent found no machine ID on the element" +
-				" (see the Machine ID row in jp's README for where it looks)")
+			// not an error (#144): tarzan found none, so there is nothing to record
+			fmt.Fprintln(pv.Out, "Warning: no expected value for", pid+": the trust agent found no machine ID")
+			return nil
 		}
 		evs = map[string]any{"machineid": b.MachineID}
 

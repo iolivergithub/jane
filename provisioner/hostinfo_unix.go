@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/iolivergithub/jane/lib/machineid"
@@ -21,9 +22,10 @@ func collectHostInfo() (HostInfo, error) {
 	if err != nil {
 		return HostInfo{}, err
 	}
+	// no machine ID is not an error: the element gets none (#144)
 	mid, err := machineid.Get()
 	if err != nil {
-		return HostInfo{}, err
+		fmt.Fprintln(os.Stderr, "Warning: no machine ID, the element gets none:", err)
 	}
 	machine := unix.ByteSliceToString(u.Machine[:])
 	return HostInfo{

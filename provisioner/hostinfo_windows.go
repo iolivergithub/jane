@@ -20,9 +20,10 @@ func collectHostInfo() (HostInfo, error) {
 		return HostInfo{}, err
 	}
 
+	// no machine ID is not an error: the element gets none (#144)
 	mid, err := machineid.Get() // MachineGuid
 	if err != nil {
-		return HostInfo{}, err
+		fmt.Fprintln(os.Stderr, "Warning: no machine ID, the element gets none:", err)
 	}
 
 	osName := "Windows"
